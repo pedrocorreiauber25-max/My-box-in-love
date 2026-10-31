@@ -1,0 +1,14 @@
+{
+  "name": "My Box in Love · Gestão",
+  "short_name": "My Box",
+  "description": "Gestão privada da My Box in Love",
+  "lang": "pt-PT",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf6f4",
+  "theme_color": "#e9b8c2",
+  "icons": [
+    { "src": "assets/logo-my-box-in-love.jpg", "sizes": "any", "type": "image/jpeg", "purpose": "any" }
+  ]
+}
