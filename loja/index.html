@@ -50,10 +50,10 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <h2>Faz o teu pedido</h2>
 <p class="muted">Preenche os detalhes. Vamos abrir uma conversa no WhatsApp com a tua mensagem já preparada.</p>
 <form id="pedido">
-<div><label for="nome">O teu nome</label><input id="nome" required maxlength="80" autocomplete="name" placeholder="Nome"></div>
+<div class="row"><div><label for="nome">O teu nome</label><input id="nome" required maxlength="80" autocomplete="name" placeholder="Nome"></div><div><label for="telefone">O teu contacto</label><input id="telefone" required type="tel" maxlength="25" autocomplete="tel" placeholder="Telemóvel"></div></div>
 <div><label for="produto">O que gostarias de encomendar?</label><select id="produto" required><option value="">Seleciona uma opção</option><option>Box Pequeno-Almoço (1 pessoa)</option><option>Box Pequeno-Almoço (2 pessoas)</option><option>Box Kids / Doces</option><option>Box Festa</option><option>Buquê de Doces</option><option>Pedido personalizado</option></select></div>
 <div class="row"><div><label for="data">Data pretendida</label><input id="data" type="date"></div><div><label for="hora">Horário preferido</label><input id="hora" type="time"></div></div>
-<div><label for="morada">Morada de entrega (opcional nesta fase)</label><input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, localidade"></div>
+<div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap"><label for="morada">Morada de entrega (se aplicável)</label><input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, localidade e código postal"></div>
 <div><label for="detalhes">Detalhes e personalização</label><textarea id="detalhes" maxlength="700" placeholder="Ocasião, cores, mensagem, alergias ou outros detalhes..."></textarea></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
@@ -67,10 +67,10 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 </main>
 <footer>MY BOX IN LOVE · Feito com amor ❤️</footer>
 <script>
-document.getElementById('pedido').addEventListener('submit',function(e){
+const dataInput=document.getElementById('data');\nconst hoje=new Date(); dataInput.min=new Date(hoje.getTime()-hoje.getTimezoneOffset()*60000).toISOString().slice(0,10);\ndocument.getElementById('pedido').addEventListener('submit',function(e){
  e.preventDefault();
  const v=id=>document.getElementById(id).value.trim();
- const lines=['Olá, My Box in Love! Gostaria de fazer um pedido:','Nome: '+v('nome'),'Produto: '+v('produto'),'Data pretendida: '+(v('data')||'A combinar'),'Hora: '+(v('hora')||'A combinar'),'Morada: '+(v('morada')||'A combinar'),'Detalhes: '+(v('detalhes')||'Sem detalhes adicionais'),'Podem confirmar disponibilidade, preço e entrega?'];
+ const lines=['Olá, My Box in Love! Gostaria de fazer um pedido:','Nome: '+v('nome'),'Contacto: '+v('telefone'),'Produto: '+v('produto'),'Entrega: '+v('entrega'),'Data pretendida: '+(v('data')||'A combinar'),'Hora: '+(v('hora')||'A combinar'),'Morada: '+(v('morada')||'A combinar'),'Detalhes: '+(v('detalhes')||'Sem detalhes adicionais'),'Podem confirmar disponibilidade, preço e entrega?'];
  location.href='https://wa.me/351966811670?text='+encodeURIComponent(lines.join('\n'));
 });
 </script>
