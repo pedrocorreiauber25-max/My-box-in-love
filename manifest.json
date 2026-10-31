@@ -1,19 +1,19 @@
-
 {
   "id": "/My-box-in-love/",
-  "name": "My Box in Love · Gestão",
+  "name": "My Box in Love",
   "short_name": "My Box",
   "description": "Gestão privada da My Box in Love",
   "lang": "pt-PT",
-  "start_url": "/My-box-in-love/?source=pwa",
+  "start_url": "/My-box-in-love/?versao=novo",
   "scope": "/My-box-in-love/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#fbf6f4",
   "theme_color": "#e9b8c2",
   "icons": [
     {
       "src": "/My-box-in-love/assets/logo-my-box-in-love.jpg",
-      "sizes": "any",
+      "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
     }
