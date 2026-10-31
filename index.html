@@ -1,374 +1,591 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#e9b8c2">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/logo-my-box-in-love.jpg">
-<title>My Box in Love · CEO</title>
+<title>My Box in Love | Gestão CEO</title>
+
 <style>
-:root{--pink:#e9b8c2;--pale:#faedf0;--brown:#80502f;--ink:#46332e;--line:#f0dce1;--green:#397b59;--red:#b94c55}
+:root {
+ --pink:#e9b8c2;
+ --light:#faedf0;
+ --brown:#80502f;
+ --ink:#46332e;
+ --white:#fff;
+ --line:#f0dce1;
+ --green:#397b59;
+ --red:#b94c55;
+}
 *{box-sizing:border-box}
-body{margin:0;background:#fbf6f4;color:var(--ink);font:15px system-ui}
-header{background:linear-gradient(135deg,#e9b8c2,#f5dce1);padding:22px;text-align:center;color:white}
-.brand{font-size:25px;letter-spacing:4px;font-weight:800}
-.script{font:italic 20px Georgia}
-.wrap{max-width:1050px;margin:auto;padding:15px}
-h1{font-size:22px}h2{font-size:17px;color:var(--brown)}
-button{border:0;border-radius:11px;padding:11px 14px;background:white;color:var(--brown);font-weight:700;cursor:pointer;margin:3px}
+body{
+ margin:0;background:#fbf6f4;color:var(--ink);
+ font:15px system-ui,-apple-system,sans-serif;
+}
+header{
+ background:linear-gradient(135deg,#e9b8c2,#f5dce1);
+ color:white;text-align:center;padding:22px 12px;
+}
+header img{
+ width:90px;height:90px;object-fit:cover;
+ border-radius:22px;margin-bottom:8px;
+}
+.brand{font-size:26px;font-weight:900;letter-spacing:4px}
+.script{font:italic 21px Georgia}
+header small{font-size:10px;letter-spacing:2px}
+.wrap{max-width:1100px;margin:auto;padding:14px}
+h1{font-size:22px}
+h2{font-size:17px;color:var(--brown)}
+button{
+ border:0;border-radius:11px;padding:11px 14px;
+ background:white;color:var(--brown);font-weight:700;
+ cursor:pointer;margin:3px;
+}
 button.primary{background:var(--brown);color:white}
 button.danger{background:#fbe9e9;color:#a33}
-.tabs{display:flex;overflow:auto;gap:5px;padding:12px 0}
-.card{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin:10px 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
-.metric{font-size:24px;font-weight:800;color:var(--brown)}
-.muted{color:#927f79;font-size:13px}
-.section{display:none}.section.show{display:block}
-input,select,textarea{padding:10px;border:1px solid var(--line);border-radius:10px;width:100%;font:inherit;margin:4px 0 10px;background:white;color:var(--ink)}
+input,select,textarea{
+ width:100%;padding:11px;border:1px solid var(--line);
+ border-radius:10px;background:white;color:var(--ink);
+ font:inherit;margin:5px 0 12px;
+}
 label{font-size:12px;color:#927f79;font-weight:700}
-table{width:100%;border-collapse:collapse}
-td,th{text-align:left;padding:9px;border-bottom:1px solid var(--line);font-size:13px}
+.grid{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+ gap:10px;
+}
+.card{
+ background:white;border:1px solid var(--line);
+ border-radius:16px;padding:15px;margin:10px 0;
+}
+.metric{font-size:24px;font-weight:850;color:var(--brown)}
+.muted,.small{font-size:13px;color:#927f79}
+.tabs{
+ display:flex;gap:5px;overflow-x:auto;
+ padding:10px 0;position:sticky;top:0;
+ background:#fbf6f4;z-index:5;
+}
+.tabs button{white-space:nowrap}
+.section{display:none}
+.section.show{display:block}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .field{flex:1;min-width:130px}
+.item{padding:12px 0;border-bottom:1px solid var(--line)}
+.pill{background:var(--light);padding:5px 9px;border-radius:20px}
 .hidden{display:none!important}
-.pill{background:var(--pale);border-radius:20px;padding:5px 9px;font-size:12px}
-.notice{background:#fff5e8;padding:12px;border-radius:12px;font-size:13px;color:#72532d}
-.good{color:var(--green)}.bad{color:var(--red)}
-.item{padding:11px 0;border-bottom:1px solid var(--line)}
-.small{font-size:12px;color:#927f79}
-@media(max-width:550px){.wrap{padding:10px}td,th{padding:6px;font-size:12px}}
+.good{color:var(--green)}
+.bad{color:var(--red)}
+.notice{background:#fff5e8;padding:12px;border-radius:12px}
+footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
+@media(max-width:550px){
+ .wrap{padding:9px}
+ .metric{font-size:21px}
+}
 </style>
 </head>
+
 <body>
+
 <header>
-<img src="assets/logo-my-box-in-love.jpg" alt="My Box in Love" style="width:105px;height:105px;object-fit:cover;border-radius:23px;display:block;margin:0 auto 9px">
-<div class="brand">MY BOX</div>
-<div class="script">in love</div>
-<small>PAINEL DE GESTÃO · CEO EDITION</small>
+ <img src="assets/logo-my-box-in-love.jpg" alt="My Box in Love">
+ <div class="brand">MY BOX</div>
+ <div class="script">in love</div>
+ <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
+
 <main class="wrap">
-<div id="login" class="card hidden">
-<h1>Bem-vinda, my box in love ❤️</h1>
-<p class="muted">Gestão da tua empresa My Box in Love.</p>
-<button class="primary" id="enter">Entrar na aplicação</button>
-<p class="small">Os dados ficam guardados neste dispositivo. Esta versão não tem autenticação nem sincronização entre dispositivos.</p>
-</div>
 
-<div id="app">
-<div class="row"><h1 style="flex:1">Olá, Raquel ❤️</h1></div>
-<p class="muted">O teu negócio, organizado num só lugar.</p>
-<nav class="tabs">
-<button data-tab="home">Painel</button>
-<button data-tab="orders">Encomendas</button>
-<button data-tab="products">Produtos</button>
-<button data-tab="purchases">Compras</button>
-<button data-tab="stock">Stock</button>
-<button data-tab="finance">Financeiro</button>
-<button data-tab="clients">Clientes</button>
-<button data-tab="settings">Definições</button>
-</nav>
+ <div class="row">
+  <h1 style="flex:1">Olá, Raquel ❤️</h1>
+  <span class="pill">Área de gestão</span>
+ </div>
+ <p class="muted">O teu negócio, organizado num só lugar.</p>
 
-<section id="home" class="section show">
-<h1>Painel CEO</h1>
-<div class="grid">
-<div class="card">Vendas recebidas<div class="metric" id="sales">0 €</div></div>
-<div class="card">Despesas pagas<div class="metric" id="costs">0 €</div></div>
-<div class="card">Lucro calculado<div class="metric" id="profit">0 €</div></div>
-<div class="card">Encomendas abertas<div class="metric" id="open">0</div></div>
-<div class="card">Sinais por receber<div class="metric" id="pending">0 €</div></div>
-<div class="card">Materiais em stock<div class="metric" id="materials">0</div></div>
-</div>
-<div class="card">
-<h2>Distribuição do lucro</h2>
-<p class="muted">Percentagens configuráveis nas definições. Só é distribuído o lucro positivo.</p>
-<div id="distribution"></div>
-</div>
-<div class="card">
-<h2>Últimas encomendas</h2><div id="recent"></div>
-</div>
-<button class="primary" data-go="orders">+ Nova encomenda</button>
-</section>
+ <nav class="tabs">
+  <button data-tab="home">Painel</button>
+  <button data-tab="orders">Encomendas</button>
+  <button data-tab="products">Produtos</button>
+  <button data-tab="purchases">Compras</button>
+  <button data-tab="stock">Stock</button>
+  <button data-tab="finance">Financeiro</button>
+  <button data-tab="clients">Clientes</button>
+  <button data-tab="settings">Definições</button>
+ </nav>
 
-<section id="orders" class="section">
-<div class="row"><h1 style="flex:1">Encomendas</h1><button class="primary" id="neworder">+ Nova</button></div>
-<div id="orderform" class="card hidden">
-<h2>Registar encomenda</h2>
-<label>CLIENTE</label><input id="oc" placeholder="Nome da cliente">
-<label>CONTACTO</label><input id="op" placeholder="Telefone">
-<label>PRODUTO</label><select id="oproduct"></select>
-<label>QUANTIDADE DE PRODUTOS</label><input id="oqty" type="number" min="1" value="1">
-<label>ADICIONAIS</label><div id="oextras"></div>
-<label>DATA DE ENTREGA</label><input id="odate" type="date">
-<label>ESTADO</label>
-<select id="ostatus"><option>Recebida</option><option>Em preparação</option><option>Pronta</option><option>Entregue</option><option>Cancelada</option></select>
-<label>SINAL RECEBIDO (€)</label><input id="odeposit" type="number" min="0" step=".01" value="0">
-<label>OBSERVAÇÕES</label><textarea id="onotes"></textarea>
-<p><b>Total: <span id="ototal">0,00 €</span></b></p>
-<button class="primary" id="saveorder">Guardar encomenda</button>
-<button id="closeorder">Fechar</button>
-</div>
-<div class="card"><div id="orderlist"></div></div>
-</section>
+ <section id="home" class="section show">
+  <h1>Painel CEO</h1>
+  <div class="grid">
+   <div class="card">Vendas recebidas<div class="metric" id="sales">0 €</div></div>
+   <div class="card">Despesas registadas<div class="metric" id="costs">0 €</div></div>
+   <div class="card">Resultado financeiro<div class="metric" id="profit">0 €</div></div>
+   <div class="card">Encomendas abertas<div class="metric" id="open">0</div></div>
+   <div class="card">Por receber<div class="metric" id="pending">0 €</div></div>
+   <div class="card">Unidades em stock<div class="metric" id="materials">0</div></div>
+  </div>
 
-<section id="products" class="section">
-<div class="row"><h1 style="flex:1">Produtos e fichas técnicas</h1><button class="primary" id="newproduct">+ Produto</button></div>
-<p class="muted">Os preços de venda são definidos pela Raquel. Aqui também podes indicar os materiais utilizados em cada produto.</p>
-<div id="productlist"></div>
-</section>
+  <div class="card">
+   <h2>Distribuição do lucro</h2>
+   <div id="distribution"></div>
+  </div>
 
-<section id="purchases" class="section">
-<h1>Compras de materiais</h1>
-<div class="card">
-<h2>Registar compra</h2>
-<label>MATERIAL</label><input id="mname" placeholder="Ex.: Caixas">
-<div class="row">
-<div class="field"><label>PREÇO DO PACOTE (€)</label><input id="mprice" type="number" min="0" step=".01" placeholder="30"></div>
-<div class="field"><label>UNIDADES NO PACOTE</label><input id="mqty" type="number" min="1" step="1" placeholder="15"></div>
-</div>
-<label>DATA</label><input id="mdate" type="date">
-<label>FORNECEDOR (OPCIONAL)</label><input id="msupplier" placeholder="Nome da loja ou fornecedor">
-<button class="primary" id="addpurchase">Registar compra</button>
-</div>
-<div class="card"><h2>Histórico de compras</h2><div id="purchaselist"></div></div>
-</section>
+  <div class="card">
+   <h2>Últimas encomendas</h2>
+   <div id="recent"></div>
+  </div>
+  <button class="primary" onclick="newOrder()">+ Nova encomenda</button>
+ </section>
 
-<section id="stock" class="section">
-<h1>Stock disponível</h1>
-<p class="muted">O custo médio por unidade é atualizado quando compras mais material.</p>
-<div class="card"><div id="stocklist"></div></div>
-</section>
+ <section id="orders" class="section">
+  <div class="row">
+   <h1 style="flex:1">Encomendas</h1>
+   <button class="primary" onclick="newOrder()">+ Nova</button>
+  </div>
 
-<section id="finance" class="section">
-<h1>Financeiro</h1>
-<div class="grid">
-<div class="card">Recebido<div class="metric" id="freceived">0 €</div></div>
-<div class="card">Despesas<div class="metric" id="fexpenses">0 €</div></div>
-<div class="card">Lucro<div class="metric" id="fprofit">0 €</div></div>
-</div>
-<div class="card">
-<h2>Registar outra despesa</h2>
-<label>DESCRIÇÃO</label><input id="ename" placeholder="Ex.: entrega, publicidade">
-<label>VALOR (€)</label><input id="evalue" type="number" min="0" step=".01">
-<button class="primary" id="addexpense">Registar despesa</button>
-</div>
-<div class="card"><h2>Movimentos financeiros</h2><div id="financelist"></div></div>
-</section>
+  <div id="orderform" class="card hidden">
+   <h2>Nova encomenda</h2>
+   <label>CLIENTE</label><input id="oc" placeholder="Nome da cliente">
+   <label>CONTACTO</label><input id="op" placeholder="Telefone">
+   <label>PRODUTO</label><select id="oproduct"></select>
+   <label>QUANTIDADE</label><input id="oqty" type="number" min="1" value="1">
+   <label>ADICIONAIS</label><div id="oextras"></div>
+   <label>DATA DE ENTREGA</label><input id="odate" type="date">
+   <label>ESTADO</label>
+   <select id="ostatus">
+    <option>Recebida</option>
+    <option>Em preparação</option>
+    <option>Pronta</option>
+    <option>Entregue</option>
+   </select>
+   <label>SINAL RECEBIDO (€)</label><input id="odeposit" type="number" min="0" step=".01" value="0">
+   <label>OBSERVAÇÕES</label><textarea id="onotes"></textarea>
+   <h2>Total: <span id="ototal">0,00 €</span></h2>
+   <button class="primary" onclick="saveOrder()">Guardar encomenda</button>
+   <button onclick="closeOrder()">Fechar</button>
+  </div>
+  <div id="orderlist"></div>
+ </section>
 
-<section id="clients" class="section">
-<h1>Clientes</h1><div class="card" id="clientlist"></div>
-</section>
+ <section id="products" class="section">
+  <div class="row">
+   <h1 style="flex:1">Produtos</h1>
+   <button class="primary" onclick="addProduct()">+ Produto</button>
+  </div>
+  <p class="muted">Define os preços e os materiais utilizados em cada produto.</p>
+  <div id="productlist"></div>
+  <div class="card">
+   <h2>Adicionais</h2>
+   <p class="muted">Cria extras opcionais para as encomendas.</p>
+   <button class="primary" onclick="addExtra()">+ Adicionar extra</button>
+   <div id="extralist"></div>
+  </div>
+ </section>
 
-<section id="settings" class="section">
-<h1>Definições</h1>
-<div class="card">
-<h2>Distribuição do lucro</h2>
-<label>PARTE DA RAQUEL (%)</label><input id="sharepersonal" type="number" min="0" max="100">
-<label>REINVESTIMENTO (%)</label><input id="sharereinvest" type="number" min="0" max="100">
-<label>RESERVA DA EMPRESA (%)</label><input id="sharereserve" type="number" min="0" max="100">
-<p class="muted">A soma tem de ser 100%.</p>
-<button class="primary" id="saveshares">Guardar percentagens</button>
-</div>
-<div class="card">
-<h2>Cópia de segurança</h2>
-<button class="primary" id="backup">Exportar cópia de segurança</button>
-<label>RESTAURAR CÓPIA JSON</label><input id="restorefile" type="file" accept=".json,application/json">
-<button id="restore">Restaurar dados</button>
-</div>
-<div class="card">
-<h2>Privacidade</h2>
-<p class="muted">Esta aplicação não tem login real. Os dados ficam no armazenamento do navegador deste dispositivo. Quem tiver acesso ao endereço do site pode abrir a aplicação. Não guardes dados sensíveis de clientes nesta versão.</p>
-</div>
-</section>
-</div>
+ <section id="purchases" class="section">
+  <h1>Compras de materiais</h1>
+  <div class="card">
+   <h2>Registar compra</h2>
+   <label>MATERIAL</label><input id="mname" placeholder="Ex.: Caixas">
+   <div class="row">
+    <div class="field">
+     <label>PREÇO DO PACOTE (€)</label>
+     <input id="mprice" type="number" min="0" step=".01">
+    </div>
+    <div class="field">
+     <label>UNIDADES NO PACOTE</label>
+     <input id="mqty" type="number" min="1" step="1">
+    </div>
+   </div>
+   <label>DATA</label><input id="mdate" type="date">
+   <label>FORNECEDOR</label><input id="msupplier" placeholder="Opcional">
+   <button class="primary" onclick="addPurchase()">Registar compra</button>
+  </div>
+  <div class="card"><h2>Histórico de compras</h2><div id="purchaselist"></div></div>
+ </section>
+
+ <section id="stock" class="section">
+  <h1>Stock disponível</h1>
+  <p class="muted">O custo médio é atualizado com cada compra.</p>
+  <div class="card"><div id="stocklist"></div></div>
+ </section>
+
+ <section id="finance" class="section">
+  <h1>Financeiro</h1>
+  <div class="grid">
+   <div class="card">Recebido<div class="metric" id="freceived">0 €</div></div>
+   <div class="card">Despesas<div class="metric" id="fexpenses">0 €</div></div>
+   <div class="card">Resultado<div class="metric" id="fprofit">0 €</div></div>
+  </div>
+  <div class="card">
+   <h2>Outra despesa</h2>
+   <label>DESCRIÇÃO</label><input id="ename" placeholder="Ex.: Publicidade">
+   <label>VALOR (€)</label><input id="evalue" type="number" min="0" step=".01">
+   <button class="primary" onclick="addExpense()">Registar despesa</button>
+  </div>
+  <div class="card"><h2>Movimentos financeiros</h2><div id="financelist"></div></div>
+ </section>
+
+ <section id="clients" class="section">
+  <h1>Clientes</h1>
+  <div class="card"><div id="clientlist"></div></div>
+ </section>
+
+ <section id="settings" class="section">
+  <h1>Definições</h1>
+  <div class="card">
+   <h2>Distribuição do lucro</h2>
+   <label>PARTE DA RAQUEL (%)</label><input id="sharepersonal" type="number" min="0" max="100">
+   <label>REINVESTIMENTO (%)</label><input id="sharereinvest" type="number" min="0" max="100">
+   <label>RESERVA DA EMPRESA (%)</label><input id="sharereserve" type="number" min="0" max="100">
+   <button class="primary" onclick="saveShares()">Guardar percentagens</button>
+  </div>
+  <div class="card">
+   <h2>Cópia de segurança</h2>
+   <button class="primary" onclick="backup()">Exportar cópia de segurança</button>
+   <label>RESTAURAR FICHEIRO JSON</label>
+   <input id="restorefile" type="file" accept=".json,application/json">
+   <button onclick="restore()">Restaurar dados</button>
+  </div>
+  <div class="card">
+   <h2>Privacidade e armazenamento</h2>
+   <p class="muted">Não existe login nesta versão. Os dados são guardados neste navegador e dispositivo. O endereço do site é público, por isso não guardes dados sensíveis de clientes.</p>
+  </div>
+ </section>
+
 </main>
 
+<footer>MY BOX IN LOVE · Gestão com amor ❤️</footer>
+
 <script>
-const $=id=>document.getElementById(id);
-const money=n=>(Number(n)||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-const uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random();
-const today=()=>new Date().toISOString().slice(0,10);
-let d={
-products:[
-{name:"Box Pequeno-Almoço (1 pessoa)",price:0,recipe:[]},
-{name:"Box Pequeno-Almoço (2 pessoas)",price:0,recipe:[]},
-{name:"Box Kids / Doces",price:0,recipe:[]},
-{name:"Box Festa",price:0,recipe:[]},
-{name:"Buquê de Doces",price:0,recipe:[]}
-].map(x=>({...x,id:uid()})),
-extras:[],orders:[],stock:[],purchases:[],expenses:[],
-shares:{personal:50,reinvest:30,reserve:20}
+const $ = id => document.getElementById(id);
+const money = n => (Number(n)||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random();
+const today = () => new Date().toISOString().slice(0,10);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const defaults = {
+ products:[
+  {name:"Box Pequeno-Almoço (1 pessoa)",price:0,recipe:[]},
+  {name:"Box Pequeno-Almoço (2 pessoas)",price:0,recipe:[]},
+  {name:"Box Kids / Doces",price:0,recipe:[]},
+  {name:"Box Festa",price:0,recipe:[]},
+  {name:"Buquê de Doces",price:0,recipe:[]}
+ ].map(p=>({...p,id:uid()})),
+ extras:[],orders:[],stock:[],purchases:[],expenses:[],
+ shares:{personal:50,reinvest:30,reserve:20}
 };
-try{
+
+let d;
+try {
  const old=JSON.parse(localStorage.getItem('mbl')||'null');
- if(old)d={...d,...old};
-}catch(e){}
-d.stock=d.stock||[];d.purchases=d.purchases||[];d.expenses=d.expenses||[];d.orders=d.orders||[];
+ d=old?{...defaults,...old}:defaults;
+} catch(e) { d=defaults; }
+
 d.products=(d.products||[]).map(p=>({...p,recipe:p.recipe||[],price:Number(p.price)||0}));
+d.orders=d.orders||[];
+d.stock=d.stock||[];
+d.purchases=d.purchases||[];
+d.expenses=d.expenses||[];
+d.extras=d.extras||[];
 d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
-let selectedRecipe=null;
 
-function save(){localStorage.setItem('mbl',JSON.stringify(d));draw()}
-function go(id){document.querySelectorAll('.section').forEach(s=>s.classList.toggle('show',s.id===id))}
-document.querySelectorAll('[data-tab],[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.tab||b.dataset.go));
-$('enter').onclick=()=>{$('login').classList.add('hidden');$('app').classList.remove('hidden');draw()};
-$('exit').onclick=()=>{$('app').classList.add('hidden');$('login').classList.remove('hidden')};
+function save(){
+ localStorage.setItem('mbl',JSON.stringify(d));
+ draw();
+}
+function go(id){
+ document.querySelectorAll('.section').forEach(s=>s.classList.toggle('show',s.id===id));
+ document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('primary',b.dataset.tab===id));
+}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
 
-function getCost(product){
- return (product.recipe||[]).reduce((sum,r)=>{
-  let m=d.stock.find(x=>x.id===r.material);
-  return sum+(m?m.unitCost*r.qty:0);
+function receivedOrder(o){
+ return Number(o.deposit||0)+(o.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0)-(Number(o.refunds)||0);
+}
+function pendingOrder(o){
+ return Math.max(0,Number(o.total||0)-receivedOrder(o));
+}
+function totalOrder(){
+ const p=d.products.find(x=>x.id===$('oproduct').value);
+ const q=Math.max(1,Number($('oqty').value)||1);
+ let extras=0;
+ document.querySelectorAll('.ox:checked').forEach(c=>{
+  const x=d.extras.find(e=>e.id===c.value);
+  if(x)extras+=Number(x.price)||0;
+ });
+ return p ? p.price*q+extras : 0;
+}
+function newOrder(){
+ $('orderform').classList.remove('hidden');
+ $('odate').value=today();
+ draw();
+}
+function closeOrder(){ $('orderform').classList.add('hidden'); }
+$('oproduct').onchange=()=> $('ototal').textContent=money(totalOrder());
+$('oqty').oninput=()=> $('ototal').textContent=money(totalOrder());
+$('oextras').onchange=()=> $('ototal').textContent=money(totalOrder());
+
+function saveOrder(){
+ const p=d.products.find(x=>x.id===$('oproduct').value);
+ const client=$('oc').value.trim();
+ const qty=Math.max(1,Number($('oqty').value)||1);
+ if(!client||!p)return alert('Indica o cliente e o produto.');
+ const total=totalOrder();
+ const deposit=Number($('odeposit').value)||0;
+ if(deposit<0||deposit>total)return alert('Sinal inválido.');
+ const extras=[...document.querySelectorAll('.ox:checked')].map(c=>c.value);
+ d.orders.push({
+  id:uid(),client,phone:$('op').value,product:p.name,productId:p.id,
+  qty,date:$('odate').value,status:$('ostatus').value,total,deposit,
+  payments:[],refunds:0,produced:false,materialCost:0,
+  extras,notes:$('onotes').value
+ });
+ ['oc','op','onotes'].forEach(id=>$(id).value='');
+ $('odeposit').value=0;
+ closeOrder();save();
+}
+
+function addProduct(){
+ const name=prompt('Nome do produto:');
+ if(!name?.trim())return;
+ const price=Number(prompt('Preço de venda (€):','0'));
+ if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
+ d.products.push({id:uid(),name:name.trim(),price,recipe:[]});
+ save();
+}
+function editProduct(id){
+ const p=d.products.find(x=>x.id===id);if(!p)return;
+ const name=prompt('Nome do produto:',p.name);
+ if(name===null)return;
+ const price=Number(prompt('Preço de venda (€):',p.price));
+ if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
+ p.name=name.trim();p.price=price;
+ if(confirm('Queres adicionar um material à ficha técnica?')){
+  const material=prompt('Nome exato do material que está no stock:');
+  const m=d.stock.find(x=>x.name.toLowerCase()===String(material).toLowerCase());
+  if(!m)return alert('Material não encontrado. Regista primeiro uma compra.');
+  const qty=Number(prompt('Quantidade utilizada por unidade de produto:','1'));
+  if(qty>0)p.recipe.push({material:m.id,qty});
+ }
+ save();
+}
+function getCost(p){
+ return (p.recipe||[]).reduce((s,r)=>{
+  const m=d.stock.find(x=>x.id===r.material);
+  return s+(m?m.unitCost*r.qty:0);
  },0);
 }
-function orderTotal(){
- let p=d.products.find(x=>x.id===$('oproduct').value);
- let q=Math.max(1,Number($('oqty').value)||1);
- let extra=0;
- document.querySelectorAll('.ox:checked').forEach(c=>{
-  let x=d.extras.find(z=>z.id===c.value);if(x)extra+=x.price;
- });
- return p?(p.price*q+extra):0;
-}
-function draw(){
- $('oproduct').innerHTML=d.products.map(p=>`<option value="${p.id}">${esc(p.name)} · ${money(p.price)}</option>`).join('');
- $('oextras').innerHTML=(d.extras||[]).map(x=>`<label class="pill"><input class="ox" type="checkbox" value="${x.id}">${esc(x.name)} (+${money(x.price)})</label>`).join('')||'<span class="muted">Sem adicionais registados.</span>';
- $('ototal').textContent=money(orderTotal());
- const received=d.orders.reduce((s,o)=>s+(o.deposit||0)+(o.payments||[]).reduce((a,p)=>a+p.amount,0)-(o.refunds||0),0);
- const expenses=d.expenses.reduce((s,x)=>s+x.value,0)+d.purchases.reduce((s,x)=>s+x.price,0);
- const materialCost=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+(o.materialCost||0),0);
- const profit=received-expenses+0;
- const open=d.orders.filter(o=>!['Entregue','Cancelada'].includes(o.status)).length;
- $('sales').textContent=money(received);$('costs').textContent=money(expenses);
- $('profit').textContent=money(profit);$('open').textContent=open;
- $('pending').textContent=money(d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+Math.max(0,o.total-(o.deposit||0)-(o.payments||[]).reduce((a,p)=>a+p.amount,0)),0));
- $('materials').textContent=d.stock.reduce((s,x)=>s+x.qty,0);
- $('freceived').textContent=money(received);$('fexpenses').textContent=money(expenses);$('fprofit').textContent=money(profit);
- let sh=d.shares,positive=Math.max(0,profit);
- $('distribution').innerHTML=`<p>Raquel (${sh.personal}%): <b>${money(positive*sh.personal/100)}</b></p><p>Reinvestimento (${sh.reinvest}%): <b>${money(positive*sh.reinvest/100)}</b></p><p>Reserva (${sh.reserve}%): <b>${money(positive*sh.reserve/100)}</b></p>`;
- $('productlist').innerHTML=d.products.map(p=>`<div class="card"><b>${esc(p.name)}</b><p>Preço de venda: <b>${money(p.price)}</b> · Custo estimado: ${money(getCost(p))}</p><button onclick="editProduct('${p.id}')">Editar produto e ficha técnica</button></div>`).join('');
- $('stocklist').innerHTML=d.stock.map(m=>`<div class="item"><b>${esc(m.name)}</b><div>${m.qty} unidades disponíveis</div><div>Custo médio unitário: ${money(m.unitCost)}</div><div>Valor em stock: ${money(m.qty*m.unitCost)}</div></div>`).join('')||'Ainda não existem materiais.';
- $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`<div class="item"><b>${esc(p.name)}</b><div>${p.qty} unidades · ${money(p.price)} · ${money(p.unitCost)}/unidade</div><div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`).join('')||'Ainda não existem compras.';
- $('orderlist').innerHTML=d.orders.slice().reverse().map(o=>`<div class="card"><b>${esc(o.client)}</b> · ${esc(o.product)}<p>${o.date||'Sem data'} · ${money(o.total)} · ${esc(o.status)}</p><p class="small">Recebido: ${money((o.deposit||0)+(o.payments||[]).reduce((a,p)=>a+p.amount,0))} · Em falta: ${money(Math.max(0,o.total-(o.deposit||0)-(o.payments||[]).reduce((a,p)=>a+p.amount,0)))}</p><button onclick="payment('${o.id}')">Registar pagamento</button><button onclick="produce('${o.id}')">Confirmar materiais utilizados</button><button onclick="refund('${o.id}')">Cancelar / devolver sinal</button><button onclick="statusOrder('${o.id}')">Alterar estado</button></div>`).join('')||'Ainda não existem encomendas.';
- $('financelist').innerHTML=[
- ...d.purchases.map(x=>({name:'Compra: '+x.name,value:x.price,date:x.date})),
- ...d.expenses.map(x=>({name:x.name,value:x.value,date:x.date})),
- ...d.orders.flatMap(o=>[{name:'Sinal: '+o.client,value:o.deposit||0,date:o.date},...(o.payments||[]).map(p=>({name:'Pagamento: '+o.client,value:p.amount,date:p.date})),...(o.refunds?[{name:'Devolução: '+o.client,value:-o.refunds,date:o.date}]:[])])
- ].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(x=>`<div class="item">${esc(x.name)} <b>${money(x.value)}</b><div class="small">${x.date||''}</div></div>`).join('')||'Sem movimentos.';
- $('clientlist').innerHTML=[...new Set(d.orders.map(o=>o.client))].map(n=>`<div class="item">${esc(n)}</div>`).join('')||'Ainda sem clientes.';
- $('recent').innerHTML=d.orders.slice(-5).reverse().map(o=>`<div class="item">${esc(o.client)} · ${esc(o.product)} · ${money(o.total)}</div>`).join('')||'Ainda sem encomendas.';
- $('sharepersonal').value=sh.personal;$('sharereinvest').value=sh.reinvest;$('sharereserve').value=sh.reserve;
-}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-
-$('neworder').onclick=()=>{$('orderform').classList.remove('hidden');$('odate').value=today();draw()};
-$('closeorder').onclick=()=>$('orderform').classList.add('hidden');
-$('oproduct').onchange=()=>{$('ototal').textContent=money(orderTotal())};
-$('oqty').oninput=()=>{$('ototal').textContent=money(orderTotal())};
-$('oextras').onchange=()=>{$('ototal').textContent=money(orderTotal())};
-$('saveorder').onclick=()=>{
- let p=d.products.find(x=>x.id===$('oproduct').value);
- let client=$('oc').value.trim(),q=Math.max(1,Number($('oqty').value)||1);
- if(!client||!p)return alert('Indica o cliente e o produto.');
- let total=orderTotal(),deposit=Number($('odeposit').value)||0;
- if(deposit<0||deposit>total)return alert('O sinal não pode ser superior ao total.');
- let o={id:uid(),client,phone:$('op').value,product:p.name,productId:p.id,qty:q,date:$('odate').value,status:$('ostatus').value,total,deposit,payments:[],refunds:0,materialCost:0,produced:false,notes:$('onotes').value};
- d.orders.push(o);
- $('orderform').classList.add('hidden');$('oc').value='';$('op').value='';$('odeposit').value='0';$('onotes').value='';
- save();
-};
-$('newproduct').onclick=()=>{
- let name=prompt('Nome do produto');if(!name?.trim())return;
- let price=Number(prompt('Preço de venda definido pela Raquel (€)','0'));
+function addExtra(){
+ const name=prompt('Nome do adicional:');
+ if(!name?.trim())return;
+ const price=Number(prompt('Preço do adicional (€):','0'));
  if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
- d.products.push({id:uid(),name:name.trim(),price,recipe:[]});save();
-};
-window.editProduct=id=>{
- let p=d.products.find(x=>x.id===id);if(!p)return;
- let name=prompt('Nome do produto',p.name);if(name===null)return;
- let price=Number(prompt('Preço de venda (€)',p.price));if(!Number.isFinite(price)||price<0)return;
- p.name=name.trim();p.price=price;
- let lines=(p.recipe||[]).map(r=>{let m=d.stock.find(x=>x.id===r.material);return `${m?.name||'Material'}: ${r.qty}`}).join('\n');
- alert('Agora podes adicionar materiais à ficha técnica.');
- let add=confirm('Queres adicionar um material à ficha técnica?');
- if(add){
-  let mname=prompt('Nome do material exatamente como aparece no stock');let m=d.stock.find(x=>x.name.toLowerCase()===String(mname).toLowerCase());
-  if(!m)return alert('Material não encontrado. Regista-o primeiro nas Compras.');
-  let qty=Number(prompt('Quantidade utilizada por produto','1'));
-  if(qty>0){p.recipe.push({material:m.id,qty});}
- }
+ d.extras.push({id:uid(),name:name.trim(),price});
  save();
-};
-$('addpurchase').onclick=()=>{
- let name=$('mname').value.trim(),price=Number($('mprice').value),qty=Number($('mqty').value);
- if(!name||price<=0||qty<=0||!Number.isInteger(qty))return alert('Indica material, preço e número inteiro de unidades.');
- let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
- if(!m){m={id:uid(),name,qty:0,unitCost:0};d.stock.push(m)}
- let oldValue=m.qty*m.unitCost;m.qty+=qty;m.unitCost=(oldValue+price)/m.qty;
- d.purchases.push({id:uid(),name,price,qty,unitCost:price/qty,date:$('mdate').value||today(),supplier:$('msupplier').value});
- $('mname').value='';$('mprice').value='';$('mqty').value='';$('msupplier').value='';
- save();alert('Compra registada e stock atualizado!');
-};
-$('addexpense').onclick=()=>{
- let name=$('ename').value.trim(),value=Number($('evalue').value);
- if(!name||value<=0)return alert('Indica descrição e valor.');
- d.expenses.push({id:uid(),name,value,date:today()});$('ename').value='';$('evalue').value='';save();
-};
-window.payment=id=>{
- let o=d.orders.find(x=>x.id===id);if(!o||o.status==='Cancelada')return;
- let already=(o.deposit||0)+(o.payments||[]).reduce((s,p)=>s+p.amount,0);
- let remaining=o.total-already;
- if(remaining<=0)return alert('Esta encomenda já está totalmente paga.');
- let v=Number(prompt('Valor recebido. Em falta: '+money(remaining),remaining));
- if(v>0&&v<=remaining){o.payments.push({amount:v,date:today()});save()}
- else alert('Valor inválido.');
-};
-window.produce=id=>{
- let o=d.orders.find(x=>x.id===id);if(!o||o.produced)return alert('Já foi confirmada ou não existe.');
- let p=d.products.find(x=>x.id===o.productId);if(!p)return;
- let recipe=p.recipe||[];
- if(!recipe.length)return alert('Este produto ainda não tem ficha técnica. Adiciona os materiais primeiro.');
- let totalCost=0,usage=[];
- for(let r of recipe){
-  let m=d.stock.find(x=>x.id===r.material),qty=r.qty*o.qty;
-  if(!m||m.qty<qty)return alert('Stock insuficiente: '+(m?.name||'material'));
-  usage.push({m,qty});totalCost+=m.unitCost*qty;
+}
+function deleteExtra(id){
+ if(confirm('Eliminar este adicional?')){
+  d.extras=d.extras.filter(x=>x.id!==id);save();
  }
- if(!confirm('Confirmas a utilização dos materiais desta encomenda?'))return;
- usage.forEach(x=>x.m.qty-=x.qty);
- o.materialCost=totalCost;o.produced=true;save();alert('Materiais descontados do stock.');
-};
-window.refund=id=>{
- let o=d.orders.find(x=>x.id===id);if(!o)return;
+}
+function addPurchase(){
+ const name=$('mname').value.trim();
+ const price=Number($('mprice').value);
+ const qty=Number($('mqty').value);
+ if(!name||price<=0||qty<=0||!Number.isInteger(qty))
+  return alert('Indica material, preço e quantidade inteira.');
+ let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
+ if(!m){m={id:uid(),name,qty:0,unitCost:0};d.stock.push(m);}
+ const oldValue=m.qty*m.unitCost;
+ m.qty+=qty;
+ m.unitCost=(oldValue+price)/m.qty;
+ d.purchases.push({
+  id:uid(),name,price,qty,unitCost:price/qty,
+  date:$('mdate').value||today(),supplier:$('msupplier').value
+ });
+ ['mname','mprice','mqty','msupplier'].forEach(id=>$(id).value='');
+ save();alert('Compra registada e stock atualizado!');
+}
+function addExpense(){
+ const name=$('ename').value.trim(),value=Number($('evalue').value);
+ if(!name||value<=0)return alert('Indica descrição e valor.');
+ d.expenses.push({id:uid(),name,value,date:today()});
+ $('ename').value='';$('evalue').value='';save();
+}
+function payment(id){
+ const o=d.orders.find(x=>x.id===id);if(!o||o.status==='Cancelada')return;
+ const remaining=pendingOrder(o);
+ if(remaining<=0)return alert('Encomenda totalmente paga.');
+ const value=Number(prompt('Valor recebido. Em falta: '+money(remaining),remaining));
+ if(value>0&&value<=remaining){
+  o.payments=o.payments||[];
+  o.payments.push({amount:value,date:today()});save();
+ }else alert('Valor inválido.');
+}
+function refund(id){
+ const o=d.orders.find(x=>x.id===id);if(!o)return;
  if(!confirm('Cancelar esta encomenda?'))return;
- let received=(o.deposit||0)+(o.payments||[]).reduce((s,p)=>s+p.amount,0);
+ const received=receivedOrder(o);
  if(received>0){
-  let refund=Number(prompt('Valor a devolver à cliente (€)',received));
-  if(refund<0||refund>received||!Number.isFinite(refund))return alert('Valor de devolução inválido.');
-  o.refunds=refund;
+  const value=Number(prompt('Valor a devolver (€):',received));
+  if(!Number.isFinite(value)||value<0||value>received)return alert('Valor inválido.');
+  o.refunds=(o.refunds||0)+value;
  }
  o.status='Cancelada';save();
-};
-window.statusOrder=id=>{
- let o=d.orders.find(x=>x.id===id);if(!o)return;
- let s=prompt('Novo estado: Recebida, Em preparação, Pronta, Entregue ou Cancelada',o.status);
- if(['Recebida','Em preparação','Pronta','Entregue','Cancelada'].includes(s)){o.status=s;save()}
-};
-$('saveshares').onclick=()=>{
- let a=Number($('sharepersonal').value),b=Number($('sharereinvest').value),c=Number($('sharereserve').value);
- if([a,b,c].some(x=>x<0||x>100)||a+b+c!==100)return alert('As percentagens têm de somar exatamente 100%.');
- d.shares={personal:a,reinvest:b,reserve:c};save();alert('Distribuição guardada.');
-};
-$('backup').onclick=()=>{
- let blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='my-box-in-love-backup.json';a.click();URL.revokeObjectURL(url);
-};
-$('restore').onclick=()=>{
- let file=$('restorefile').files[0];if(!file)return alert('Escolhe primeiro um ficheiro JSON.');
- let reader=new FileReader();reader.onload=()=>{try{let x=JSON.parse(reader.result);if(!x.products||!x.orders||!x.stock)throw Error();d={...d,...x};save();alert('Cópia restaurada.')}catch(e){alert('Ficheiro inválido.')}};reader.readAsText(file);
-};
+}
+function statusOrder(id){
+ const o=d.orders.find(x=>x.id===id);if(!o)return;
+ const s=prompt('Novo estado: Recebida, Em preparação, Pronta ou Entregue',o.status);
+ if(['Recebida','Em preparação','Pronta','Entregue'].includes(s)){o.status=s;save();}
+}
+function produce(id){
+ const o=d.orders.find(x=>x.id===id);if(!o||o.produced)return alert('Já foi produzida.');
+ const p=d.products.find(x=>x.id===o.productId);if(!p)return;
+ if(!p.recipe.length)return alert('Adiciona primeiro os materiais à ficha técnica.');
+ const usage=[];let cost=0;
+ for(const r of p.recipe){
+  const m=d.stock.find(x=>x.id===r.material),qty=r.qty*o.qty;
+  if(!m||m.qty<qty)return alert('Stock insuficiente: '+(m?.name||'material'));
+  usage.push({m,qty});cost+=m.unitCost*qty;
+ }
+ if(!confirm('Confirmas a utilização dos materiais?'))return;
+ usage.forEach(x=>x.m.qty-=x.qty);
+ o.materialCost=cost;o.produced=true;save();
+ alert('Materiais descontados do stock.');
+}
+function saveShares(){
+ const a=Number($('sharepersonal').value);
+ const b=Number($('sharereinvest').value);
+ const c=Number($('sharereserve').value);
+ if([a,b,c].some(x=>x<0||x>100)||a+b+c!==100)
+  return alert('As percentagens têm de somar 100%.');
+ d.shares={personal:a,reinvest:b,reserve:c};save();
+ alert('Distribuição guardada.');
+}
+function backup(){
+ const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download='my-box-in-love-backup.json';a.click();
+ URL.revokeObjectURL(url);
+}
+function restore(){
+ const file=$('restorefile').files[0];
+ if(!file)return alert('Escolhe primeiro um ficheiro JSON.');
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const x=JSON.parse(reader.result);
+   if(!x.products||!x.orders||!x.stock)throw Error();
+   if(!confirm('Substituir os dados atuais pela cópia?'))return;
+   d={...defaults,...x};save();alert('Cópia restaurada.');
+  }catch(e){alert('Ficheiro inválido.');}
+ };
+ reader.readAsText(file);
+}
+
+function draw(){
+ $('oproduct').innerHTML=d.products.map(p=>
+  `<option value="${p.id}">${esc(p.name)} · ${money(p.price)}</option>`
+ ).join('');
+ $('oextras').innerHTML=d.extras.map(x=>
+  `<label class="pill"><input class="ox" type="checkbox" value="${x.id}"> ${esc(x.name)} (+${money(x.price)})</label>`
+ ).join('')||'<span class="muted">Sem adicionais.</span>';
+ $('ototal').textContent=money(totalOrder());
+
+ const received=d.orders.reduce((s,o)=>s+receivedOrder(o),0);
+ const expenses=d.purchases.reduce((s,x)=>s+x.price,0)+d.expenses.reduce((s,x)=>s+x.value,0);
+ const profit=received-expenses;
+ const open=d.orders.filter(o=>!['Entregue','Cancelada'].includes(o.status)).length;
+ const pending=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
+
+ $('sales').textContent=money(received);
+ $('costs').textContent=money(expenses);
+ $('profit').textContent=money(profit);
+ $('open').textContent=open;
+ $('pending').textContent=money(pending);
+ $('materials').textContent=d.stock.reduce((s,x)=>s+x.qty,0);
+ $('freceived').textContent=money(received);
+ $('fexpenses').textContent=money(expenses);
+ $('fprofit').textContent=money(profit);
+ $('profit').className='metric '+(profit<0?'bad':'good');
+
+ const sh=d.shares,positive=Math.max(0,profit);
+ $('distribution').innerHTML=`
+  <p>Raquel (${sh.personal}%): <b>${money(positive*sh.personal/100)}</b></p>
+  <p>Reinvestimento (${sh.reinvest}%): <b>${money(positive*sh.reinvest/100)}</b></p>
+  <p>Reserva (${sh.reserve}%): <b>${money(positive*sh.reserve/100)}</b></p>`;
+
+ $('productlist').innerHTML=d.products.map(p=>`
+  <div class="card">
+   <b>${esc(p.name)}</b>
+   <p>Venda: <b>${money(p.price)}</b> · Custo estimado: ${money(getCost(p))}</p>
+   <p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p>
+   <button onclick="editProduct('${p.id}')">Editar produto e ficha técnica</button>
+  </div>`).join('');
+
+ $('extralist').innerHTML=d.extras.map(x=>`
+  <div class="item">${esc(x.name)} · ${money(x.price)}
+  <button class="danger" onclick="deleteExtra('${x.id}')">Eliminar</button></div>`
+ ).join('')||'Ainda não existem adicionais.';
+
+ $('stocklist').innerHTML=d.stock.map(m=>`
+  <div class="item"><b>${esc(m.name)}</b>
+  <div>${m.qty} unidades disponíveis</div>
+  <div>Custo médio: ${money(m.unitCost)} / unidade</div>
+  <div>Valor em stock: ${money(m.qty*m.unitCost)}</div></div>`
+ ).join('')||'Ainda não existem materiais.';
+
+ $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`
+  <div class="item"><b>${esc(p.name)}</b>
+  <div>${p.qty} unidades · ${money(p.price)}</div>
+  <div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`
+ ).join('')||'Ainda não existem compras.';
+
+ $('orderlist').innerHTML=d.orders.slice().reverse().map(o=>`
+  <div class="card">
+   <b>${esc(o.client)}</b> · ${esc(o.product)}
+   <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
+   <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
+   <p class="small">${esc(o.notes||'')}</p>
+   <button onclick="payment('${o.id}')">Registar pagamento</button>
+   <button onclick="produce('${o.id}')">Confirmar produção</button>
+   <button onclick="statusOrder('${o.id}')">Alterar estado</button>
+   <button class="danger" onclick="refund('${o.id}')">Cancelar / devolver</button>
+  </div>`
+ ).join('')||'Ainda não existem encomendas.';
+
+ const movements=[
+  ...d.purchases.map(x=>({name:'Compra: '+x.name,value:-x.price,date:x.date})),
+  ...d.expenses.map(x=>({name:x.name,value:-x.value,date:x.date})),
+  ...d.orders.flatMap(o=>[
+   {name:'Sinal: '+o.client,value:o.deposit||0,date:o.date},
+   ...(o.payments||[]).map(p=>({name:'Pagamento: '+o.client,value:p.amount,date:p.date})),
+   ...(o.refunds?[{name:'Devolução: '+o.client,value:-o.refunds,date:o.date}]:[])
+  ])
+ ];
+ $('financelist').innerHTML=movements.sort((a,b)=>(b.date||'').localeCompare(a.date||''))
+ .map(x=>`<div class="item">${esc(x.name)} <b>${money(x.value)}</b><div class="small">${x.date||''}</div></div>`).join('')||'Sem movimentos.';
+
+ $('clientlist').innerHTML=[...new Set(d.orders.map(o=>o.client))]
+ .map(n=>`<div class="item">${esc(n)}</div>`).join('')||'Ainda sem clientes.';
+
+ $('recent').innerHTML=d.orders.slice(-5).reverse()
+ .map(o=>`<div class="item">${esc(o.client)} · ${esc(o.product)} · ${money(o.total)}</div>`).join('')||'Ainda sem encomendas.';
+
+ $('sharepersonal').value=sh.personal;
+ $('sharereinvest').value=sh.reinvest;
+ $('sharereserve').value=sh.reserve;
+}
+
 draw();
-if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+go('home');
+
+// Não existe login nem autenticação nesta aplicação.
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
