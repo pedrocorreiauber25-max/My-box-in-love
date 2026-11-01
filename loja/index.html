@@ -68,32 +68,31 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <footer>MY BOX IN LOVE · Feito com amor ❤️</footer>
 <script>
 (function(){
-  const form=document.getElementById('pedido');
-  if(!form) return;
-  form.addEventListener('submit',function(e){
-    e.preventDefault();
-    if(!form.reportValidity()) return;
-    const v=id=>document.getElementById(id).value.trim();
-    const lines=[
+  const form = document.getElementById('pedido');
+  if (!form) return;
+
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!form.reportValidity()) return;
+
+    const value = id => document.getElementById(id).value.trim();
+    const message = [
       'Olá, My Box in Love! Gostaria de fazer um pedido:',
-      'Nome: '+v('nome'),
-      'Contacto: '+v('telefone'),
-      'Produto: '+v('produto'),
-      'Entrega: '+v('entrega'),
-      'Data pretendida: '+(v('data')||'A combinar'),
-      'Hora: '+(v('hora')||'A combinar'),
-      'Morada: '+(v('morada')||'A combinar'),
-      'Detalhes: '+(v('detalhes')||'Sem detalhes adicionais'),
+      'Nome: ' + value('nome'),
+      'Contacto: ' + value('telefone'),
+      'Produto: ' + value('produto'),
+      'Entrega: ' + value('entrega'),
+      'Data pretendida: ' + (value('data') || 'A combinar'),
+      'Hora: ' + (value('hora') || 'A combinar'),
+      'Morada: ' + (value('morada') || 'A combinar'),
+      'Detalhes: ' + (value('detalhes') || 'Sem detalhes adicionais'),
       'Podem confirmar disponibilidade, preço e entrega?'
-    ];
-    const url='https://wa.me/351960486450?text='+encodeURIComponent(lines.join('\n'));
-    const link=document.createElement('a');
-    link.href=url;
-    link.target='_blank';
-    link.rel='noopener';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    ].join('\n');
+
+    const whatsappUrl = 'https://wa.me/351960486450?text=' + encodeURIComponent(message);
+    window.location.assign(whatsappUrl);
   });
 })();
 </script>
