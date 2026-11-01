@@ -67,7 +67,9 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 </main>
 <footer>MY BOX IN LOVE · Feito com amor ❤️</footer>
 <script>
-const dataInput=document.getElementById('data');\nconst hoje=new Date(); dataInput.min=new Date(hoje.getTime()-hoje.getTimezoneOffset()*60000).toISOString().slice(0,10);\ndocument.getElementById('pedido').addEventListener('submit',function(e){
+const dataInput=document.getElementById('data');
+const hoje=new Date();
+dataInput.min=new Date(hoje.getTime()-hoje.getTimezoneOffset()*60000).toISOString().slice(0,10);\ndocument.getElementById('pedido').addEventListener('submit',function(e){
  e.preventDefault();
  const v=id=>document.getElementById(id).value.trim();
  const lines=['Olá, My Box in Love! Gostaria de fazer um pedido:','Nome: '+v('nome'),'Contacto: '+v('telefone'),'Produto: '+v('produto'),'Entrega: '+v('entrega'),'Data pretendida: '+(v('data')||'A combinar'),'Hora: '+(v('hora')||'A combinar'),'Morada: '+(v('morada')||'A combinar'),'Detalhes: '+(v('detalhes')||'Sem detalhes adicionais'),'Podem confirmar disponibilidade, preço e entrega?'];
