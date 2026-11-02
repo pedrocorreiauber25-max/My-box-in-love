@@ -35,7 +35,15 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 @media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<style>#deliveryMap{height:300px;border-radius:14px;border:1px solid var(--line);z-index:1}.map-help{font-size:12px;color:#927f79;margin:7px 0}</style>
+<style>
+#deliveryMap{height:300px;border-radius:14px;border:1px solid var(--line);z-index:1}
+.map-help{font-size:12px;color:#927f79;margin:7px 0}
+.delivery-quote{margin:14px 0 4px;padding:16px 18px;border:2px solid #d7a0aa;border-radius:16px;background:linear-gradient(135deg,#fff0f4,#fffaf7);color:var(--ink);box-shadow:0 6px 18px #80502f12}
+.delivery-quote .quote-label{display:block;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#94616a}
+.delivery-quote .quote-price{display:block;margin:3px 0 5px;font-size:clamp(30px,8vw,42px);line-height:1.1;font-weight:900;letter-spacing:-1px;color:#75452f}
+.delivery-quote .quote-detail{display:block;font-size:13px;font-weight:650;color:#80645c;line-height:1.5}
+.delivery-quote.is-pending{border-color:#ead6da;background:#fff9fa}
+</style>
 </head>
 <body>
 <header>
@@ -85,7 +93,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div id="addressChoicesWrap" hidden><label for="addressChoices">Encontrámos mais do que uma morada. Confirma a correta:</label><select id="addressChoices"></select></div>
 <p id="selectedPoint" class="note">Ainda não foi localizada nenhuma morada.</p>
 <div id="deliveryMap" role="application" aria-label="Confirmação do local de entrega"></div>
-<p id="quoteBox" class="note">Indica a morada para calcular a entrega.</p>
+<div id="quoteBox" class="delivery-quote is-pending" role="status" aria-live="polite"><span class="quote-label">Preço da entrega</span><span class="quote-detail">Indica a morada para calcular a entrega.</span></div>
 </div>
 <div><label for="detalhes">Adicionais e personalização pretendida</label><textarea id="detalhes" maxlength="700" placeholder="Indica os adicionais (balão 4 €, placa 3 €, quadro 15 €, trio Polaroid 5 €, rosas 3 €/unidade), artigos extra do menu, ocasião, cores e mensagem..."></textarea><p class="note">Os adicionais e artigos à unidade são somados após confirmação da seleção pela equipa. Caixa Presente e Buquê variam conforme tamanho e escolha.</p></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
@@ -155,7 +163,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular a entrega.');
     const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
     const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-    lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
+    lastQuote=q; box.classList.remove('is-pending'); box.innerHTML='<span class="quote-label">Preço da entrega</span><strong class="quote-price">'+fee+'</strong><span class="quote-detail">'+q.delivery_km+' km por estrada · '+rate+'/km</span>';
   }
   async function locateAddress() {
     const query=address.value.trim();
