@@ -83,6 +83,10 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  .wrap{padding:9px}
  .metric{font-size:21px}
 }
+
+#loginGate{max-width:420px;margin:40px auto;padding:24px;background:#fff;border:1px solid var(--line);border-radius:18px;text-align:center}
+#loginGate input{text-align:center;font-size:24px;letter-spacing:8px}
+#newOrderToast{position:fixed;right:14px;bottom:14px;z-index:20;background:#80502f;color:white;padding:14px 18px;border-radius:14px;box-shadow:0 8px 28px #0003;display:none}
 </style>
 </head>
 
@@ -95,11 +99,13 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<main id="privateMain" class="wrap">
+<section id="loginGate"><h2>Acesso privado da Raquel</h2><p class="muted">Introduz o teu PIN para consultar e gerir as encomendas.</p><input id="panelPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="current-password"><button class="primary" id="loginButton">Entrar na gestão</button><p class="small" id="loginError"></p></section>
+<div id="newOrderToast">❤️ Nova encomenda recebida!</div>
+<main id="privateMain" class="wrap" style="display:none">
 
  <div class="row">
   <h1 style="flex:1">Olá, Raquel ❤️</h1>
-  <span class="pill">Área de gestão</span>
+  <span class="pill">Área privada · <button onclick="mblLogout()">Sair</button></span>
  </div>
  <p class="muted">O teu negócio, organizado num só lugar.</p>
 
@@ -165,7 +171,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button onclick="closeOrder()">Fechar</button>
   </div>
   <div id="orderlist"></div>
-  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
+  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button><button onclick="mblEnableNotifications()">Ativar notificações</button></div><p class="small" id="notificationState">Ativa as notificações neste dispositivo.</p><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
  </section>
 
  <section id="products" class="section">
@@ -265,6 +271,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 
 <footer>MY BOX IN LOVE · Gestão com amor ❤️</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const $ = id => document.getElementById(id);
 const money = n => (Number(n)||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
@@ -642,11 +649,49 @@ go('home');
 const MBL_API='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action';
 const MBL_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
 let MBL_TOKEN=sessionStorage.getItem('mbl_panel_session')||'';
+let mblRealtime=null;
+const MBL_URL='https://tlhcwzpyuhitjxymapbm.supabase.co';
 async function mblCall(data){
  const res=await fetch(MBL_API,{method:'POST',headers:{'Content-Type':'application/json','apikey':MBL_KEY,...(MBL_TOKEN?{'Authorization':'Bearer '+MBL_TOKEN}:{})},body:JSON.stringify(data)});
  const json=await res.json().catch(()=>({error:'Resposta inválida.'}));
  if(!res.ok)throw new Error(json.error||'Erro de ligação.');
  return json;
+}
+async function mblLogin(){
+ const pin=$('panelPin').value.trim();$('loginError').textContent='';
+ if(!/^\\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
+ $('loginButton').disabled=true;$('loginButton').textContent='A validar…';
+ try{
+  const result=await mblCall({action:'login',pin});
+  MBL_TOKEN=result.token;sessionStorage.setItem('mbl_panel_session',MBL_TOKEN);
+  $('loginGate').style.display='none';$('privateMain').style.display='block';
+  await mblLoadOrders();mblSubscribeOrders();
+  if('Notification' in window && Notification.permission==='default') mblEnableNotifications();
+ }catch(e){$('loginError').textContent=e.message;}
+ finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar na gestão';}
+}
+$('loginButton').addEventListener('click',mblLogin);
+$('panelPin').addEventListener('keydown',e=>{if(e.key==='Enter')mblLogin();});
+function mblLogout(){if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');$('privateMain').style.display='none';$('loginGate').style.display='block';}
+async function mblEnableNotifications(){
+ if(!('Notification' in window)){ $('notificationState').textContent='Este navegador não suporta notificações.';return;}
+ const permission=await Notification.requestPermission();
+ $('notificationState').textContent=permission==='granted'?'Notificações permitidas neste dispositivo. Mantém o painel ativo para receber alertas de novas encomendas.':'As notificações não foram autorizadas.';
+}
+function mblSubscribeOrders(){
+ if(!window.supabase?.createClient||mblRealtime)return;
+ const client=window.supabase.createClient(MBL_URL,MBL_KEY);
+ mblRealtime=client.channel('mbl-private-orders')
+ .on('postgres_changes',{event:'INSERT',schema:'public',table:'mbl_orders'},payload=>{
+   const o=payload.new||{};
+   $('newOrderToast').textContent='❤️ Nova encomenda '+(o.reference||'')+' recebida de '+(o.customer_name||'cliente')+'!';
+   $('newOrderToast').style.display='block';
+   setTimeout(()=>$('newOrderToast').style.display='none',9000);
+   if('Notification' in window&&Notification.permission==='granted'){
+     new Notification('Nova encomenda · My Box in Love',{body:(o.customer_name||'Cliente')+' · '+(o.product_name||'Pedido novo'),icon:'assets/logo-my-box-in-love.jpg'});
+   }
+   mblLoadOrders();
+ }).subscribe();
 }
 async function mblLoadOrders(){
  const box=document.getElementById('onlineOrders');if(!box)return;
@@ -663,8 +708,12 @@ async function mblSaveOrder(id){
  try{await mblCall({action:'update',id,status:document.getElementById('mbls-'+id).value,product_total_cents:p===''?null:Math.round(Number(p)*100),admin_notes:document.getElementById('mbln-'+id).value});alert('Encomenda atualizada.');mblLoadOrders();}
  catch(e){alert(e.message);}
 }
-document.getElementById('privateMain').style.display='block';
-mblLoadOrders();
+if(MBL_TOKEN){
+ $('loginGate').style.display='none';$('privateMain').style.display='block';
+ mblCall({action:'verify'}).then(()=>{mblLoadOrders();mblSubscribeOrders();}).catch(()=>mblLogout());
+}else{
+ $('loginGate').style.display='block';$('privateMain').style.display='none';
+}
 
 // Não existe login nem autenticação nesta aplicação.
 if('serviceWorker' in navigator){
