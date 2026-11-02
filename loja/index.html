@@ -140,53 +140,19 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
   }
   async function locateAddress() {
-    const raw=address.value.trim();
-    if(raw.length<5) throw new Error('Escreve a rua, número e localidade da entrega.');
-    const query=/portugal/i.test(raw)?raw:raw+', Portugal';
-    const inPortugal=(lon,lat)=>lon>=-9.7&&lon<=-6.0&&lat>=36.8&&lat<=42.3;
-    let features=[], photonError=null;
-    // Primeiro serviço: Photon. Se estiver indisponível, usa Nominatim como alternativa.
-    try {
-      const url='https://photon.komoot.io/api/?limit=12&lang=pt&q='+encodeURIComponent(query);
-      const response=await fetch(url,{headers:{'Accept':'application/json'}});
-      if(!response.ok) throw new Error('Photon HTTP '+response.status);
-      const data=await response.json();
-      features=(data.features||[]).filter(f=>{
-        const p=f.properties||{},coords=f.geometry&&f.geometry.coordinates;
-        if(!Array.isArray(coords)||coords.length<2)return false;
-        const lon=Number(coords[0]),lat=Number(coords[1]),country=String(p.country||'').toLowerCase();
-        return Number.isFinite(lat)&&Number.isFinite(lon)&&(country.includes('portugal')||(!p.country&&inPortugal(lon,lat)));
-      });
-    } catch(err) { photonError=err; }
-    if(!features.length) {
-      try {
-        const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=10&countrycodes=pt&q='+encodeURIComponent(query);
-        const response=await fetch(url,{headers:{'Accept':'application/json'}});
-        if(!response.ok) throw new Error('Nominatim HTTP '+response.status);
-        const rows=await response.json();
-        features=(rows||[]).filter(r=>inPortugal(Number(r.lon),Number(r.lat))).map(r=>{
-          const a=r.address||{};
-          return {geometry:{coordinates:[Number(r.lon),Number(r.lat)]},properties:{
-            name:a.road||r.name||r.display_name,housenumber:a.house_number||'',
-            street:a.road||'',postcode:a.postcode||'',
-            city:a.city||a.town||a.village||a.municipality||a.county||'',
-            state:a.state||'',country:'Portugal'
-          }};
-        });
-      } catch(err) {
-        throw new Error('Os serviços de mapas estão temporariamente indisponíveis. Verifica a ligação à internet e tenta novamente. ('+(err.message||'erro de ligação')+')');
-      }
-    }
-    if(!features.length) throw new Error('Não encontrámos a morada. Experimenta escrever rua, número, código postal e localidade (ex.: Ermesinde, Portugal).');
-    addressResults=features;
-    const choices=document.getElementById('addressChoices'), wrap=document.getElementById('addressChoicesWrap');
-    choices.innerHTML='';
-    features.forEach((f,i)=>{
-      const p=f.properties||{}, label=[p.name,p.housenumber,p.street,p.postcode,p.city||p.town||p.village||p.district,p.state].filter(Boolean).join(', ');
-      const option=document.createElement('option'); option.value=String(i); option.textContent=label||('Resultado '+(i+1)); choices.appendChild(option);
+    const query=address.value.trim();
+    if(query.length<5) throw new Error('Escreve a rua, número e localidade da entrega.');
+    const res=await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
+      body:JSON.stringify({action:'geocode',address:query})
     });
-    wrap.hidden=features.length<2;
-    choices.onchange=()=>selectAddress(Number(choices.value));
+    let data={};
+    try{data=await res.json();}catch(_){}
+    if(!res.ok||!data.ok||!data.point) throw new Error(data.error||'Não foi possível localizar a morada. Confirma rua, número e código postal.');
+    const point=data.point;
+    addressResults=[{geometry:{coordinates:[Number(point.lon),Number(point.lat)]},properties:{name:point.label||query,country:'Portugal'}}];
+    document.getElementById('addressChoicesWrap').hidden=true;
     selectAddress(0);
   }
   function selectAddress(index) {
