@@ -84,7 +84,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  .metric{font-size:21px}
 }
 
-#loginGate{max-width:420px;margin:40px auto;padding:24px;background:#fff;border:1px solid var(--line);border-radius:18px;text-align:center}
+#loginGate{display:none!important}
 #loginGate input{text-align:center;font-size:24px;letter-spacing:8px}
 #newOrderToast{position:fixed;right:14px;bottom:14px;z-index:20;background:#80502f;color:white;padding:14px 18px;border-radius:14px;box-shadow:0 8px 28px #0003;display:none}
 </style>
@@ -99,7 +99,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<section id="loginGate"><h2>Acesso privado da Raquel</h2><p class="muted">Introduz o teu PIN para consultar e gerir as encomendas.</p><input id="panelPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="current-password"><button class="primary" id="loginButton">Entrar na gestão</button><p class="small" id="loginError"></p></section>
+<section id="loginGate" class="hidden" aria-hidden="true"></section>
 <div id="newOrderToast">❤️ Nova encomenda recebida!</div>
 <main id="privateMain" class="wrap" style="display:none">
 
@@ -648,7 +648,7 @@ draw();
 go('home');
 const MBL_API='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action';
 const MBL_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
-let MBL_TOKEN=sessionStorage.getItem('mbl_panel_session')||'';
+let MBL_TOKEN=localStorage.getItem('mbl_panel_session')||'';
 let mblRealtime=null;
 const MBL_URL='https://tlhcwzpyuhitjxymapbm.supabase.co';
 async function mblCall(data){
@@ -657,22 +657,30 @@ async function mblCall(data){
  if(!res.ok)throw new Error(json.error||'Erro de ligação.');
  return json;
 }
-async function mblLogin(){
- const pin=$('panelPin').value.trim();$('loginError').textContent='';
- if(!/^\\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
- $('loginButton').disabled=true;$('loginButton').textContent='A validar…';
+async function mblStartPanel(){
+ $('loginGate').style.display='none';$('privateMain').style.display='block';
  try{
-  const result=await mblCall({action:'login',pin});
-  MBL_TOKEN=result.token;sessionStorage.setItem('mbl_panel_session',MBL_TOKEN);
-  $('loginGate').style.display='none';$('privateMain').style.display='block';
-  await mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}
-  if('Notification' in window && Notification.permission==='default') mblEnableNotifications();
- }catch(e){$('loginError').textContent=e.message;}
- finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar na gestão';}
+  if(!MBL_TOKEN) throw new Error('NO_SESSION');
+  await mblLoadOrders();
+ }catch(e){
+  if(e.message==='NO_SESSION'||/sessão|token|autorizad|401|403/i.test(e.message)){
+   MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
+   $('privateMain').style.display='block';
+   $('onlineOrders').innerHTML='<p class="notice">A sessão precisa de ser revalidada. Contacta o suporte para recuperar o acesso privado.</p>';
+  }else $('onlineOrders').innerHTML='<p class="notice">Não foi possível atualizar as encomendas: '+esc(e.message)+'</p>';
+ }
+ mblSubscribeOrders();
+ if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
+ if('Notification' in window && Notification.permission==='default'){
+  $('notificationState').textContent='Ativa as notificações neste dispositivo no separador Encomendas.';
+ }
 }
-$('loginButton').addEventListener('click',mblLogin);
-$('panelPin').addEventListener('keydown',e=>{if(e.key==='Enter')mblLogin();});
-function mblLogout(){if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}mblSeenOrders=new Set();mblOrdersInitialized=false;if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');$('privateMain').style.display='none';$('loginGate').style.display='block';}
+function mblLogout(){
+ if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}
+ if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}
+ MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
+ $('privateMain').style.display='none';$('loginGate').style.display='none';
+}
 async function mblEnableNotifications(){
  if(!('Notification' in window)){ $('notificationState').textContent='Este navegador não suporta notificações.';return;}
  const permission=await Notification.requestPermission();
