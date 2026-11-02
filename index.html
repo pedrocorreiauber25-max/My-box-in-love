@@ -164,7 +164,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="saveOrder()">Guardar encomenda</button>
    <button onclick="closeOrder()">Fechar</button>
   </div>
-  <div id="orderlist"></div>\n  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
+  <div id="orderlist"></div>
+  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
  </section>
 
  <section id="products" class="section">
@@ -295,7 +296,8 @@ d.stock=d.stock||[];
 d.purchases=d.purchases||[];
 d.expenses=d.expenses||[];
 d.extras=d.extras||[];
-d.shares=d.shares||{personal:50,reinvest:30,reserve:20};\nd.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
+d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
+d.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
 
 function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
@@ -588,7 +590,8 @@ function draw(){
  $('recent').innerHTML=d.orders.slice(-5).reverse()
  .map(o=>`<div class="item">${esc(o.client)} · ${esc(o.product)} · ${money(o.total)}</div>`).join('')||'Ainda sem encomendas.';
 
- $('sharepersonal').value=sh.personal;\n $('deliveryRate').value=d.deliveryRate.toFixed(2);
+ $('sharepersonal').value=sh.personal;
+ $('deliveryRate').value=d.deliveryRate.toFixed(2);
  $('sharereinvest').value=sh.reinvest;
  $('sharereserve').value=sh.reserve;
 }
