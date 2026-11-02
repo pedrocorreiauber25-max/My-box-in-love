@@ -659,7 +659,7 @@ async function mblCall(data){
 }
 async function mblLogin(){
  const pin=$('panelPin').value.trim();$('loginError').textContent='';
- if(!/^\\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
+ if(!/^\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
  $('loginButton').disabled=true;$('loginButton').textContent='A validar…';
  try{
   const result=await mblCall({action:'login',pin});
