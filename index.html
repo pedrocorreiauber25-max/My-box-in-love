@@ -95,7 +95,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<main class="wrap">
+<section id="privateLogin" class="wrap"><div class="card" style="max-width:420px;margin:35px auto;text-align:center"><h1>Acesso privado ❤️</h1><p class="muted">Introduz o PIN de 4 dígitos da Raquel.</p><form id="privateLoginForm"><input id="privatePin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="PIN de 4 dígitos" required><button class="primary" type="submit">Entrar</button><p id="privateLoginError" class="bad"></p></form></div></section>
+<main id="privateMain" style="display:none" class="wrap">
 
  <div class="row">
   <h1 style="flex:1">Olá, Raquel ❤️</h1>
@@ -164,7 +165,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="saveOrder()">Guardar encomenda</button>
    <button onclick="closeOrder()">Fechar</button>
   </div>
-  <div id="orderlist"></div>
+  <div id="orderlist"></div>\n  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
  </section>
 
  <section id="products" class="section">
@@ -581,6 +582,36 @@ function draw(){
 
 draw();
 go('home');
+const MBL_API='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action';
+const MBL_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
+let MBL_TOKEN=sessionStorage.getItem('mbl_panel_session')||'';
+async function mblCall(data){
+ const res=await fetch(MBL_API,{method:'POST',headers:{'Content-Type':'application/json','apikey':MBL_KEY,...(MBL_TOKEN?{'Authorization':'Bearer '+MBL_TOKEN}:{})},body:JSON.stringify(data)});
+ const json=await res.json().catch(()=>({error:'Resposta inválida.'}));
+ if(!res.ok)throw new Error(json.error||'Erro de ligação.');
+ return json;
+}
+async function mblLoadOrders(){
+ const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
+ box.textContent='A carregar…';
+ try{
+  const data=await mblCall({action:'orders'});
+  const statuses=['Novo','Em contacto','Confirmado','Em preparação','Pronto','Entregue','Cancelado'];
+  box.innerHTML=(data.orders||[]).map(o=>'<article class="card"><b>'+esc(o.customer_name)+'</b> · '+esc(o.reference)+'<p>'+esc(o.product_name)+' · '+esc(o.customer_phone)+'</p><p>'+esc(o.delivery_method)+' · '+esc(o.requested_date||'Data a combinar')+' '+esc(o.requested_time||'')+'</p>'+(o.destination_address?'<p>'+esc(o.destination_address)+'</p>':'')+(o.customer_notes?'<p>'+esc(o.customer_notes)+'</p>':'')+'<label>ESTADO</label><select id="mbls-'+o.id+'">'+statuses.map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')+'</select><label>PREÇO COMBINADO (€)</label><input id="mblp-'+o.id+'" type="number" min="0" step=".01" value="'+(o.product_total_cents==null?'':(o.product_total_cents/100).toFixed(2))+'"><label>NOTAS INTERNAS</label><textarea id="mbln-'+o.id+'">'+esc(o.admin_notes||'')+'</textarea><button class="primary" onclick="mblSaveOrder(\''+o.id+'\')">Guardar</button></article>').join('')||'<p class="muted">Ainda não existem encomendas online.</p>';
+ }catch(e){box.textContent=e.message;}
+}
+async function mblSaveOrder(id){
+ const p=document.getElementById('mblp-'+id).value;
+ try{await mblCall({action:'update',id,status:document.getElementById('mbls-'+id).value,product_total_cents:p===''?null:Math.round(Number(p)*100),admin_notes:document.getElementById('mbln-'+id).value});alert('Encomenda atualizada.');mblLoadOrders();}
+ catch(e){alert(e.message);}
+}
+document.getElementById('privateLoginForm').addEventListener('submit',async e=>{
+ e.preventDefault();const pin=document.getElementById('privatePin').value;
+ try{const r=await mblCall({action:'login',pin});MBL_TOKEN=r.token;sessionStorage.setItem('mbl_panel_session',MBL_TOKEN);document.getElementById('privateLogin').style.display='none';document.getElementById('privateMain').style.display='block';mblLoadOrders();}
+ catch(err){document.getElementById('privateLoginError').textContent=err.message;}
+});
+if(MBL_TOKEN){mblCall({action:'verify'}).then(()=>{document.getElementById('privateLogin').style.display='none';document.getElementById('privateMain').style.display='block';mblLoadOrders();}).catch(()=>{MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');});}
+
 
 // Não existe login nem autenticação nesta aplicação.
 if('serviceWorker' in navigator){
