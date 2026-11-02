@@ -80,11 +80,12 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap" hidden>
 <label for="morada">Morada de entrega</label>
 <input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, número, localidade e código postal">
-<p class="map-help">Arrasta o mapa e toca no local exato de entrega. O cálculo usa a rota de carro desde a loja.</p>
-<div id="deliveryMap" role="application" aria-label="Mapa para escolher o local de entrega"></div>
-<p id="selectedPoint" class="note">Ainda não escolheste o ponto de entrega.</p>
-<button class="btn secondary" type="button" id="calcEntrega">Calcular entrega</button>
-<p id="quoteBox" class="note">Escolhe o ponto no mapa e calcula a entrega.</p>
+<p class="map-help">Escreve a morada completa e carrega em localizar. Encontramos o ponto no mapa e calculamos automaticamente a distância por estrada.</p>
+<button class="btn secondary" type="button" id="calcEntrega">Localizar morada e calcular entrega</button>
+<div id="addressChoicesWrap" hidden><label for="addressChoices">Encontrámos mais do que uma morada. Confirma a correta:</label><select id="addressChoices"></select></div>
+<p id="selectedPoint" class="note">Ainda não foi localizada nenhuma morada.</p>
+<div id="deliveryMap" role="application" aria-label="Confirmação do local de entrega"></div>
+<p id="quoteBox" class="note">Indica a morada para calcular a entrega.</p>
 </div>
 <div><label for="detalhes">Adicionais e personalização pretendida</label><textarea id="detalhes" maxlength="700" placeholder="Indica os adicionais (balão 4 €, placa 3 €, quadro 15 €, trio Polaroid 5 €, rosas 3 €/unidade), artigos extra do menu, ocasião, cores e mensagem..."></textarea><p class="note">Os adicionais e artigos à unidade são somados após confirmação da seleção pela equipa. Caixa Presente e Buquê variam conforme tamanho e escolha.</p></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
@@ -107,7 +108,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
   const delivery = document.getElementById('entrega');
   const addressWrap = document.getElementById('morada-wrap');
   const address = document.getElementById('morada');
-  let deliveryMap, deliveryMarker, selectedCoords = null, lastQuote = null;
+  let deliveryMap, deliveryMarker, selectedCoords = null, lastQuote = null, addressResults = [];
   const storePoint = [41.2067818168, -8.5588216782];
   function initDeliveryMap() {
     if (deliveryMap || !window.L) return;
@@ -131,23 +132,58 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
   }
   delivery.addEventListener('change', updateAddressField);
   updateAddressField();
-  document.getElementById('calcEntrega').addEventListener('click', async function() {
+  async function calculateSelectedAddress() {
     const box = document.getElementById('quoteBox');
-    if (!address.value.trim()) { alert('Indica a morada completa.'); return; }
-    if (!selectedCoords) { alert('Toca no mapa para escolher o ponto exato de entrega.'); return; }
-    this.disabled = true; this.textContent = 'A calcular…'; box.textContent = 'A calcular rota de carro…';
+    if (!selectedCoords) throw new Error('Não foi possível localizar esta morada. Confirma a rua, número, localidade e código postal.');
+    const res = await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler', {
+      method:'POST', headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
+      body:JSON.stringify({action:'quote',address:address.value.trim(),lat:selectedCoords.lat,lon:selectedCoords.lon})
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular a entrega.');
+    const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+    const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+    lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
+  }
+  async function locateAddress() {
+    const query=address.value.trim();
+    if(query.length<8) throw new Error('Escreve a morada completa, incluindo localidade e código postal.');
+    const url='https://photon.komoot.io/api/?limit=6&lang=pt&q='+encodeURIComponent(query);
+    const response=await fetch(url);
+    if(!response.ok) throw new Error('O serviço de localização está temporariamente indisponível. Tenta novamente.');
+    const data=await response.json();
+    const features=(data.features||[]).filter(f=>{
+      const p=f.properties||{}, country=(p.country||'').toLowerCase();
+      return country.includes('portugal') && Array.isArray(f.geometry?.coordinates);
+    });
+    if(!features.length) throw new Error('Não encontrámos essa morada. Experimenta acrescentar localidade e código postal.');
+    addressResults=features;
+    const choices=document.getElementById('addressChoices'), wrap=document.getElementById('addressChoicesWrap');
+    choices.innerHTML='';
+    features.forEach((f,i)=>{
+      const p=f.properties||{}, label=[p.name,p.housenumber,p.street,p.postcode,p.city||p.town||p.village,p.state].filter(Boolean).join(', ');
+      const option=document.createElement('option'); option.value=String(i); option.textContent=label||('Resultado '+(i+1)); choices.appendChild(option);
+    });
+    wrap.hidden=features.length<2;
+    choices.onchange=()=>selectAddress(Number(choices.value));
+    selectAddress(0);
+  }
+  function selectAddress(index) {
+    const f=addressResults[index]; if(!f)return;
+    const [lon,lat]=f.geometry.coordinates;
+    selectedCoords={lat,lon}; lastQuote=null;
+    const p=f.properties||{};
+    document.getElementById('selectedPoint').textContent='Morada localizada: '+[p.name,p.housenumber,p.street,p.postcode,p.city||p.town||p.village].filter(Boolean).join(', ');
+    if(deliveryMap){const point=[lat,lon];deliveryMap.setView(point,17);if(deliveryMarker)deliveryMarker.setLatLng(point);else deliveryMarker=L.marker(point).addTo(deliveryMap);setTimeout(()=>deliveryMap.invalidateSize(),100);}
+  }
+  document.getElementById('calcEntrega').addEventListener('click', async function() {
+    const button=this, box=document.getElementById('quoteBox');
+    button.disabled=true; button.textContent='A localizar e calcular…'; box.textContent='A procurar a morada…';
     try {
-      const res = await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler', {
-        method:'POST', headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
-        body:JSON.stringify({action:'quote',address:address.value.trim(),lat:selectedCoords.lat,lon:selectedCoords.lon})
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular.');
-      const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-      const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-      lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
-    } catch(e) { box.textContent=e.message; }
-    this.disabled=false; this.textContent='Calcular entrega';
+      await locateAddress();
+      await calculateSelectedAddress();
+    } catch(e) { box.textContent=e.message; lastQuote=null; }
+    button.disabled=false; button.textContent='Localizar morada e calcular entrega';
   });
   const dateField = document.getElementById('data');
   const today = new Date();
@@ -181,7 +217,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     };
 
     try {
-      if (payload.delivery === 'Entrega ao domicílio' && (!selectedCoords || !lastQuote)) throw new Error('Escolhe o ponto no mapa e calcula a entrega antes de enviar o pedido.');
+      if (payload.delivery === 'Entrega ao domicílio' && (!selectedCoords || !lastQuote)) throw new Error('Localiza a morada e calcula a entrega antes de enviar o pedido.');
       const response = await fetch(
         'https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',
         {
