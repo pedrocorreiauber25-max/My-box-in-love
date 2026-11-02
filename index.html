@@ -687,9 +687,16 @@ function mblLogout(){
  $('privateMain').style.display='none';$('loginGate').style.display='block';
 }
 async function mblEnableNotifications(){
- if(!('Notification' in window)){ $('notificationState').textContent='Este navegador não suporta notificações.';return;}
- const permission=await Notification.requestPermission();
- $('notificationState').textContent=permission==='granted'?'Notificações permitidas neste dispositivo. Mantém o painel ativo para receber alertas de novas encomendas.':'As notificações não foram autorizadas.';
+ const state=$('notificationState');
+ if(!('Notification' in window)){state.textContent='Este navegador não suporta notificações.';return;}
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission!=='granted'){state.textContent='Permissão não concedida. Verifica as definições do navegador.';return;}
+  if(!('serviceWorker' in navigator)){state.textContent='Este navegador não suporta notificações do serviço.';return;}
+  const reg=await navigator.serviceWorker.ready;
+  await reg.showNotification('My Box in Love · Teste de notificações',{body:'As notificações estão autorizadas neste dispositivo.',icon:'assets/logo-my-box-in-love.jpg',tag:'mbl-test'});
+  state.textContent='Permissão ativa. Com o painel aberto, os novos pedidos geram alertas. Com a app fechada, é necessário configurar Push.';
+ }catch(err){state.textContent='Erro ao ativar notificações: '+err.message;}
 }
 function mblSubscribeOrders(){
  if(!window.supabase?.createClient||mblRealtime)return;
@@ -700,9 +707,7 @@ function mblSubscribeOrders(){
    $('newOrderToast').textContent='❤️ Nova encomenda '+(o.reference||'')+' recebida de '+(o.customer_name||'cliente')+'!';
    $('newOrderToast').style.display='block';
    setTimeout(()=>$('newOrderToast').style.display='none',9000);
-   if('Notification' in window&&Notification.permission==='granted'){
-     new Notification('Nova encomenda · My Box in Love',{body:(o.customer_name||'Cliente')+' · '+(o.product_name||'Pedido novo'),icon:'assets/logo-my-box-in-love.jpg'});
-   }
+   if('Notification' in window&&Notification.permission==='granted'&&'serviceWorker' in navigator){navigator.serviceWorker.ready.then(reg=>reg.showNotification('Nova encomenda · My Box in Love',{body:(o.customer_name||'Cliente')+' · '+(o.product_name||'Pedido novo'),icon:'assets/logo-my-box-in-love.jpg',tag:'mbl-'+o.id})).catch(()=>{});}
    mblLoadOrders();
  }).subscribe();
 }
@@ -736,9 +741,19 @@ async function mblLoadOrders(){
    const subtotal=Number(o.order_subtotal_cents ?? o.product_total_cents ?? 0)/100;
    const deliveryFee=Number(o.delivery_fee_cents||0)/100;
    const total=Number(o.order_total_cents ?? (subtotal*100+Number(o.delivery_fee_cents||0)))/100;
-   return '<article class="card"><div class="row"><b style="flex:1">'+esc(o.customer_name)+'</b><span class="pill">'+esc(o.reference)+'</span></div><p>'+esc(o.customer_phone)+'</p><div class="card" style="background:#fff9fa">'+(itemHtml||'<div>'+esc(o.product_name)+'</div>')+'<hr><div class="row" style="justify-content:space-between"><span>Subtotal</span><b>'+money(subtotal)+'</b></div><div class="row" style="justify-content:space-between"><span>Entrega'+(o.delivery_km?' · '+esc(o.delivery_km)+' km':'')+'</span><b>'+money(deliveryFee)+'</b></div><div class="row" style="justify-content:space-between;font-size:19px;color:var(--brown)"><strong>Total indicativo</strong><strong>'+money(total)+'</strong></div></div><p>'+esc(o.delivery_method)+' · '+esc(o.requested_date||'Data a combinar')+' '+esc(o.requested_time||'')+'</p>'+(o.destination_address?'<p>📍 '+esc(o.destination_address)+'</p>':'')+(o.customer_notes?'<p>Notas do cliente: '+esc(o.customer_notes)+'</p>':'')+'<label>ESTADO</label><select id="mbls-'+o.id+'">'+statuses.map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')+'</select><label>PREÇO FINAL ACORDADO (€)</label><input id="mblp-'+o.id+'" type="number" min="0" step=".01" value="'+(o.product_total_cents==null?'':(o.product_total_cents/100).toFixed(2))+'"><label>NOTAS INTERNAS</label><textarea id="mbln-'+o.id+'">'+esc(o.admin_notes||'')+'</textarea><button class="primary" onclick="mblSaveOrder(\''+o.id+'\')">Guardar alterações</button></article>';
+   return '<article class="card"><div class="row"><b style="flex:1">'+esc(o.customer_name)+'</b><span class="pill">'+esc(o.reference)+'</span></div><p>'+esc(o.customer_phone)+'</p><div class="card" style="background:#fff9fa">'+(itemHtml||'<div>'+esc(o.product_name)+'</div>')+'<hr><div class="row" style="justify-content:space-between"><span>Subtotal</span><b>'+money(subtotal)+'</b></div><div class="row" style="justify-content:space-between"><span>Entrega'+(o.delivery_km?' · '+esc(o.delivery_km)+' km':'')+'</span><b>'+money(deliveryFee)+'</b></div><div class="row" style="justify-content:space-between;font-size:19px;color:var(--brown)"><strong>Total indicativo</strong><strong>'+money(total)+'</strong></div></div><p>'+esc(o.delivery_method)+' · '+esc(o.requested_date||'Data a combinar')+' '+esc(o.requested_time||'')+'</p>'+(o.destination_address?'<p>📍 '+esc(o.destination_address)+'</p>':'')+(o.customer_notes?'<p>Notas do cliente: '+esc(o.customer_notes)+'</p>':'')+'<label>ESTADO</label><select id="mbls-'+o.id+'">'+statuses.map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')+'</select><label>PAGAMENTO</label><p>Estado: <b>'+esc(o.payment_status||'Não autorizado')+'</b> · Método: '+esc(o.payment_method||'Por escolher')+'</p><select id="mblpay-'+o.id+'"><option value="">Escolher método</option><option value="MB WAY" '+(o.payment_method==='MB WAY'?'selected':'')+'>MB WAY</option><option value="Transferência imediata" '+(o.payment_method==='Transferência imediata'?'selected':'')+'>Transferência imediata</option></select><div class="row"><button type="button" onclick="mblAuthorizePayment(\''+o.id+'\')">Autorizar pagamento</button><button type="button" class="primary" onclick="mblConfirmPayment(\''+o.id+'\')">Confirmar dinheiro recebido</button></div><p>MB WAY: 966 811 670. Só marcar como pago após confirmar a entrada do dinheiro.</p><label>PREÇO FINAL ACORDADO (€)</label><input id="mblp-'+o.id+'" type="number" min="0" step=".01" value="'+(o.product_total_cents==null?'':(o.product_total_cents/100).toFixed(2))+'"><label>NOTAS INTERNAS</label><textarea id="mbln-'+o.id+'">'+esc(o.admin_notes||'')+'</textarea><button class="primary" onclick="mblSaveOrder(\''+o.id+'\')">Guardar alterações</button></article>';
   }).join('')||'<p class="muted">Ainda não existem encomendas online.</p>';
  }catch(e){box.textContent=e.message;}
+}
+async function mblAuthorizePayment(id){
+ const method=document.getElementById('mblpay-'+id).value;
+ if(!method){alert('Escolhe um método de pagamento.');return;}
+ if(!confirm('Autorizar pagamento por '+method+'?'))return;
+ try{await mblCall({action:'update',id,payment_method:method,payment_status:'A aguardar pagamento'});alert('Pagamento autorizado.');mblLoadOrders();}catch(e){alert(e.message);}
+}
+async function mblConfirmPayment(id){
+ if(!confirm('Confirmas que o dinheiro já entrou?'))return;
+ try{await mblCall({action:'update',id,payment_status:'Pago'});alert('Pagamento confirmado.');mblLoadOrders();}catch(e){alert(e.message);}
 }
 async function mblSaveOrder(id){
  const p=document.getElementById('mblp-'+id).value;
