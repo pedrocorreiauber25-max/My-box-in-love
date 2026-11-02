@@ -112,8 +112,10 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
   const storePoint = [41.2067818168, -8.5588216782];
   function initDeliveryMap() {
     if (deliveryMap || !window.L) return;
-    deliveryMap = L.map('deliveryMap').setView(storePoint, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(deliveryMap);
+    const portoBounds = L.latLngBounds([[40.85, -8.85], [41.45, -8.05]]); // Limites aproximados do distrito do Porto
+    deliveryMap = L.map('deliveryMap', { maxBounds: portoBounds, maxBoundsViscosity: 1.0, minZoom: 9, maxZoom: 18 }).setView(storePoint, 12);
+    deliveryMap.setMaxBounds(portoBounds);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 9, maxZoom: 19, bounds: portoBounds, noWrap: true, attribution: '&copy; OpenStreetMap contributors' }).addTo(deliveryMap);
     L.marker(storePoint).addTo(deliveryMap).bindPopup('Local de partida da loja');
     setTimeout(() => deliveryMap.invalidateSize(), 150);
   }
