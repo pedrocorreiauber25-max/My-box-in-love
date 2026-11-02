@@ -173,10 +173,10 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <h1 style="flex:1">Produtos</h1>
    <button class="primary" onclick="addProduct()">+ Produto</button>
   </div>
-  <p class="muted">Define os preços e os materiais utilizados em cada produto.</p>
+  <p class="muted">Menu My Box in Love 2026. Os produtos com intervalo de preço são confirmados conforme personalização; extras podem ser selecionados nas encomendas.</p>
   <div id="productlist"></div>
   <div class="card">
-   <h2>Adicionais</h2>
+   <h2>Adicionais e produtos individuais do menu</h2>
    <p class="muted">Cria extras opcionais para as encomendas.</p>
    <button class="primary" onclick="addExtra()">+ Adicionar extra</button>
    <div id="extralist"></div>
@@ -272,24 +272,38 @@ const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+M
 const today = () => new Date().toISOString().slice(0,10);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+const menuProducts = [
+ {name:"Box Basic · Individual",price:33,priceLabel:"33 €"},
+ {name:"Box Classic · Para dividir",price:65,priceLabel:"65 €"},
+ {name:"Box Kids · Individual",price:36,priceLabel:"36 €"},
+ {name:"Festa na Box",price:75,priceLabel:"75 €"},
+ {name:"Caixa Presente",price:40,priceLabel:"40 €–70 €"},
+ {name:"Buquê de Doces",price:45,priceLabel:"45 €–70 €"}
+];
+const menuExtras = [
+ ["Balão temático",4],["Placa de mensagem",3],["Quadro personalizado 20×23 cm",15],
+ ["Trio de fotos Polaroid",5],["Rosa (unidade)",3],
+ ["Mini panquecas (2)",1.5],["Mini pastel de nata",1.5],["Waffle",1.5],["Croissant",2],
+ ["Croissant de chocolate",3],["Pão de leite",1],["Pães de queijo (4)",3.5],["Mini tostas (8)",1],
+ ["Queijo (2 fatias)",1],["Fiambre (2 fatias)",1],["Salame (2 fatias)",1.5],
+ ["Iogurte natural",1.5],["Bolacha Nutella",2],["Mini Nutella",1],["Manteiga",0.5],
+ ["Granola",1],["Mel",2],["Biscoff",1],["Palitos de chocolate",1.5],
+ ["Mini bolachas belgas",1.5],["Mini palmieres",2],["Laço folheado",1],
+ ["Biscoito amanteigado",1],["Macarons (2)",2],
+ ["Ucal 350 ml",2],["Compal Laranja 200 ml",2],["Frappuccino Starbucks 250 ml",5]
+].map(([name,price])=>({name,price}));
+menuExtras.push({name:"Fruta (preço variável: 2 €–5 €)",price:2,priceLabel:"2 €–5 €"});
 const defaults = {
- products:[
-  {name:"Box Pequeno-Almoço (1 pessoa)",price:0,recipe:[]},
-  {name:"Box Pequeno-Almoço (2 pessoas)",price:0,recipe:[]},
-  {name:"Box Kids / Doces",price:0,recipe:[]},
-  {name:"Box Festa",price:0,recipe:[]},
-  {name:"Buquê de Doces",price:0,recipe:[]}
- ].map(p=>({...p,id:uid()})),
- extras:[],orders:[],stock:[],purchases:[],expenses:[],
+ products:menuProducts.map(p=>({...p,id:uid(),recipe:[]})),
+ extras:menuExtras.map(x=>({...x,id:uid()})),
+ orders:[],stock:[],purchases:[],expenses:[],
  shares:{personal:50,reinvest:30,reserve:20},deliveryRate:0.50
 };
-
 let d;
 try {
  const old=JSON.parse(localStorage.getItem('mbl')||'null');
  d=old?{...defaults,...old}:defaults;
 } catch(e) { d=defaults; }
-
 d.products=(d.products||[]).map(p=>({...p,recipe:p.recipe||[],price:Number(p.price)||0}));
 d.orders=d.orders||[];
 d.stock=d.stock||[];
@@ -299,23 +313,24 @@ d.extras=d.extras||[];
 d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
 d.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
 
-// Reinicialização única: começar do zero, sem dados de testes.
-const cleanProducts=[
- {name:"Box Pequeno-Almoço (1 pessoa)",price:0,recipe:[]},
- {name:"Box Pequeno-Almoço (2 pessoas)",price:0,recipe:[]},
- {name:"Box Kids / Doces",price:0,recipe:[]},
- {name:"Box Festa",price:0,recipe:[]},
- {name:"Buquê de Doces",price:0,recipe:[]}
-];
-if(localStorage.getItem('mbl_clean_start_v1')!=='done'){
- d={products:cleanProducts.map(p=>({...p,id:uid()})),extras:[],orders:[],stock:[],purchases:[],expenses:[],
-    shares:{personal:50,reinvest:30,reserve:20},deliveryRate:0.50};
- localStorage.setItem('mbl',JSON.stringify(d));
- localStorage.setItem('mbl_clean_start_v1','done');
-}else if(!d.products||d.products.length===0){
- d.products=cleanProducts.map(p=>({...p,id:uid()}));
- localStorage.setItem('mbl',JSON.stringify(d));
-}
+// Atualiza o catálogo do menu sem apagar encomendas, compras, stock ou artigos personalizados.
+const oldProductNames=["Box Pequeno-Almoço (1 pessoa)","Box Pequeno-Almoço (2 pessoas)","Box Kids / Doces","Box Festa","Buquê de Doces"];
+oldProductNames.forEach((name,i)=>{
+ const idx=d.products.findIndex(p=>p.name===name);
+ if(idx>=0) d.products.splice(idx,1);
+});
+menuProducts.forEach(item=>{
+ const existing=d.products.find(p=>p.name===item.name);
+ if(existing){existing.price=item.price;existing.priceLabel=item.priceLabel;}
+ else d.products.push({...item,id:uid(),recipe:[]});
+});
+menuExtras.forEach(item=>{
+ if(!d.extras.some(x=>x.name.toLowerCase()===item.name.toLowerCase()))
+  d.extras.push({...item,id:uid()});
+});
+if(!d.extras.some(x=>x.name.startsWith("Fruta (preço variável")))
+ d.extras.push({...menuExtras[menuExtras.length-1],id:uid()});
+localStorage.setItem('mbl',JSON.stringify(d));
 
 function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
@@ -528,7 +543,7 @@ function restore(){
 
 function draw(){
  $('oproduct').innerHTML=d.products.map(p=>
-  `<option value="${p.id}">${esc(p.name)} · ${money(p.price)}</option>`
+  `<option value="${p.id}">${esc(p.name)} · ${esc(p.priceLabel||money(p.price))}</option>`
  ).join('');
  $('oextras').innerHTML=d.extras.map(x=>
   `<label class="pill"><input class="ox" type="checkbox" value="${x.id}"> ${esc(x.name)} (+${money(x.price)})</label>`
@@ -561,7 +576,7 @@ function draw(){
  $('productlist').innerHTML=d.products.map(p=>`
   <div class="card">
    <b>${esc(p.name)}</b>
-   <p>Venda: <b>${money(p.price)}</b> · Custo estimado: ${money(getCost(p))}</p>
+   <p>Venda: <b>${esc(p.priceLabel||money(p.price))}</b> · Custo estimado: ${money(getCost(p))}</p>
    <p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p>
    <button onclick="editProduct('${p.id}')">Editar produto e ficha técnica</button>
   </div>`).join('');
