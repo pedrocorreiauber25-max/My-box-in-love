@@ -102,7 +102,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <p class="note">Os artigos extra do menu e pedidos personalizados escritos abaixo serão confirmados à parte.</p></div>
 <div id="orderSummary" class="delivery-quote is-pending" style="margin:14px 0" aria-live="polite"><span class="quote-label">Resumo do teu pedido</span><div id="summaryLines" class="quote-detail">Escolhe uma box para veres o resumo.</div><strong id="summaryTotal" class="quote-price">—</strong><span class="quote-detail" id="summaryNote">A entrega e os adicionais serão incluídos quando selecionados.</span></div>
 <div><label for="detalhes">Outros artigos e personalização</label><textarea id="detalhes" maxlength="700" placeholder="Indica os adicionais (balão 4 €, placa 3 €, quadro 15 €, trio Polaroid 5 €, rosas 3 €/unidade), artigos extra do menu, ocasião, cores e mensagem..."></textarea><p class="note">O resumo soma automaticamente os preços definidos. Artigos extra escritos neste campo, tamanhos e personalizações sem preço fixo ficam sujeitos a confirmação.</p></div>
-<button class="btn" type="submit">Continuar pelo WhatsApp</button>
+<button class="btn" type="submit">Enviar pedido à My Box in Love</button>
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
 </form>
 </section>
@@ -267,7 +267,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
       name: value('nome'),
       phone: value('telefone'),
       product: value('produto')+(chosenProduct.dataset.price?' | '+euro(Number(variableField.value||chosenProduct.dataset.price)):'') ,
-      extras:selectedExtras, roses:roses, variable_price:variableField.value||null,
+      extras:selectedExtras, roses:roses, variable_price:variableField.value||null, product_price:Number(variableField.value || chosenProduct.dataset.price || 0),
       delivery: value('entrega'),
       date: value('data'),
       time: value('hora'),
@@ -317,9 +317,12 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Podem confirmar disponibilidade, preço e entrega?'
       ].join('\n');
 
-      window.location.assign(
-        'https://wa.me/351960486450?text=' + encodeURIComponent(message)
-      );
+      const success = document.createElement('div');
+      success.className = 'card center';
+      success.style.cssText = 'padding:24px;margin:18px 0;border:1px solid #e9b8c2;background:#fff8fa';
+      success.innerHTML = '<div style="font-size:34px">❤️</div><h2>Pedido recebido!</h2><p>Referência <strong>'+String(result.order?.reference||'').replace(/[<>&"]/g,'')+'</strong></p><p>O teu pedido foi registado. A equipa da My Box in Love irá confirmar os detalhes contigo.</p><p><strong>Total indicativo: '+summaryTotal.textContent+'</strong></p>';
+      form.replaceWith(success);
+      window.scrollTo({top:success.getBoundingClientRect().top+window.scrollY-20,behavior:'smooth'});
     } catch (error) {
       alert(error.message || 'Ocorreu um erro ao enviar o pedido. Tenta novamente ou contacta-nos pelo WhatsApp.');
       button.disabled = false;
