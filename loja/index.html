@@ -34,6 +34,8 @@ textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns
 footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 @media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>#deliveryMap{height:300px;border-radius:14px;border:1px solid var(--line);z-index:1}.map-help{font-size:12px;color:#927f79;margin:7px 0}</style>
 </head>
 <body>
 <header>
@@ -60,7 +62,15 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div class="row"><div><label for="nome">O teu nome</label><input id="nome" required maxlength="80" autocomplete="name" placeholder="Nome"></div><div><label for="telefone">O teu contacto</label><input id="telefone" required type="tel" maxlength="25" autocomplete="tel" placeholder="Telemóvel"></div></div>
 <div><label for="produto">O que gostarias de encomendar?</label><select id="produto" required><option value="">Seleciona uma opção</option><option>Box Pequeno-Almoço (1 pessoa)</option><option>Box Pequeno-Almoço (2 pessoas)</option><option>Box Kids / Doces</option><option>Box Festa</option><option>Buquê de Doces</option><option>Pedido personalizado</option></select></div>
 <div class="row"><div><label for="data">Data pretendida</label><input id="data" type="date"></div><div><label for="hora">Horário preferido</label><input id="hora" type="time"></div></div>
-<div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap" hidden><label for="morada">Morada de entrega (se aplicável)</label><input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, localidade e código postal"><button class="btn secondary" type="button" id="calcEntrega">Calcular entrega</button><p id="quoteBox" class="note">Indica a morada e calcula a entrega.</p></div>
+<div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap" hidden>
+<label for="morada">Morada de entrega</label>
+<input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, número, localidade e código postal">
+<p class="map-help">Arrasta o mapa e toca no local exato de entrega. O cálculo usa a rota de carro desde a loja.</p>
+<div id="deliveryMap" role="application" aria-label="Mapa para escolher o local de entrega"></div>
+<p id="selectedPoint" class="note">Ainda não escolheste o ponto de entrega.</p>
+<button class="btn secondary" type="button" id="calcEntrega">Calcular entrega</button>
+<p id="quoteBox" class="note">Escolhe o ponto no mapa e calcula a entrega.</p>
+</div>
 <div><label for="detalhes">Detalhes e personalização</label><textarea id="detalhes" maxlength="700" placeholder="Ocasião, cores, mensagem, alergias ou outros detalhes..."></textarea></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
@@ -74,6 +84,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 </main>
 <footer>MY BOX IN LOVE · Feito com amor ❤️<br><span class="note">Cada pedido é confirmado individualmente por mensagem. Preços e disponibilidade sob consulta.</span></footer>
 <a class="float-wa" href="https://wa.me/351960486450?text=Ol%C3%A1%2C%20gostava%20de%20saber%20mais%20sobre%20as%20vossas%20boxes." target="_blank" rel="noopener" aria-label="Falar com a My Box in Love pelo WhatsApp">💬 Falar connosco</a>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (function(){
   const form = document.getElementById('pedido');
@@ -81,28 +92,45 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
   const delivery = document.getElementById('entrega');
   const addressWrap = document.getElementById('morada-wrap');
   const address = document.getElementById('morada');
+  let deliveryMap, deliveryMarker, selectedCoords = null, lastQuote = null;
+  const storePoint = [41.2067818168, -8.5588216782];
+  function initDeliveryMap() {
+    if (deliveryMap || !window.L) return;
+    deliveryMap = L.map('deliveryMap').setView(storePoint, 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(deliveryMap);
+    L.marker(storePoint).addTo(deliveryMap).bindPopup('Local de partida da loja');
+    deliveryMap.on('click', function(e) {
+      selectedCoords = {lat:e.latlng.lat, lon:e.latlng.lng}; lastQuote = null;
+      if (deliveryMarker) deliveryMarker.setLatLng(e.latlng); else deliveryMarker = L.marker(e.latlng).addTo(deliveryMap);
+      document.getElementById('selectedPoint').textContent = 'Ponto de entrega selecionado. Agora calcula a distância.';
+      document.getElementById('quoteBox').textContent = 'Ponto selecionado. Carrega em Calcular entrega.';
+    });
+    setTimeout(() => deliveryMap.invalidateSize(), 150);
+  }
   function updateAddressField() {
     const needsAddress = delivery.value === 'Entrega ao domicílio';
     addressWrap.hidden = !needsAddress;
     address.required = needsAddress;
-    document.getElementById('quoteBox').textContent = needsAddress ? 'Indica a morada e calcula a entrega.' : '';
+    if (needsAddress) setTimeout(initDeliveryMap, 100); else { selectedCoords = null; lastQuote = null; }
+    document.getElementById('quoteBox').textContent = needsAddress ? 'Escolhe o ponto no mapa e calcula a entrega.' : '';
   }
   delivery.addEventListener('change', updateAddressField);
   updateAddressField();
   document.getElementById('calcEntrega').addEventListener('click', async function() {
     const box = document.getElementById('quoteBox');
     if (!address.value.trim()) { alert('Indica a morada completa.'); return; }
-    this.disabled = true; this.textContent = 'A calcular…'; box.textContent = 'A calcular distância por estrada…';
+    if (!selectedCoords) { alert('Toca no mapa para escolher o ponto exato de entrega.'); return; }
+    this.disabled = true; this.textContent = 'A calcular…'; box.textContent = 'A calcular rota de carro…';
     try {
       const res = await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler', {
         method:'POST', headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
-        body:JSON.stringify({action:'quote',address:address.value.trim()})
+        body:JSON.stringify({action:'quote',address:address.value.trim(),lat:selectedCoords.lat,lon:selectedCoords.lon})
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular.');
       const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
       const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-      box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
+      lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
     } catch(e) { box.textContent=e.message; }
     this.disabled=false; this.textContent='Calcular entrega';
   });
@@ -131,11 +159,14 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
       date: value('data'),
       time: value('hora'),
       address: value('morada'),
+      lat: selectedCoords?.lat ?? null,
+      lon: selectedCoords?.lon ?? null,
       notes: value('detalhes'),
       website: ''
     };
 
     try {
+      if (payload.delivery === 'Entrega ao domicílio' && (!selectedCoords || !lastQuote)) throw new Error('Escolhe o ponto no mapa e calcula a entrega antes de enviar o pedido.');
       const response = await fetch(
         'https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',
         {
