@@ -115,12 +115,6 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     deliveryMap = L.map('deliveryMap').setView(storePoint, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(deliveryMap);
     L.marker(storePoint).addTo(deliveryMap).bindPopup('Local de partida da loja');
-    deliveryMap.on('click', function(e) {
-      selectedCoords = {lat:e.latlng.lat, lon:e.latlng.lng}; lastQuote = null;
-      if (deliveryMarker) deliveryMarker.setLatLng(e.latlng); else deliveryMarker = L.marker(e.latlng).addTo(deliveryMap);
-      document.getElementById('selectedPoint').textContent = 'Ponto de entrega selecionado. Agora calcula a distância.';
-      document.getElementById('quoteBox').textContent = 'Ponto selecionado. Carrega em Calcular entrega.';
-    });
     setTimeout(() => deliveryMap.invalidateSize(), 150);
   }
   function updateAddressField() {
@@ -128,7 +122,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     addressWrap.hidden = !needsAddress;
     address.required = needsAddress;
     if (needsAddress) setTimeout(initDeliveryMap, 100); else { selectedCoords = null; lastQuote = null; }
-    document.getElementById('quoteBox').textContent = needsAddress ? 'Escolhe o ponto no mapa e calcula a entrega.' : '';
+    document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : '';
   }
   delivery.addEventListener('change', updateAddressField);
   updateAddressField();
@@ -146,22 +140,28 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     lastQuote=q; box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
   }
   async function locateAddress() {
-    const query=address.value.trim();
-    if(query.length<8) throw new Error('Escreve a morada completa, incluindo localidade e código postal.');
-    const url='https://photon.komoot.io/api/?limit=6&lang=pt&q='+encodeURIComponent(query);
-    const response=await fetch(url);
-    if(!response.ok) throw new Error('O serviço de localização está temporariamente indisponível. Tenta novamente.');
+    const raw=address.value.trim();
+    if(raw.length<5) throw new Error('Escreve a rua, número e localidade da entrega.');
+    const query=/portugal/i.test(raw)?raw:raw+', Portugal';
+    const url='https://photon.komoot.io/api/?limit=12&lang=pt&q='+encodeURIComponent(query);
+    const response=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!response.ok) throw new Error('O serviço de localização está temporariamente indisponível. Tenta novamente dentro de instantes.');
     const data=await response.json();
     const features=(data.features||[]).filter(f=>{
-      const p=f.properties||{}, country=(p.country||'').toLowerCase();
-      return country.includes('portugal') && Array.isArray(f.geometry?.coordinates);
+      const p=f.properties||{}, coords=f.geometry&&f.geometry.coordinates;
+      if(!Array.isArray(coords)||coords.length<2) return false;
+      const lon=Number(coords[0]),lat=Number(coords[1]);
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)) return false;
+      const country=String(p.country||'').toLowerCase();
+      const inPortugal=lon>=-9.7&&lon<=-6.0&&lat>=36.8&&lat<=42.3;
+      return country.includes('portugal') || (!p.country&&inPortugal);
     });
-    if(!features.length) throw new Error('Não encontrámos essa morada. Experimenta acrescentar localidade e código postal.');
+    if(!features.length) throw new Error('Não encontrámos a morada. Experimenta escrever rua, número, código postal e localidade (ex.: Ermesinde, Portugal).');
     addressResults=features;
     const choices=document.getElementById('addressChoices'), wrap=document.getElementById('addressChoicesWrap');
     choices.innerHTML='';
     features.forEach((f,i)=>{
-      const p=f.properties||{}, label=[p.name,p.housenumber,p.street,p.postcode,p.city||p.town||p.village,p.state].filter(Boolean).join(', ');
+      const p=f.properties||{}, label=[p.name,p.housenumber,p.street,p.postcode,p.city||p.town||p.village||p.district,p.state].filter(Boolean).join(', ');
       const option=document.createElement('option'); option.value=String(i); option.textContent=label||('Resultado '+(i+1)); choices.appendChild(option);
     });
     wrap.hidden=features.length<2;
