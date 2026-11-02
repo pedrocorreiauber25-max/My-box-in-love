@@ -83,7 +83,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <p class="muted">Preenche os detalhes. Vamos abrir uma conversa no WhatsApp com a tua mensagem já preparada.</p>
 <form id="pedido">
 <div class="row"><div><label for="nome">O teu nome</label><input id="nome" required maxlength="80" autocomplete="name" placeholder="Nome"></div><div><label for="telefone">O teu contacto</label><input id="telefone" required type="tel" maxlength="25" autocomplete="tel" placeholder="Telemóvel"></div></div>
-<div><label for="produto">O que gostarias de encomendar?</label><select id="produto" required><option value="">Seleciona uma opção</option><option>Box Basic · Individual — 33 €</option><option>Box Classic · Para dividir — 65 €</option><option>Box Kids · Individual — 36 €</option><option>Festa na Box — 75 €</option><option>Caixa Presente — 40 € a 70 €</option><option>Buquê de Doces — 45 € a 70 €</option><option>Pedido personalizado</option></select></div>
+<div><label for="produto">O que gostarias de encomendar?</label><select id="produto" required><option value="">Seleciona uma opção</option><option data-price="33">Box Basic · Individual — 33 €</option><option data-price="65">Box Classic · Para dividir — 65 €</option><option data-price="36">Box Kids · Individual — 36 €</option><option data-price="75">Festa na Box — 75 €</option><option data-price="40" data-variable="true">Caixa Presente — desde 40 € (até 70 €)</option><option data-price="45" data-variable="true">Buquê de Doces — desde 45 € (até 70 €)</option><option data-variable="true">Pedido personalizado — preço a confirmar</option></select></div>
+<div id="variablePriceWrap" hidden><label for="variablePrice">Valor escolhido para esta box (€)</label><input id="variablePrice" type="number" min="40" max="70" step="1" placeholder="Indica um valor entre 40 e 70 €"><p class="note">O valor final será confirmado pela equipa.</p></div>
 <div class="row"><div><label for="data">Data pretendida</label><input id="data" type="date"></div><div><label for="hora">Horário preferido</label><input id="hora" type="time"></div></div>
 <div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap" hidden>
 <label for="morada">Morada de entrega</label>
@@ -95,7 +96,12 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div id="deliveryMap" role="application" aria-label="Confirmação do local de entrega"></div>
 <div id="quoteBox" class="delivery-quote is-pending" role="status" aria-live="polite"><span class="quote-label">Preço da entrega</span><span class="quote-detail">Indica a morada para calcular a entrega.</span></div>
 </div>
-<div><label for="detalhes">Adicionais e personalização pretendida</label><textarea id="detalhes" maxlength="700" placeholder="Indica os adicionais (balão 4 €, placa 3 €, quadro 15 €, trio Polaroid 5 €, rosas 3 €/unidade), artigos extra do menu, ocasião, cores e mensagem..."></textarea><p class="note">Os adicionais e artigos à unidade são somados após confirmação da seleção pela equipa. Caixa Presente e Buquê variam conforme tamanho e escolha.</p></div>
+<div class="card" style="padding:15px;background:#fff9fa"><h3 style="margin:0 0 10px;color:var(--brown)">Adicionais com preço definido</h3>
+<div class="row"><label><input class="extra-check" type="checkbox" data-name="Balão temático" data-price="4" style="width:auto"> Balão temático · 4 €</label><label><input class="extra-check" type="checkbox" data-name="Placa de mensagem" data-price="3" style="width:auto"> Placa de mensagem · 3 €</label><label><input class="extra-check" type="checkbox" data-name="Quadro personalizado" data-price="15" style="width:auto"> Quadro personalizado · 15 €</label><label><input class="extra-check" type="checkbox" data-name="Trio de fotos Polaroid" data-price="5" style="width:auto"> Trio Polaroid · 5 €</label></div>
+<label for="rosesQty">Rosas (3 € cada)</label><input id="rosesQty" type="number" min="0" max="30" step="1" value="0">
+<p class="note">Os artigos extra do menu e pedidos personalizados escritos abaixo serão confirmados à parte.</p></div>
+<div id="orderSummary" class="delivery-quote is-pending" style="margin:14px 0" aria-live="polite"><span class="quote-label">Resumo do teu pedido</span><div id="summaryLines" class="quote-detail">Escolhe uma box para veres o resumo.</div><strong id="summaryTotal" class="quote-price">—</strong><span class="quote-detail" id="summaryNote">A entrega e os adicionais serão incluídos quando selecionados.</span></div>
+<div><label for="detalhes">Outros artigos e personalização</label><textarea id="detalhes" maxlength="700" placeholder="Indica os adicionais (balão 4 €, placa 3 €, quadro 15 €, trio Polaroid 5 €, rosas 3 €/unidade), artigos extra do menu, ocasião, cores e mensagem..."></textarea><p class="note">O resumo soma automaticamente os preços definidos. Artigos extra escritos neste campo, tamanhos e personalizações sem preço fixo ficam sujeitos a confirmação.</p></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
 </form>
@@ -143,15 +149,53 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     addressWrap.hidden = !needsAddress;
     address.required = needsAddress;
     if (needsAddress) setTimeout(initDeliveryMap, 100); else { selectedCoords = null; lastQuote = null; }
-    document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : '';
+    document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : ''; if(typeof updateSummary==='function') updateSummary();
   }
   delivery.addEventListener('change', updateAddressField);
   address.addEventListener('input', () => {
-    selectedCoords = null; lastQuote = null;
+    selectedCoords = null; lastQuote = null; updateSummary();
     document.getElementById('selectedPoint').textContent = 'Morada alterada. Localiza novamente ou escolhe o ponto no mapa.';
     document.getElementById('quoteBox').textContent = 'A morada mudou; é necessário recalcular a entrega.';
   });
   updateAddressField();
+  const productField=document.getElementById('produto');
+  const variableWrap=document.getElementById('variablePriceWrap');
+  const variableField=document.getElementById('variablePrice');
+  const summaryLines=document.getElementById('summaryLines');
+  const summaryTotal=document.getElementById('summaryTotal');
+  const summaryNote=document.getElementById('summaryNote');
+  const euro=n=>n.toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+  function updateSummary(){
+    const opt=productField.selectedOptions[0];
+    const isVariable=opt?.dataset.variable==='true';
+    variableWrap.hidden=!isVariable || !opt?.dataset.price;
+    variableField.required=!variableWrap.hidden;
+    let lines=[],total=0,confirmed=true;
+    if(opt?.dataset.price){
+      let base=Number(opt.dataset.price);
+      if(isVariable && variableField.value) base=Number(variableField.value);
+      else if(isVariable) confirmed=false;
+      lines.push('<div>• '+opt.textContent.split(' — ')[0]+': <b>'+euro(base)+'</b>'+(isVariable?' (valor indicativo)':'')+'</div>');
+      total+=base;
+    } else if(opt?.value){lines.push('<div>• Produto personalizado: <b>a confirmar</b></div>');confirmed=false;}
+    document.querySelectorAll('.extra-check:checked').forEach(c=>{const p=Number(c.dataset.price);lines.push('<div>• '+c.dataset.name+': <b>'+euro(p)+'</b></div>');total+=p;});
+    const roses=Math.max(0,Math.min(30,Number(document.getElementById('rosesQty').value)||0));
+    if(roses){lines.push('<div>• Rosas × '+roses+': <b>'+euro(roses*3)+'</b></div>');total+=roses*3;}
+    if(delivery.value==='Entrega ao domicílio'){
+      if(lastQuote){const fee=lastQuote.delivery_fee_cents/100;lines.push('<div>• Entrega ('+lastQuote.delivery_km+' km): <b>'+euro(fee)+'</b></div>');total+=fee;}
+      else {lines.push('<div>• Entrega: <b>por calcular</b></div>');confirmed=false;}
+    } else if(delivery.value==='Levantamento a combinar') lines.push('<div>• Entrega: <b>Levantamento — 0,00 €</b></div>');
+    else {lines.push('<div>• Entrega: <b>a combinar</b></div>');confirmed=false;}
+    summaryLines.innerHTML=lines.length?lines.join(''):'Escolhe uma box para veres o resumo.';
+    summaryTotal.textContent=lines.length?euro(total):'—';
+    summaryNote.textContent=confirmed?'Total dos artigos com preço definido.':'Estimativa parcial: falta definir o produto e/ou calcular a entrega.';
+    document.getElementById('orderSummary').classList.toggle('is-pending',!confirmed);
+  }
+  productField.addEventListener('change',updateSummary);
+  variableField.addEventListener('input',updateSummary);
+  document.querySelectorAll('.extra-check').forEach(c=>c.addEventListener('change',updateSummary));
+  document.getElementById('rosesQty').addEventListener('input',updateSummary);
+  delivery.addEventListener('change',updateSummary);
   async function calculateSelectedAddress() {
     const box = document.getElementById('quoteBox');
     if (!selectedCoords) throw new Error('Não foi possível localizar esta morada. Confirma a rua, número, localidade e código postal.');
@@ -163,7 +207,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular a entrega.');
     const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
     const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
-    lastQuote=q; box.classList.remove('is-pending'); box.innerHTML='<span class="quote-label">Preço da entrega</span><strong class="quote-price">'+fee+'</strong><span class="quote-detail">'+q.delivery_km+' km por estrada · '+rate+'/km</span>';
+    lastQuote=q; box.classList.remove('is-pending'); updateSummary(); box.innerHTML='<span class="quote-label">Preço da entrega</span><strong class="quote-price">'+fee+'</strong><span class="quote-detail">'+q.delivery_km+' km por estrada · '+rate+'/km</span>';
   }
   async function locateAddress() {
     const query=address.value.trim();
@@ -215,10 +259,14 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     button.disabled = true;
     button.textContent = 'A enviar pedido…';
 
+    const selectedExtras=[...document.querySelectorAll('.extra-check:checked')].map(c=>({name:c.dataset.name,price:Number(c.dataset.price)}));
+    const roses=Math.max(0,Math.min(30,Number(value('rosesQty'))||0));
+    const chosenProduct=productField.selectedOptions[0];
     const payload = {
       name: value('nome'),
       phone: value('telefone'),
-      product: value('produto'),
+      product: value('produto')+(chosenProduct.dataset.price?' | '+euro(Number(variableField.value||chosenProduct.dataset.price)):'') ,
+      extras:selectedExtras, roses:roses, variable_price:variableField.value||null,
       delivery: value('entrega'),
       date: value('data'),
       time: value('hora'),
@@ -230,6 +278,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     };
 
     try {
+      if(chosenProduct.dataset.variable==='true' && chosenProduct.dataset.price && (!variableField.value || Number(variableField.value)<40 || Number(variableField.value)>70)) throw new Error('Indica um valor entre 40 € e 70 € para esta box.');
       if (payload.delivery === 'Entrega ao domicílio' && (!selectedCoords || !lastQuote)) throw new Error('Localiza a morada e calcula a entrega antes de enviar o pedido.');
       const response = await fetch(
         'https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',
@@ -255,6 +304,10 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Nome: ' + payload.name,
         'Contacto: ' + payload.phone,
         'Produto: ' + payload.product,
+        ...selectedExtras.map(x=>'Adicional: '+x.name+' — '+euro(x.price)),
+        ...(roses?[ 'Rosas: '+roses+' × 3 € = '+euro(roses*3) ]:[]),
+        'Resumo de preços: '+document.getElementById('summaryLines').innerText.replace(/\n/g,' | '),
+        'Total indicativo: '+summaryTotal.textContent,
         'Entrega: ' + payload.delivery,
         'Data pretendida: ' + (payload.date || 'A combinar'),
         'Hora: ' + (payload.time || 'A combinar'),
