@@ -99,7 +99,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<section id="loginGate"><h2>Acesso privado da Raquel</h2><p class="muted">Valida o acesso uma vez neste dispositivo. Nas próximas aberturas entras diretamente.</p><input id="panelPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="current-password"><button class="primary" id="loginButton">Entrar na gestão</button><p class="small" id="loginError"></p></section>
+<section id="loginGate"><h2>Acesso privado da Raquel</h2><p class="muted">Valida o acesso uma vez neste dispositivo. Nas próximas aberturas entras diretamente.</p><form id="loginForm" autocomplete="on"><input id="panelPin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="••••" autocomplete="current-password" enterkeyhint="go" required><button class="primary" id="loginButton" type="submit">Entrar na gestão</button></form><p class="small" id="loginError" role="status" aria-live="polite"></p></section>
 <div id="newOrderToast">❤️ Nova encomenda recebida!</div>
 <main id="privateMain" class="wrap" style="display:none">
 
@@ -671,8 +671,8 @@ async function mblLogin(){
  }catch(e){$('loginError').textContent=e.message;}
  finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar na gestão';}
 }
-$('loginButton').addEventListener('click',mblLogin);
-$('panelPin').addEventListener('keydown',e=>{if(e.key==='Enter')mblLogin();});
+$('loginForm').addEventListener('submit',e=>{e.preventDefault();mblLogin();});
+$('panelPin').addEventListener('input',()=>{$('loginError').textContent='';});
 function mblStartPanel(){
  if(MBL_TOKEN){
   $('loginGate').style.display='none';$('privateMain').style.display='block';
