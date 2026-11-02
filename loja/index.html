@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#e9b8c2">
-<meta name="description" content="Boxes e presentes personalizados My Box in Love.">
+<meta name="description" content="Surpreende quem amas com boxes de pequeno-almoço, doces, festas e buquês personalizados. Faz o teu pedido à My Box in Love.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="My Box in Love | Presentes feitos com carinho">
+<meta property="og:description" content="Boxes e presentes personalizados para tornar cada momento especial. Faz o teu pedido pelo WhatsApp.">
+<meta property="og:image" content="https://myboxinlove.pages.dev/assets/logo-my-box-in-love.jpg">
+<meta property="og:url" content="https://myboxinlove.pages.dev/">
+<meta name="twitter:card" content="summary">
 <title>My Box in Love | Loja</title>
 <style>
 :root{--pink:#e9b8c2;--pale:#fff6f8;--brown:#80502f;--ink:#46332e;--line:#f0dce1}
@@ -24,6 +30,7 @@ input,select,textarea{width:100%;padding:12px;border:1px solid var(--line);borde
 textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .btn{display:inline-block;border:0;border-radius:13px;padding:14px 18px;background:#25d366;color:white;text-decoration:none;font-weight:800;font:inherit;cursor:pointer;text-align:center}
 .btn.secondary{background:var(--brown);color:white}.center{text-align:center}.note{font-size:12px;color:#927f79;line-height:1.5}
+.float-wa{position:fixed;right:16px;bottom:16px;z-index:5;border-radius:30px;padding:13px 17px;background:#25d366;color:#fff;text-decoration:none;font-weight:800;box-shadow:0 6px 22px #0002}
 footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 @media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}}
 </style>
@@ -65,11 +72,26 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <a class="btn secondary" href="https://wa.me/351960486450" target="_blank" rel="noopener">WhatsApp · 960 486 450</a>
 </section>
 </main>
-<footer>MY BOX IN LOVE · Feito com amor ❤️</footer>
+<footer>MY BOX IN LOVE · Feito com amor ❤️<br><span class="note">Cada pedido é confirmado individualmente por mensagem. Preços e disponibilidade sob consulta.</span></footer>
+<a class="float-wa" href="https://wa.me/351960486450?text=Ol%C3%A1%2C%20gostava%20de%20saber%20mais%20sobre%20as%20vossas%20boxes." target="_blank" rel="noopener" aria-label="Falar com a My Box in Love pelo WhatsApp">💬 Falar connosco</a>
 <script>
 (function(){
   const form = document.getElementById('pedido');
   if (!form) return;
+  const delivery = document.getElementById('entrega');
+  const addressWrap = document.getElementById('morada-wrap');
+  const address = document.getElementById('morada');
+  function updateAddressField() {
+    const needsAddress = delivery.value === 'Entrega ao domicílio';
+    addressWrap.hidden = !needsAddress;
+    address.required = needsAddress;
+  }
+  delivery.addEventListener('change', updateAddressField);
+  updateAddressField();
+  const dateField = document.getElementById('data');
+  const today = new Date();
+  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+  dateField.min = localToday;
 
   form.addEventListener('submit', async function(event) {
     event.preventDefault();
