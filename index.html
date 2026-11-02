@@ -300,11 +300,21 @@ d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
 d.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
 
 // Reinicialização única: começar do zero, sem dados de testes.
+const cleanProducts=[
+ {name:"Box Pequeno-Almoço (1 pessoa)",price:0,recipe:[]},
+ {name:"Box Pequeno-Almoço (2 pessoas)",price:0,recipe:[]},
+ {name:"Box Kids / Doces",price:0,recipe:[]},
+ {name:"Box Festa",price:0,recipe:[]},
+ {name:"Buquê de Doces",price:0,recipe:[]}
+];
 if(localStorage.getItem('mbl_clean_start_v1')!=='done'){
- d={products:[],extras:[],orders:[],stock:[],purchases:[],expenses:[],
+ d={products:cleanProducts.map(p=>({...p,id:uid()})),extras:[],orders:[],stock:[],purchases:[],expenses:[],
     shares:{personal:50,reinvest:30,reserve:20},deliveryRate:0.50};
  localStorage.setItem('mbl',JSON.stringify(d));
  localStorage.setItem('mbl_clean_start_v1','done');
+}else if(!d.products||d.products.length===0){
+ d.products=cleanProducts.map(p=>({...p,id:uid()}));
+ localStorage.setItem('mbl',JSON.stringify(d));
 }
 
 function save(){
