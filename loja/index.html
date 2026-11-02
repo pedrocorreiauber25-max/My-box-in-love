@@ -149,7 +149,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     addressWrap.hidden = !needsAddress;
     address.required = needsAddress;
     if (needsAddress) setTimeout(initDeliveryMap, 100); else { selectedCoords = null; lastQuote = null; }
-    document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : ''; if(typeof updateSummary==='function') updateSummary();
+    document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : '';
   }
   delivery.addEventListener('change', updateAddressField);
   address.addEventListener('input', () => {
@@ -196,6 +196,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
   document.querySelectorAll('.extra-check').forEach(c=>c.addEventListener('change',updateSummary));
   document.getElementById('rosesQty').addEventListener('input',updateSummary);
   delivery.addEventListener('change',updateSummary);
+  updateSummary();
   async function calculateSelectedAddress() {
     const box = document.getElementById('quoteBox');
     if (!selectedCoords) throw new Error('Não foi possível localizar esta morada. Confirma a rua, número, localidade e código postal.');
