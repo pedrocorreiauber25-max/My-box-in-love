@@ -398,6 +398,13 @@ function deleteExtra(id){
   d.extras=d.extras.filter(x=>x.id!==id);save();
  }
 }
+function deleteStock(id){
+ const m=d.stock.find(x=>x.id===id);if(!m)return;
+ if(!confirm('Eliminar "'+m.name+'" do stock? O histórico financeiro das compras será mantido.'))return;
+ d.stock=d.stock.filter(x=>x.id!==id);
+ d.products.forEach(p=>{p.recipe=(p.recipe||[]).filter(r=>r.material!==id);});
+ save();
+}
 function addPurchase(){
  const name=$('mname').value.trim();
  const price=Number($('mprice').value);
@@ -550,7 +557,8 @@ function draw(){
   <div class="item"><b>${esc(m.name)}</b>
   <div>${m.qty} unidades disponíveis</div>
   <div>Custo médio: ${money(m.unitCost)} / unidade</div>
-  <div>Valor em stock: ${money(m.qty*m.unitCost)}</div></div>`
+  <div>Valor em stock: ${money(m.qty*m.unitCost)}</div>
+  <button class="danger" onclick="deleteStock('${m.id}')">Eliminar do stock</button></div>`
  ).join('')||'Ainda não existem materiais.';
 
  $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`
