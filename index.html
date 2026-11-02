@@ -95,8 +95,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<section id="privateLogin" class="wrap"><div class="card" style="max-width:420px;margin:35px auto;text-align:center"><h1>Acesso privado ❤️</h1><p class="muted">Introduz o PIN de 4 dígitos da Raquel.</p><form id="privateLoginForm"><input id="privatePin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="PIN de 4 dígitos" required><button class="primary" type="submit">Entrar</button><p id="privateLoginError" class="bad"></p></form></div></section>
-<main id="privateMain" style="display:none" class="wrap">
+<main id="privateMain" class="wrap">
 
  <div class="row">
   <h1 style="flex:1">Olá, Raquel ❤️</h1>
@@ -242,6 +241,13 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="saveShares()">Guardar percentagens</button>
   </div>
   <div class="card">
+   <h2>Taxa de entrega</h2>
+   <p class="muted">Preço por quilómetro (valor inicial: 0,50 €).</p>
+   <label>VALOR POR KM (€)</label><input id="deliveryRate" type="number" min="0" step="0.01" value="0.50">
+   <button class="primary" onclick="saveDeliveryRate()">Guardar tarifa</button>
+   <p class="small" id="deliveryRateSaved"></p>
+  </div>
+  <div class="card">
    <h2>Cópia de segurança</h2>
    <button class="primary" onclick="backup()">Exportar cópia de segurança</button>
    <label>RESTAURAR FICHEIRO JSON</label>
@@ -274,7 +280,7 @@ const defaults = {
   {name:"Buquê de Doces",price:0,recipe:[]}
  ].map(p=>({...p,id:uid()})),
  extras:[],orders:[],stock:[],purchases:[],expenses:[],
- shares:{personal:50,reinvest:30,reserve:20}
+ shares:{personal:50,reinvest:30,reserve:20},deliveryRate:0.50
 };
 
 let d;
@@ -289,7 +295,7 @@ d.stock=d.stock||[];
 d.purchases=d.purchases||[];
 d.expenses=d.expenses||[];
 d.extras=d.extras||[];
-d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
+d.shares=d.shares||{personal:50,reinvest:30,reserve:20};\nd.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
 
 function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
@@ -455,6 +461,13 @@ function produce(id){
  o.materialCost=cost;o.produced=true;save();
  alert('Materiais descontados do stock.');
 }
+function saveDeliveryRate(){
+ const rate=Number($('deliveryRate').value);
+ if(!Number.isFinite(rate)||rate<0||rate>20)return alert('Indica um valor entre 0 e 20 €/km.');
+ d.deliveryRate=Math.round(rate*100)/100;save();
+ $('deliveryRateSaved').textContent='Tarifa guardada neste dispositivo: '+money(d.deliveryRate)+'/km.';
+ alert('Tarifa guardada.');
+}
 function saveShares(){
  const a=Number($('sharepersonal').value);
  const b=Number($('sharereinvest').value);
@@ -575,7 +588,7 @@ function draw(){
  $('recent').innerHTML=d.orders.slice(-5).reverse()
  .map(o=>`<div class="item">${esc(o.client)} · ${esc(o.product)} · ${money(o.total)}</div>`).join('')||'Ainda sem encomendas.';
 
- $('sharepersonal').value=sh.personal;
+ $('sharepersonal').value=sh.personal;\n $('deliveryRate').value=d.deliveryRate.toFixed(2);
  $('sharereinvest').value=sh.reinvest;
  $('sharereserve').value=sh.reserve;
 }
@@ -592,7 +605,8 @@ async function mblCall(data){
  return json;
 }
 async function mblLoadOrders(){
- const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
+ const box=document.getElementById('onlineOrders');if(!box)return;
+ if(!MBL_TOKEN){box.innerHTML='<p class="muted">O painel abre diretamente. Para proteger os contactos e moradas dos clientes, a sincronização das encomendas online continua protegida e será ativada quando a sessão privada estiver configurada.</p>';return;}
  box.textContent='A carregar…';
  try{
   const data=await mblCall({action:'orders'});
@@ -605,13 +619,8 @@ async function mblSaveOrder(id){
  try{await mblCall({action:'update',id,status:document.getElementById('mbls-'+id).value,product_total_cents:p===''?null:Math.round(Number(p)*100),admin_notes:document.getElementById('mbln-'+id).value});alert('Encomenda atualizada.');mblLoadOrders();}
  catch(e){alert(e.message);}
 }
-document.getElementById('privateLoginForm').addEventListener('submit',async e=>{
- e.preventDefault();const pin=document.getElementById('privatePin').value;
- try{const r=await mblCall({action:'login',pin});MBL_TOKEN=r.token;sessionStorage.setItem('mbl_panel_session',MBL_TOKEN);document.getElementById('privateLogin').style.display='none';document.getElementById('privateMain').style.display='block';mblLoadOrders();}
- catch(err){document.getElementById('privateLoginError').textContent=err.message;}
-});
-if(MBL_TOKEN){mblCall({action:'verify'}).then(()=>{document.getElementById('privateLogin').style.display='none';document.getElementById('privateMain').style.display='block';mblLoadOrders();}).catch(()=>{MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');});}
-
+document.getElementById('privateMain').style.display='block';
+mblLoadOrders();
 
 // Não existe login nem autenticação nesta aplicação.
 if('serviceWorker' in navigator){
