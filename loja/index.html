@@ -117,6 +117,17 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     deliveryMap.setMaxBounds(portoBounds);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 9, maxZoom: 19, bounds: portoBounds, noWrap: true, attribution: '&copy; OpenStreetMap contributors' }).addTo(deliveryMap);
     L.marker(storePoint).addTo(deliveryMap).bindPopup('Local de partida da loja');
+    deliveryMap.on('click', async (event) => {
+      selectedCoords = { lat: event.latlng.lat, lon: event.latlng.lng };
+      lastQuote = null;
+      if (deliveryMarker) deliveryMarker.setLatLng(event.latlng);
+      else deliveryMarker = L.marker(event.latlng).addTo(deliveryMap);
+      document.getElementById('selectedPoint').textContent = 'Ponto escolhido no mapa: ' + event.latlng.lat.toFixed(6) + ', ' + event.latlng.lng.toFixed(6);
+      const box = document.getElementById('quoteBox');
+      box.textContent = 'A calcular a rota de carro…';
+      try { await calculateSelectedAddress(); }
+      catch (e) { box.textContent = e.message; lastQuote = null; }
+    });
     setTimeout(() => deliveryMap.invalidateSize(), 150);
   }
   function updateAddressField() {
@@ -127,6 +138,11 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     document.getElementById('quoteBox').textContent = needsAddress ? 'Escreve a morada completa e carrega em localizar.' : '';
   }
   delivery.addEventListener('change', updateAddressField);
+  address.addEventListener('input', () => {
+    selectedCoords = null; lastQuote = null;
+    document.getElementById('selectedPoint').textContent = 'Morada alterada. Localiza novamente ou escolhe o ponto no mapa.';
+    document.getElementById('quoteBox').textContent = 'A morada mudou; é necessário recalcular a entrega.';
+  });
   updateAddressField();
   async function calculateSelectedAddress() {
     const box = document.getElementById('quoteBox');
