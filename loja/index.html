@@ -299,8 +299,10 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         throw new Error(result.error || 'Não foi possível registar o pedido.');
       }
 
+      const trackingUrl = 'https://myboxinlove.pages.dev/acompanhar.html?token=' + encodeURIComponent(result.order?.tracking_token || '');
       const message = [
         'Olá, My Box in Love! Enviei um pedido pela loja:',
+        'Acompanhar encomenda: ' + trackingUrl,
         'Referência: ' + (result.order?.reference || 'A confirmar'),
         'Nome: ' + payload.name,
         'Contacto: ' + payload.phone,
@@ -320,8 +322,9 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
       const success = document.createElement('div');
       success.className = 'card center';
       success.style.cssText = 'padding:24px;margin:18px 0;border:1px solid #e9b8c2;background:#fff8fa';
-      success.innerHTML = '<div style="font-size:34px">❤️</div><h2>Pedido recebido!</h2><p>Referência <strong>'+String(result.order?.reference||'').replace(/[<>&"]/g,'')+'</strong></p><p>O teu pedido foi registado. A equipa da My Box in Love irá confirmar os detalhes contigo.</p><p><strong>Total indicativo: '+summaryTotal.textContent+'</strong></p>';
+      success.innerHTML = '<div style="font-size:34px">❤️</div><h2>Pedido recebido!</h2><p>Referência <strong>'+String(result.order?.reference||'').replace(/[<>&"]/g,'')+'</strong></p><p>O teu pedido foi registado. Guarda este link privado para acompanhares o estado e veres as instruções de pagamento quando forem autorizadas.</p><p><strong>Total indicativo: '+summaryTotal.textContent+'</strong></p><a class="btn secondary" style="display:block;margin:12px 0" href="'+trackingUrl.replace(/&/g,'&amp;')+'">Acompanhar a minha encomenda</a><button class="btn" type="button" id="shareTracking" style="width:100%">Enviar link por WhatsApp</button><p class="note">Não partilhes este link com outras pessoas.</p>';
       form.replaceWith(success);
+      success.querySelector('#shareTracking').addEventListener('click',()=>{const msg='Olá! Este é o link privado para acompanhar a minha encomenda My Box in Love: '+trackingUrl;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');});
       window.scrollTo({top:success.getBoundingClientRect().top+window.scrollY-20,behavior:'smooth'});
     } catch (error) {
       alert(error.message || 'Ocorreu um erro ao enviar o pedido. Tenta novamente ou contacta-nos pelo WhatsApp.');
