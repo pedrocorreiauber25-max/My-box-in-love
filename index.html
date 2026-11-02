@@ -665,14 +665,14 @@ async function mblLogin(){
   const result=await mblCall({action:'login',pin});
   MBL_TOKEN=result.token;sessionStorage.setItem('mbl_panel_session',MBL_TOKEN);
   $('loginGate').style.display='none';$('privateMain').style.display='block';
-  await mblLoadOrders();mblSubscribeOrders();
+  await mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}
   if('Notification' in window && Notification.permission==='default') mblEnableNotifications();
  }catch(e){$('loginError').textContent=e.message;}
  finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar na gestão';}
 }
 $('loginButton').addEventListener('click',mblLogin);
 $('panelPin').addEventListener('keydown',e=>{if(e.key==='Enter')mblLogin();});
-function mblLogout(){if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');$('privateMain').style.display='none';$('loginGate').style.display='block';}
+function mblLogout(){if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}mblSeenOrders=new Set();mblOrdersInitialized=false;if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}MBL_TOKEN='';sessionStorage.removeItem('mbl_panel_session');$('privateMain').style.display='none';$('loginGate').style.display='block';}
 async function mblEnableNotifications(){
  if(!('Notification' in window)){ $('notificationState').textContent='Este navegador não suporta notificações.';return;}
  const permission=await Notification.requestPermission();
@@ -693,14 +693,38 @@ function mblSubscribeOrders(){
    mblLoadOrders();
  }).subscribe();
 }
+let mblSeenOrders = new Set();
+let mblOrdersInitialized = false;
 async function mblLoadOrders(){
- const box=document.getElementById('onlineOrders');if(!box)return;
- if(!MBL_TOKEN){box.innerHTML='<p class="muted">O painel abre diretamente. Para proteger os contactos e moradas dos clientes, a sincronização das encomendas online continua protegida e será ativada quando a sessão privada estiver configurada.</p>';return;}
- box.textContent='A carregar…';
+ const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
  try{
   const data=await mblCall({action:'orders'});
+  const orders=data.orders||[];
+  if(mblOrdersInitialized){
+   const fresh=orders.filter(o=>!mblSeenOrders.has(o.id));
+   fresh.forEach(o=>{
+    $('newOrderToast').textContent='❤️ Nova encomenda '+(o.reference||'')+' recebida de '+(o.customer_name||'cliente')+'!';
+    $('newOrderToast').style.display='block';
+    if('serviceWorker' in navigator && Notification.permission==='granted'){
+      navigator.serviceWorker.ready.then(reg=>reg.showNotification('Nova encomenda · My Box in Love',{
+       body:(o.customer_name||'Cliente')+' · '+(o.product_name||'Pedido novo'),
+       icon:'assets/logo-my-box-in-love.jpg',tag:'mbl-'+o.id
+      })).catch(()=>{});
+    }
+    setTimeout(()=>$('newOrderToast').style.display='none',10000);
+   });
+  }
+  orders.forEach(o=>mblSeenOrders.add(o.id));
+  mblOrdersInitialized=true;
   const statuses=['Novo','Em contacto','Confirmado','Em preparação','Pronto','Entregue','Cancelado'];
-  box.innerHTML=(data.orders||[]).map(o=>'<article class="card"><b>'+esc(o.customer_name)+'</b> · '+esc(o.reference)+'<p>'+esc(o.product_name)+' · '+esc(o.customer_phone)+'</p><p>'+esc(o.delivery_method)+' · '+esc(o.requested_date||'Data a combinar')+' '+esc(o.requested_time||'')+'</p>'+(o.destination_address?'<p>'+esc(o.destination_address)+'</p>':'')+(o.customer_notes?'<p>'+esc(o.customer_notes)+'</p>':'')+'<label>ESTADO</label><select id="mbls-'+o.id+'">'+statuses.map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')+'</select><label>PREÇO COMBINADO (€)</label><input id="mblp-'+o.id+'" type="number" min="0" step=".01" value="'+(o.product_total_cents==null?'':(o.product_total_cents/100).toFixed(2))+'"><label>NOTAS INTERNAS</label><textarea id="mbln-'+o.id+'">'+esc(o.admin_notes||'')+'</textarea><button class="primary" onclick="mblSaveOrder(\''+o.id+'\')">Guardar</button></article>').join('')||'<p class="muted">Ainda não existem encomendas online.</p>';
+  box.innerHTML=orders.map(o=>{
+   const items=Array.isArray(o.order_items)?o.order_items:[];
+   const itemHtml=items.map(it=>'<div class="row" style="justify-content:space-between"><span>'+esc(it.name)+(it.quantity>1?' × '+Number(it.quantity):'')+'</span><b>'+money((Number(it.total_cents)||0)/100)+'</b></div>').join('');
+   const subtotal=Number(o.order_subtotal_cents ?? o.product_total_cents ?? 0)/100;
+   const deliveryFee=Number(o.delivery_fee_cents||0)/100;
+   const total=Number(o.order_total_cents ?? (subtotal*100+Number(o.delivery_fee_cents||0)))/100;
+   return '<article class="card"><div class="row"><b style="flex:1">'+esc(o.customer_name)+'</b><span class="pill">'+esc(o.reference)+'</span></div><p>'+esc(o.customer_phone)+'</p><div class="card" style="background:#fff9fa">'+(itemHtml||'<div>'+esc(o.product_name)+'</div>')+'<hr><div class="row" style="justify-content:space-between"><span>Subtotal</span><b>'+money(subtotal)+'</b></div><div class="row" style="justify-content:space-between"><span>Entrega'+(o.delivery_km?' · '+esc(o.delivery_km)+' km':'')+'</span><b>'+money(deliveryFee)+'</b></div><div class="row" style="justify-content:space-between;font-size:19px;color:var(--brown)"><strong>Total indicativo</strong><strong>'+money(total)+'</strong></div></div><p>'+esc(o.delivery_method)+' · '+esc(o.requested_date||'Data a combinar')+' '+esc(o.requested_time||'')+'</p>'+(o.destination_address?'<p>📍 '+esc(o.destination_address)+'</p>':'')+(o.customer_notes?'<p>Notas do cliente: '+esc(o.customer_notes)+'</p>':'')+'<label>ESTADO</label><select id="mbls-'+o.id+'">'+statuses.map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')+'</select><label>PREÇO FINAL ACORDADO (€)</label><input id="mblp-'+o.id+'" type="number" min="0" step=".01" value="'+(o.product_total_cents==null?'':(o.product_total_cents/100).toFixed(2))+'"><label>NOTAS INTERNAS</label><textarea id="mbln-'+o.id+'">'+esc(o.admin_notes||'')+'</textarea><button class="primary" onclick="mblSaveOrder(\''+o.id+'\')">Guardar alterações</button></article>';
+  }).join('')||'<p class="muted">Ainda não existem encomendas online.</p>';
  }catch(e){box.textContent=e.message;}
 }
 async function mblSaveOrder(id){
@@ -710,7 +734,7 @@ async function mblSaveOrder(id){
 }
 if(MBL_TOKEN){
  $('loginGate').style.display='none';$('privateMain').style.display='block';
- mblCall({action:'verify'}).then(()=>{mblLoadOrders();mblSubscribeOrders();}).catch(()=>mblLogout());
+ mblCall({action:'verify'}).then(()=>{mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}}).catch(()=>mblLogout());
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
