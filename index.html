@@ -84,7 +84,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  .metric{font-size:21px}
 }
 
-#loginGate{display:none!important}
+#loginGate{max-width:420px;margin:40px auto;padding:24px;background:#fff;border:1px solid var(--line);border-radius:18px;text-align:center}#loginGate input{text-align:center;font-size:24px;letter-spacing:8px}
 #loginGate input{text-align:center;font-size:24px;letter-spacing:8px}
 #newOrderToast{position:fixed;right:14px;bottom:14px;z-index:20;background:#80502f;color:white;padding:14px 18px;border-radius:14px;box-shadow:0 8px 28px #0003;display:none}
 </style>
@@ -99,7 +99,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <small>PAINEL DE GESTÃO · CEO EDITION</small>
 </header>
 
-<section id="loginGate" class="hidden" aria-hidden="true"></section>
+<section id="loginGate"><h2>Acesso privado da Raquel</h2><p class="muted">Valida o acesso uma vez neste dispositivo. Nas próximas aberturas entras diretamente.</p><input id="panelPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="current-password"><button class="primary" id="loginButton">Entrar na gestão</button><p class="small" id="loginError"></p></section>
 <div id="newOrderToast">❤️ Nova encomenda recebida!</div>
 <main id="privateMain" class="wrap" style="display:none">
 
@@ -657,29 +657,34 @@ async function mblCall(data){
  if(!res.ok)throw new Error(json.error||'Erro de ligação.');
  return json;
 }
-async function mblStartPanel(){
- $('loginGate').style.display='none';$('privateMain').style.display='block';
+async function mblLogin(){
+ const pin=$('panelPin').value.trim();$('loginError').textContent='';
+ if(!/^\\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
+ $('loginButton').disabled=true;$('loginButton').textContent='A validar…';
  try{
-  if(!MBL_TOKEN) throw new Error('NO_SESSION');
-  await mblLoadOrders();
- }catch(e){
-  if(e.message==='NO_SESSION'||/sessão|token|autorizad|401|403/i.test(e.message)){
-   MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
-   $('privateMain').style.display='block';
-   $('onlineOrders').innerHTML='<p class="notice">A sessão precisa de ser revalidada. Contacta o suporte para recuperar o acesso privado.</p>';
-  }else $('onlineOrders').innerHTML='<p class="notice">Não foi possível atualizar as encomendas: '+esc(e.message)+'</p>';
- }
- mblSubscribeOrders();
- if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
- if('Notification' in window && Notification.permission==='default'){
-  $('notificationState').textContent='Ativa as notificações neste dispositivo no separador Encomendas.';
+  const result=await mblCall({action:'login',pin});
+  MBL_TOKEN=result.token;localStorage.setItem('mbl_panel_session',MBL_TOKEN);
+  $('loginGate').style.display='none';$('privateMain').style.display='block';
+  await mblLoadOrders();mblSubscribeOrders();
+  if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
+  if('Notification' in window&&Notification.permission==='default')mblEnableNotifications();
+ }catch(e){$('loginError').textContent=e.message;}
+ finally{$('loginButton').disabled=false;$('loginButton').textContent='Entrar na gestão';}
+}
+$('loginButton').addEventListener('click',mblLogin);
+$('panelPin').addEventListener('keydown',e=>{if(e.key==='Enter')mblLogin();});
+function mblStartPanel(){
+ if(MBL_TOKEN){
+  $('loginGate').style.display='none';$('privateMain').style.display='block';
+  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);})
+  .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
 }
 function mblLogout(){
  if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}
  if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}
  MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
- $('privateMain').style.display='none';$('loginGate').style.display='none';
+ $('privateMain').style.display='none';$('loginGate').style.display='block';
 }
 async function mblEnableNotifications(){
  if(!('Notification' in window)){ $('notificationState').textContent='Este navegador não suporta notificações.';return;}
