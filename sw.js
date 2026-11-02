@@ -1,4 +1,4 @@
-const CACHE = "my-box-in-love-v4";
+const CACHE = "my-box-in-love-v5";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
@@ -39,4 +39,33 @@ self.addEventListener("fetch", event => {
         cached || caches.match("./index.html")
       ))
   );
+});
+
+self.addEventListener("push", event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch { data = { body: event.data ? event.data.text() : "" }; }
+  const title = String(data.title || "My Box in Love");
+  const options = {
+    body: String(data.body || "Tens uma atualização da tua loja."),
+    icon: "./assets/logo-my-box-in-love.jpg",
+    badge: "./assets/logo-my-box-in-love.jpg",
+    tag: String(data.tag || "mbl-push"),
+    data: { url: data.url || "./" },
+    renotify: true
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "./", self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    for (const client of list) {
+      if (client.url.startsWith(self.location.origin) && "focus" in client) {
+        client.navigate(target);
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(target);
+  }));
 });
