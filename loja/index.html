@@ -60,7 +60,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div class="row"><div><label for="nome">O teu nome</label><input id="nome" required maxlength="80" autocomplete="name" placeholder="Nome"></div><div><label for="telefone">O teu contacto</label><input id="telefone" required type="tel" maxlength="25" autocomplete="tel" placeholder="Telemóvel"></div></div>
 <div><label for="produto">O que gostarias de encomendar?</label><select id="produto" required><option value="">Seleciona uma opção</option><option>Box Pequeno-Almoço (1 pessoa)</option><option>Box Pequeno-Almoço (2 pessoas)</option><option>Box Kids / Doces</option><option>Box Festa</option><option>Buquê de Doces</option><option>Pedido personalizado</option></select></div>
 <div class="row"><div><label for="data">Data pretendida</label><input id="data" type="date"></div><div><label for="hora">Horário preferido</label><input id="hora" type="time"></div></div>
-<div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap"><label for="morada">Morada de entrega (se aplicável)</label><input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, localidade e código postal"></div>
+<div><label for="entrega">Como preferes receber?</label><select id="entrega" required><option value="">Seleciona uma opção</option><option>Entrega ao domicílio</option><option>Levantamento a combinar</option><option>Ainda não sei</option></select></div><div id="morada-wrap" hidden><label for="morada">Morada de entrega (se aplicável)</label><input id="morada" autocomplete="street-address" maxlength="180" placeholder="Rua, localidade e código postal"><button class="btn secondary" type="button" id="calcEntrega">Calcular entrega</button><p id="quoteBox" class="note">Indica a morada e calcula a entrega.</p></div>
 <div><label for="detalhes">Detalhes e personalização</label><textarea id="detalhes" maxlength="700" placeholder="Ocasião, cores, mensagem, alergias ou outros detalhes..."></textarea></div>
 <button class="btn" type="submit">Continuar pelo WhatsApp</button>
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
@@ -85,9 +85,27 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     const needsAddress = delivery.value === 'Entrega ao domicílio';
     addressWrap.hidden = !needsAddress;
     address.required = needsAddress;
+    document.getElementById('quoteBox').textContent = needsAddress ? 'Indica a morada e calcula a entrega.' : '';
   }
   delivery.addEventListener('change', updateAddressField);
   updateAddressField();
+  document.getElementById('calcEntrega').addEventListener('click', async function() {
+    const box = document.getElementById('quoteBox');
+    if (!address.value.trim()) { alert('Indica a morada completa.'); return; }
+    this.disabled = true; this.textContent = 'A calcular…'; box.textContent = 'A calcular distância por estrada…';
+    try {
+      const res = await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler', {
+        method:'POST', headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
+        body:JSON.stringify({action:'quote',address:address.value.trim()})
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Não foi possível calcular.');
+      const q=data.quote, fee=(q.delivery_fee_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+      const rate=(q.delivery_rate_cents/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+      box.textContent='Distância por estrada: '+q.delivery_km+' km · Tarifa: '+rate+'/km · Entrega: '+fee+'.';
+    } catch(e) { box.textContent=e.message; }
+    this.disabled=false; this.textContent='Calcular entrega';
+  });
   const dateField = document.getElementById('data');
   const today = new Date();
   const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
