@@ -300,7 +300,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         throw new Error(result.error || 'Não foi possível registar o pedido.');
       }
 
-      const trackingUrl = 'https://pedrocorreiauber25-max.github.io/My-box-in-love/loja/acompanhar.html?token=' + encodeURIComponent(result.order?.tracking_token || '');
+      const trackingUrl = 'https://myboxinlove.pages.dev/loja/acompanhar.html?token=' + encodeURIComponent(result.order?.tracking_token || '');
       const message = [
         'Olá, My Box in Love! Enviei um pedido pela loja:',
         'Acompanhar encomenda: ' + trackingUrl,
