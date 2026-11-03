@@ -359,7 +359,13 @@ d.stock=d.stock||[];
 d.purchases=d.purchases||[];
 d.expenses=d.expenses||[];
 d.extras=d.extras||[];
-d.shares=d.shares||{personal:50,reinvest:30,reserve:20};
+const savedShares=d.shares&&typeof d.shares==='object'?d.shares:{};
+const shareValue=(value,fallback)=>{const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=100?n:fallback;};
+d.shares={
+ personal:shareValue(savedShares.personal,50),
+ reinvest:shareValue(savedShares.reinvest,30),
+ reserve:shareValue(savedShares.reserve,20)
+};
 d.deliveryRate=Number.isFinite(Number(d.deliveryRate))?Number(d.deliveryRate):0.50;
 
 // Atualiza o catálogo do menu sem apagar encomendas, compras, stock ou artigos personalizados.
@@ -388,17 +394,20 @@ function save(){
 function go(id){
  const target=document.getElementById(String(id));
  if(!target||!target.classList.contains('section'))return false;
- document.querySelectorAll('#privateMain .section').forEach(s=>{
-  const active=s===target;s.classList.toggle('show',active);s.hidden=!active;
+ document.querySelectorAll('#privateMain .section').forEach(section=>{
+  section.removeAttribute('hidden');
+  section.classList.toggle('show',section===target);
  });
- document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
-  const active=b.dataset.tab===String(id);b.classList.toggle('primary',active);b.setAttribute('aria-current',active?'page':'false');
+ document.querySelectorAll('.tabs button[data-tab]').forEach(button=>{
+  const active=button.dataset.tab===String(id);
+  button.classList.toggle('primary',active);
+  button.setAttribute('aria-current',active?'page':'false');
  });
  if(id==='materials')drawMaterialChecklist();
  if(id==='stock')draw();
  return true;
 }
-document.querySelector('.tabs')?.addEventListener('click',event=>{const button=event.target.closest('button[data-tab]');if(!button)return;event.preventDefault();const id=button.dataset.tab;if(!document.getElementById(id)?.classList.contains('section'))return;go(id);});
+window.go=go;
 
 function receivedOrder(o){
  return Number(o.deposit||0)+(o.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0)-(Number(o.refunds)||0);
@@ -1130,12 +1139,25 @@ if('serviceWorker' in navigator){
 
 <script id="MBL_TAB_NAV_FIX">
 (function(){
- document.addEventListener('click',function(e){
-  var button=e.target&&e.target.closest?e.target.closest('.tabs button[data-tab]'):null;
+ document.addEventListener('click',function(event){
+  var button=event.target&&event.target.closest?event.target.closest('.tabs button[data-tab]'):null;
   if(!button)return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  if(typeof window.go==='function')window.go(button.getAttribute('data-tab'));
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  var id=button.getAttribute('data-tab');
+  var target=document.getElementById(id);
+  if(!target||!target.classList.contains('section'))return;
+  document.querySelectorAll('#privateMain .section').forEach(function(section){
+   section.removeAttribute('hidden');
+   section.classList.toggle('show',section===target);
+  });
+  document.querySelectorAll('.tabs button[data-tab]').forEach(function(tab){
+   var active=tab.getAttribute('data-tab')===id;
+   tab.classList.toggle('primary',active);
+   tab.setAttribute('aria-current',active?'page':'false');
+  });
+  if(id==='materials'&&typeof window.drawMaterialChecklist==='function')window.drawMaterialChecklist();
+  if(id==='stock'&&typeof window.draw==='function')window.draw();
  },true);
 })();
 </script>
