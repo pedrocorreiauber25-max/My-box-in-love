@@ -262,6 +262,11 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     dateField.min = localDate(earliest);
     leadInfo.textContent = 'Encomenda com pelo menos ' + hours + ' horas de antecedência. Escolhe a data e a hora pretendidas.';
     if (dateField.value && dateField.value < dateField.min) dateField.value = '';
+    const isBouquet = /Buquê de Doces/i.test(productField.selectedOptions[0]?.textContent || '');
+    variableField.min = isBouquet ? '45' : '40';
+    variableField.max = '70';
+    variableField.placeholder = isBouquet ? 'Indica um valor entre 45 e 70 €' : 'Indica um valor entre 40 e 70 €';
+    if (variableField.value && Number(variableField.value) < Number(variableField.min)) variableField.value = '';
   }
   productField.addEventListener('change', updateLeadTime);
   updateLeadTime();
@@ -297,7 +302,17 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     };
 
     try {
-      if(chosenProduct.dataset.variable==='true' && chosenProduct.dataset.price && (!variableField.value || Number(variableField.value)<40 || Number(variableField.value)>70)) throw new Error('Indica um valor entre 40 € e 70 € para esta box.');
+      if(chosenProduct.dataset.variable==='true' && chosenProduct.dataset.price) {
+        const minimum = /Buquê de Doces/i.test(chosenProduct.textContent) ? 45 : 40;
+        if (!variableField.value || Number(variableField.value) < minimum || Number(variableField.value) > 70) {
+          throw new Error('Indica um valor entre ' + minimum + ' € e 70 € para este produto.');
+        }
+      }
+      const requested = new Date(payload.date + 'T' + payload.time);
+      if (!payload.date || !payload.time || !Number.isFinite(requested.getTime()) ||
+          requested.getTime() < Date.now() + requiredLeadHours() * 3600000) {
+        throw new Error('Escolhe uma data e hora com pelo menos ' + requiredLeadHours() + ' horas de antecedência.');
+      }
       if (payload.delivery === 'Entrega ao domicílio' && (!selectedCoords || !lastQuote)) throw new Error('Localiza a morada e calcula a entrega antes de enviar o pedido.');
       const response = await fetch(
         'https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',
