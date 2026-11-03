@@ -145,7 +145,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <div class="card">Resultado financeiro<div class="metric" id="profit">0 €</div></div>
    <div class="card">Encomendas abertas<div class="metric" id="open">0</div></div>
    <div class="card">Por receber<div class="metric" id="pending">0 €</div></div>
-   <div class="card">Unidades em stock<div class="metric" id="materials">0</div></div>
+   <div class="card">Unidades em stock<div class="metric" id="materialsCount">0</div></div>
   </div>
 
   <div class="card">
@@ -405,6 +405,7 @@ function go(id){
  });
  if(id==='materials')drawMaterialChecklist();
  if(id==='stock')draw();
+ if(id==='orders'){const form=$('orderform');if(form&&form.dataset.open==='1')form.classList.remove('hidden');}
  return true;
 }
 window.go=go;
@@ -426,11 +427,17 @@ function totalOrder(){
  return p ? p.price*q+extras : 0;
 }
 function newOrder(){
- $('orderform').classList.remove('hidden');
+ const form=$('orderform');
+ if(!form)return alert('Não foi possível abrir o formulário de encomenda.');
+ form.classList.remove('hidden');
+ form.dataset.open='1';
  $('odate').value=today();
- draw();
+ const product=$('oproduct');
+ if(product&&product.options.length===0)draw();
+ form.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function closeOrder(){ $('orderform').classList.add('hidden'); }
+window.newOrder=newOrder;
+function closeOrder(){const form=$('orderform');if(form){form.classList.add('hidden');form.dataset.open='0';}}
 $('oproduct').onchange=()=> $('ototal').textContent=money(totalOrder());
 $('oqty').oninput=()=> $('ototal').textContent=money(totalOrder());
 $('oextras').onchange=()=> $('ototal').textContent=money(totalOrder());
@@ -782,7 +789,7 @@ function draw(){
  $('profit').textContent=money(profit);
  $('open').textContent=open;
  $('pending').textContent=money(pending);
- $('materials').textContent=d.stock.reduce((s,x)=>s+x.qty,0);
+ $('materialsCount').textContent=d.stock.reduce((s,x)=>s+x.qty,0);
  $('freceived').textContent=money(received);
  $('fexpenses').textContent=money(expenses);
  $('fprofit').textContent=money(profit);
