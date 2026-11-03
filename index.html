@@ -215,6 +215,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <section id="materials" class="section">
   <div class="row"><h1 style="flex:1">Lista de compras inicial</h1><span class="pill" id="materialProgress">0% comprado</span></div>
   <p class="muted">Lista-base criada a partir do menu atual. Assinala o que já tens. Compra alimentos frescos conforme as encomendas confirmadas para evitar desperdício.</p>
+  <p class="small" id="materialSyncStatus" role="status">A lista será sincronizada entre os dispositivos.</p>
   <div id="materialChecklist"></div>
   <div class="notice"><b>Dica CEO:</b> começa por embalagens, utensílios e decoração reutilizável. Compra produtos frescos e chocolates em quantidades pequenas, de acordo com as encomendas da semana.</div>
  </section>
@@ -602,9 +603,14 @@ const materialGroups=[
   ["scissors","Tesoura"],["cutter","X-ato/cortador"],["tape","Fita-cola e fita dupla face"],["glue-gun","Pistola de cola quente e recargas"],["ruler","Régua e base de corte"],["scale","Balança de cozinha"],["thermometer","Termómetro de frigorífico"],["storage","Caixas organizadoras para stock"]
  ]}
 ];
-function toggleMaterialItem(id,checked){
+async function toggleMaterialItem(id,checked){
  d.materialChecklist=d.materialChecklist||{};d.materialChecklist[id]=checked;
  localStorage.setItem('mbl',JSON.stringify(d));drawMaterialChecklist();
+ const state=$('materialSyncStatus');if(state)state.textContent='A sincronizar…';
+ try{
+  await mblCall({action:'materials_save',checklist:d.materialChecklist});
+  if(state)state.textContent='Lista sincronizada. As alterações aparecem também no outro dispositivo.';
+ }catch(e){if(state)state.textContent='Não foi possível sincronizar: '+e.message+'. Tenta novamente.';}
 }
 function drawMaterialChecklist(){
  const host=$('materialChecklist');if(!host)return;
@@ -738,6 +744,28 @@ async function mblCall(data){
  if(!res.ok)throw new Error(json.error||'Erro de ligação.');
  return json;
 }
+async function mblLoadMaterialChecklist(){
+ const state=$('materialSyncStatus');
+ try{
+  const result=await mblCall({action:'materials_get'});
+  const remote=result.checklist&&typeof result.checklist==='object'&&!Array.isArray(result.checklist)?result.checklist:{};
+  const remoteHasItems=Object.keys(remote).length>0;
+  const local=d.materialChecklist&&typeof d.materialChecklist==='object'?d.materialChecklist:{};
+  if(remoteHasItems){
+   d.materialChecklist=remote;
+   localStorage.setItem('mbl',JSON.stringify(d));
+   drawMaterialChecklist();
+  }else if(Object.keys(local).length){
+   const saved=await mblCall({action:'materials_save',checklist:local});
+   d.materialChecklist=saved.checklist||local;
+   localStorage.setItem('mbl',JSON.stringify(d));
+   drawMaterialChecklist();
+  }else{
+   d.materialChecklist={};
+  }
+  if(state)state.textContent='Lista sincronizada entre os dispositivos.';
+ }catch(e){if(state)state.textContent='Sincronização indisponível: '+e.message;}
+}
 async function mblLogin(){
  const pin=$('panelPin').value.trim();$('loginError').textContent='';
  if(!/^\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
@@ -746,7 +774,9 @@ async function mblLogin(){
   const result=await mblCall({action:'login',pin});
   MBL_TOKEN=result.token;localStorage.setItem('mbl_panel_session',MBL_TOKEN);
   $('loginGate').style.display='none';$('privateMain').style.display='block';
+  await mblLoadMaterialChecklist();
   await mblLoadOrders();mblSubscribeOrders();
+  if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);
   if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
   if('Notification' in window&&Notification.permission==='default')mblEnableNotifications();
  }catch(e){$('loginError').textContent=e.message;}
@@ -757,12 +787,14 @@ $('panelPin').addEventListener('input',()=>{$('loginError').textContent='';});
 function mblStartPanel(){
  if(MBL_TOKEN){
   $('loginGate').style.display='none';$('privateMain').style.display='block';
-  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);})
+  mblLoadMaterialChecklist();
+  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);})
   .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
 }
 function mblLogout(){
  if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}
+ if(window.mblMaterialPoll){clearInterval(window.mblMaterialPoll);window.mblMaterialPoll=null;}
  if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}
  MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
  $('privateMain').style.display='none';$('loginGate').style.display='block';
@@ -872,7 +904,7 @@ async function mblSaveOrder(id){
 }
 if(MBL_TOKEN){
  $('loginGate').style.display='none';$('privateMain').style.display='block';
- mblCall({action:'verify'}).then(()=>{mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}}).catch(()=>mblLogout());
+ mblCall({action:'verify'}).then(()=>{mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
