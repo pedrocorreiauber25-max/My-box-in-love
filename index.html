@@ -719,6 +719,7 @@ function drawMaterialChecklist(){
  const pct=total?Math.round(done/total*100):0;
  $('materialProgress').textContent=done+' de '+total+' · '+pct+'% comprado';
 }
+window.drawMaterialChecklist=drawMaterialChecklist;
 function drawCEOFinance(){
  const period=$('ceoPeriod')?.value||'week';
  const now=new Date();
