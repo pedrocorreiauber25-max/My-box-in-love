@@ -478,6 +478,7 @@ function editProduct(id){
  if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
  p.name=name.trim();p.price=price;
  if(!Array.isArray(p.recipe))p.recipe=[];
+ if(confirm('Queres limpar a ficha técnica atual antes de a configurar novamente?'))p.recipe=[];
  let keep=true;
  while(keep&&d.stock.length){
   const choices=d.stock.map((m,i)=>(i+1)+'. '+m.name+' ('+m.qty+' '+(m.unit||'unidades')+')').join('\n');
@@ -485,13 +486,14 @@ function editProduct(id){
   if(raw===null||raw.trim()==='0')break;
   const index=Number(raw)-1,m=d.stock[index];
   if(!m)return alert('Escolhe um número válido da lista.');
-  const qty=Number(prompt('Quanto deste material é usado por cada produto? Unidade: '+(m.unit||'unidades')+'. Podes usar decimais. Ex.: 0,35','1'.replace(',', '.')).replace(',','.'));
+  const rawQty=prompt('Quanto deste material é usado por cada produto? Unidade: '+(m.unit||'unidades')+'. Podes usar decimais. Ex.: 0,35','1');
+  if(rawQty===null)break;
+  const qty=Number(rawQty.replace(',','.'));
   if(!Number.isFinite(qty)||qty<=0)return alert('Quantidade inválida.');
   const existing=p.recipe.find(r=>r.material===m.id);
   if(existing)existing.qty=qty;else p.recipe.push({material:m.id,qty});
   keep=confirm('Queres adicionar outro material à ficha técnica?');
  }
- if(confirm('Queres limpar toda a ficha técnica e começar de novo?'))p.recipe=[];
  save();
 }
 function getCost(p){
