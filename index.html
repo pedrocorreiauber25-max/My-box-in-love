@@ -1251,7 +1251,7 @@ function mblSendTrackingWhatsApp(id){
  if(phone.startsWith('00'))phone=phone.slice(2);
  if(phone.length===9)phone='351'+phone;
  if(phone.length<10)return alert('O número de WhatsApp do cliente parece inválido.');
- const url='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(token);
+ const url='https://myboxinlove.pages.dev/acompanhar.html?token='+encodeURIComponent(token);
  const message='Olá '+(order.customer_name||'')+'! ❤️ A tua encomenda My Box in Love foi registada. Podes acompanhar o estado através deste link privado: '+url+'\n\nObrigada pela preferência!';
  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(message),'_blank','noopener');
 }
