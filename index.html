@@ -1042,5 +1042,46 @@ if('serviceWorker' in navigator){
  navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>
+
+<script id="MBL_SAFE_LOGIN_FALLBACK">
+// MBL_SAFE_LOGIN_FALLBACK: mantém o acesso disponível mesmo se outro módulo do painel falhar.
+(function () {
+  var form = document.getElementById('loginForm');
+  if (!form) return;
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    var input = document.getElementById('panelPin');
+    var button = document.getElementById('loginButton');
+    var message = document.getElementById('loginError');
+    var pin = input ? input.value.trim() : '';
+    if (!/^\d{4}$/.test(pin)) {
+      if (message) message.textContent = 'Introduz os 4 números do PIN.';
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'A validar…'; }
+    if (message) message.textContent = 'A validar o acesso…';
+    try {
+      var response = await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'
+        },
+        body: JSON.stringify({ action: 'login', pin: pin })
+      });
+      var data = await response.json().catch(function () { return {}; });
+      if (!response.ok || !data.token) throw new Error(data.error || 'Não foi possível validar o PIN.');
+      localStorage.setItem('mbl_panel_session', data.token);
+      if (message) message.textContent = 'Acesso validado. A abrir o painel…';
+      window.location.reload();
+    } catch (error) {
+      if (message) message.textContent = error && error.message ? error.message : 'Falha de ligação. Tenta novamente.';
+    } finally {
+      if (button) { button.disabled = false; button.textContent = 'Entrar na gestão'; }
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
