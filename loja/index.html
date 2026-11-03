@@ -344,8 +344,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Produto: ' + payload.product,
         ...selectedExtras.map(x=>'Adicional: '+x.name+' — '+euro(x.price)),
         ...(roses?[ 'Rosas: '+roses+' × 3 € = '+euro(roses*3) ]:[]),
-        'Resumo de preços: '+document.getElementById('summaryLines').innerText.replace(/
-/g,' | '),
+        'Resumo de preços: '+document.getElementById('summaryLines').innerText.split(String.fromCharCode(10)).join(' | '),
         'Total indicativo: '+summaryTotal.textContent,
         'Entrega: ' + payload.delivery,
         'Data pretendida: ' + (payload.date || 'A combinar'),
