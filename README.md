@@ -6,7 +6,7 @@ Aplicação de gestão privada e loja online da My Box in Love.
 
 - **Loja online:** https://myboxinlove.pages.dev/
 - **Painel privado da Raquel:** https://pedrocorreiauber25-max.github.io/My-box-in-love/
-- **Acompanhamento de encomenda:** https://myboxinlove.pages.dev/loja/acompanhar.html?token=TOKEN_PRIVADO
+- **Acompanhamento de encomenda:** https://myboxinlove.pages.dev/acompanhar.html?token=TOKEN_PRIVADO
 - **Página de entrega do motorista:** https://myboxinlove.pages.dev/loja/driver.html?token=TOKEN_PRIVADO
 
 Os dois últimos endereços precisam do token privado criado para cada encomenda. Não remover o token nem partilhar publicamente estes links.
