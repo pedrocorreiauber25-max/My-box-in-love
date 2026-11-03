@@ -409,18 +409,21 @@ if(!d.extras.some(x=>x.name.startsWith("Fruta (preço variável")))
  d.extras.push({...menuExtras[menuExtras.length-1],id:uid()});
 localStorage.setItem('mbl',JSON.stringify(d));
 
-function resetBusinessData(){
- if(!confirm('ATENÇÃO: vais apagar todas as encomendas guardadas neste painel, compras, stock e despesas. O catálogo, preços, adicionais, PIN e lista de compras serão mantidos. Queres continuar?'))return;
+async function resetBusinessData(){
+ if(!confirm('ATENÇÃO: vais apagar as encomendas de teste (incluindo pagas), compras, stock e despesas, também na nuvem. O catálogo, preços, adicionais, fichas técnicas, PIN e lista de compras serão mantidos. Queres continuar?'))return;
  if(!confirm('Confirma novamente: apagar os dados de teste e iniciar a gestão a zero?'))return;
- d.orders=[];
- d.purchases=[];
- d.stock=[];
- d.expenses=[];
- localStorage.setItem('mbl',JSON.stringify(d));
- window.mblOnlineOrders=[];
- if(typeof draw==='function')draw();
- if(typeof drawCEOFinance==='function')drawCEOFinance();
- alert('Gestão reiniciada. Catálogo, PIN e lista de compras mantidos.');
+ try{
+  if(!MBL_TOKEN)throw new Error('A sessão expirou. Entra novamente no painel.');
+  await mblCall({action:'reset_business_data'});
+  d.orders=[];d.purchases=[];d.stock=[];d.expenses=[];
+  localStorage.setItem('mbl',JSON.stringify(d));
+  window.mblOnlineOrders=[];
+  mblBusinessDirty=false;mblBusinessLastSync=null;
+  if(typeof draw==='function')draw();
+  if(typeof drawCEOFinance==='function')drawCEOFinance();
+  if(typeof drawCEOAlerts==='function')drawCEOAlerts();
+  alert('Dados de teste apagados no painel e na loja online. Catálogo, preços, extras, fichas técnicas, PIN e lista de compras mantidos.');
+ }catch(e){alert('Não foi possível concluir a limpeza: '+(e.message||'erro desconhecido'));}
 }
 function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
