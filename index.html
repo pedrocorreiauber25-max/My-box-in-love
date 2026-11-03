@@ -307,6 +307,11 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button onclick="restore()">Restaurar dados</button>
   </div>
   <div class="card">
+   <h2>Recomeçar a gestão do zero</h2>
+   <p class="muted">Apaga encomendas de teste, compras, stock e despesas deste dispositivo. Mantém o catálogo de produtos, preços, adicionais, PIN e a lista de compras.</p>
+   <button class="danger" type="button" onclick="resetBusinessData()">Apagar dados de teste e começar de novo</button>
+  </div>
+  <div class="card">
    <h2>Privacidade e armazenamento</h2>
    <p class="muted">O painel tem acesso protegido por PIN. A lista de compras e as encomendas recebidas pela loja online sincronizam através da nuvem. Os registos internos de compras, stock, despesas, percentagens e encomendas criadas manualmente continuam guardados neste dispositivo; usa a cópia de segurança para os transferir. Não partilhes o PIN.</p>
   </div>
@@ -393,6 +398,19 @@ if(!d.extras.some(x=>x.name.startsWith("Fruta (preço variável")))
  d.extras.push({...menuExtras[menuExtras.length-1],id:uid()});
 localStorage.setItem('mbl',JSON.stringify(d));
 
+function resetBusinessData(){
+ if(!confirm('ATENÇÃO: vais apagar todas as encomendas guardadas neste painel, compras, stock e despesas. O catálogo, preços, adicionais, PIN e lista de compras serão mantidos. Queres continuar?'))return;
+ if(!confirm('Confirma novamente: apagar os dados de teste e iniciar a gestão a zero?'))return;
+ d.orders=[];
+ d.purchases=[];
+ d.stock=[];
+ d.expenses=[];
+ localStorage.setItem('mbl',JSON.stringify(d));
+ window.mblOnlineOrders=[];
+ if(typeof draw==='function')draw();
+ if(typeof drawCEOFinance==='function')drawCEOFinance();
+ alert('Gestão reiniciada. Catálogo, PIN e lista de compras mantidos.');
+}
 function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
  draw();
