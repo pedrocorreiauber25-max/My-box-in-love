@@ -166,6 +166,10 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <h2>Últimas encomendas</h2>
    <div id="recent"></div>
   </div>
+  <div class="card">
+   <div class="row"><h2 style="flex:1">Alertas inteligentes CEO</h2><span class="pill" id="ceoAlertCount">A verificar…</span></div>
+   <div id="ceoAlerts" class="small">A analisar prazos e níveis de stock…</div>
+  </div>
   <button class="primary" onclick="newOrder()">+ Nova encomenda</button>
  </section>
 
@@ -720,6 +724,33 @@ function drawMaterialChecklist(){
  $('materialProgress').textContent=done+' de '+total+' · '+pct+'% comprado';
 }
 window.drawMaterialChecklist=drawMaterialChecklist;
+function drawCEOAlerts(){
+ const todayKey=today();
+ const late=[];
+ const local=(d.orders||[]).filter(o=>o.date&&o.date<todayKey&&!['Entregue','Cancelada','Cancelado'].includes(String(o.status||'')));
+ local.forEach(o=>late.push({name:o.client||'Cliente',ref:o.product||'Encomenda',date:o.date,source:'manual'}));
+ const online=(window.mblOnlineOrders||[]).filter(o=>o.requested_date&&o.requested_date<todayKey&&!['Entregue','Cancelado'].includes(String(o.status||'')));
+ online.forEach(o=>late.push({name:o.customer_name||'Cliente',ref:o.reference||o.product_name||'Encomenda',date:o.requested_date,source:'online'}));
+ const low=(d.stock||[]).filter(m=>Number(m.minQty)>0&&Number(m.qty)<=Number(m.minQty));
+ const box=$('ceoAlerts'),count=$('ceoAlertCount');if(!box||!count)return;
+ const total=late.length+low.length;
+ count.textContent=total?total+' alerta(s)':'Tudo em dia';
+ count.className='pill '+(total?'bad':'good');
+ if(!total){box.innerHTML='<p class="good">✓ Sem encomendas atrasadas e sem materiais abaixo do mínimo definido.</p>';return;}
+ let html='';
+ if(late.length){
+  html+='<p class="bad"><b>Encomendas com data ultrapassada ('+late.length+')</b></p>';
+  html+=late.slice(0,8).map(o=>'<div class="item">'+esc(o.name)+' · '+esc(o.ref)+'<br><span class="small">Data prevista: '+esc(o.date)+' · '+(o.source==='online'?'Loja online':'Manual')+'</span></div>').join('');
+  if(late.length>8)html+='<p class="small">E mais '+(late.length-8)+' encomenda(s).</p>';
+  html+='<button type="button" onclick="go(\'orders\')">Ver encomendas</button>';
+ }
+ if(low.length){
+  html+='<p class="bad"><b>Stock baixo ('+low.length+')</b></p>';
+  html+=low.map(m=>'<div class="item">'+esc(m.name)+' · '+Number(m.qty)+' '+esc(m.unit||'unidades')+'<br><span class="small">Mínimo definido: '+Number(m.minQty)+' '+esc(m.unit||'unidades')+'</span></div>').join('');
+  html+='<button type="button" onclick="go(\'stock\')">Ver stock</button>';
+ }
+ box.innerHTML=html;
+}
 function drawCEOFinance(){
  const period=$('ceoPeriod')?.value||'week';
  const now=new Date();
@@ -771,6 +802,7 @@ function drawCEOFinance(){
  $('ceoTopProducts').innerHTML=top.length?top.map(([name,v],i)=>'<div class="item"><div class="row"><b style="flex:1">'+(i+1)+'. '+esc(name)+'</b><span class="pill">'+v.qty+' un.</span></div><div class="small">Vendas associadas: '+money(v.revenue)+'</div></div>').join(''):'Ainda não há vendas neste período.';
 }
 function draw(){
+ drawCEOAlerts();
  $('oproduct').innerHTML=d.products.map(p=>
   `<option value="${p.id}">${esc(p.name)} · ${esc(p.priceLabel||money(p.price))}</option>`
  ).join('');
@@ -995,7 +1027,7 @@ async function mblLoadOrders(){
  const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
  try{
   const data=await mblCall({action:'orders'});
-  const orders=data.orders||[];window.mblOnlineOrders=orders;drawCEOFinance();
+  const orders=data.orders||[];window.mblOnlineOrders=orders;drawCEOFinance();drawCEOAlerts();
   if(mblOrdersInitialized){
    const fresh=orders.filter(o=>!mblSeenOrders.has(o.id));
    fresh.forEach(o=>{
