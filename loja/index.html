@@ -281,8 +281,11 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     const button = form.querySelector('button[type="submit"]');
     const value = id => document.getElementById(id).value.trim();
     const originalLabel = button.textContent;
+    // Abre a janela durante o clique do utilizador para evitar bloqueios de pop-up
+    // depois da resposta assíncrona do servidor.
+    const whatsappWindow = window.open('about:blank', '_blank');
     button.disabled = true;
-    button.textContent = 'A enviar pedido…';
+    button.textContent = 'A registar pedido…';
 
     const selectedExtras=[...document.querySelectorAll('.extra-check:checked')].map(c=>({name:c.dataset.name,price:Number(c.dataset.price)}));
     const roses=Math.max(0,Math.min(30,Number(value('rosesQty'))||0));
@@ -333,34 +336,41 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         throw new Error(result.error || 'Não foi possível registar o pedido.');
       }
 
-      const trackingUrl = 'https://myboxinlove.pages.dev/acompanhar.html?token=' + encodeURIComponent(result.order?.tracking_token || '');
+      const summaryText = document.getElementById('summaryLines').innerText
+        .split(String.fromCharCode(10)).join(' | ');
       const message = [
-        'Olá, My Box in Love! Enviei um pedido pela loja:',
-        'Acompanhar encomenda: ' + trackingUrl,
-        'Referência: ' + (result.order?.reference || 'A confirmar'),
-        'Nome: ' + payload.name,
-        'Contacto: ' + payload.phone,
-        'Produto: ' + payload.product,
-        ...selectedExtras.map(x=>'Adicional: '+x.name+' — '+euro(x.price)),
-        ...(roses?[ 'Rosas: '+roses+' × 3 € = '+euro(roses*3) ]:[]),
-        'Resumo de preços: '+document.getElementById('summaryLines').innerText.split(String.fromCharCode(10)).join(' | '),
-        'Total indicativo: '+summaryTotal.textContent,
-        'Entrega: ' + payload.delivery,
-        'Data pretendida: ' + (payload.date || 'A combinar'),
-        'Hora: ' + (payload.time || 'A combinar'),
-        'Morada: ' + (payload.address || 'A combinar'),
-        'Detalhes: ' + (payload.notes || 'Sem detalhes adicionais'),
-        'Podem confirmar disponibilidade, preço e entrega?'
+        'Olá, My Box in Love! ❤️',
+        'Acabei de enviar um pedido pela loja online.',
+        '',
+        'REFERÊNCIA: ' + (result.order?.reference || 'A confirmar'),
+        'NOME: ' + payload.name,
+        'CONTACTO: ' + payload.phone,
+        'PRODUTO: ' + payload.product,
+        ...selectedExtras.map(x=>'ADICIONAL: '+x.name+' — '+euro(x.price)),
+        ...(roses?[ 'ROSAS: '+roses+' × 3 € = '+euro(roses*3) ]:[]),
+        'RESUMO: '+summaryText,
+        'TOTAL INDICATIVO: '+summaryTotal.textContent,
+        'ENTREGA: ' + payload.delivery,
+        'DATA PRETENDIDA: ' + (payload.date || 'A combinar'),
+        'HORA: ' + (payload.time || 'A combinar'),
+        'MORADA: ' + (payload.address || 'A combinar'),
+        'DETALHES/PERSONALIZAÇÃO: ' + (payload.notes || 'Sem detalhes adicionais'),
+        '',
+        'Gostaria de confirmar as bebidas (Compal ou UCAL), as frutas disponíveis e os últimos detalhes. Podem ajudar-me?'
       ].join(String.fromCharCode(10));
 
       const success = document.createElement('div');
       success.className = 'card center';
       success.style.cssText = 'padding:24px;margin:18px 0;border:1px solid #e9b8c2;background:#fff8fa';
-      success.innerHTML = '<div style="font-size:34px">❤️</div><h2>Pedido recebido!</h2><p>Referência <strong>'+String(result.order?.reference||'').replace(/[<>&"]/g,'')+'</strong></p><p>O teu pedido foi registado. Guarda este link privado para acompanhares o estado e veres as instruções de pagamento quando forem autorizadas.</p><p><strong>Total indicativo: '+summaryTotal.textContent+'</strong></p><a class="btn secondary" style="display:block;margin:12px 0" href="'+trackingUrl.replace(/&/g,'&amp;')+'">Acompanhar a minha encomenda</a><button class="btn" type="button" id="shareTracking" style="width:100%">Enviar link por WhatsApp</button><p class="note">Não partilhes este link com outras pessoas.</p>';
+      success.innerHTML = '<div style="font-size:34px">❤️</div><h2>Pedido registado!</h2><p>Referência <strong>'+String(result.order?.reference||'').replace(/[<>&"]/g,'')+'</strong></p><p>O teu pedido foi guardado. Vamos abrir o WhatsApp para confirmares com a Raquel as bebidas, frutas disponíveis e os últimos detalhes.</p><p><strong>Total indicativo: '+summaryTotal.textContent+'</strong></p><p class="note">A encomenda só fica confirmada depois de a My Box in Love validar os detalhes e o pagamento. O link de acompanhamento será enviado pela Raquel após a confirmação do pagamento.</p><button class="btn" type="button" id="openWhatsApp" style="width:100%">Continuar no WhatsApp</button>';
       form.replaceWith(success);
-      success.querySelector('#shareTracking').addEventListener('click',()=>{const msg='Olá! Este é o link privado para acompanhar a minha encomenda My Box in Love: '+trackingUrl;window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');});
+      const waUrl='https://wa.me/351960486450?text='+encodeURIComponent(message);
+      if(whatsappWindow && !whatsappWindow.closed){whatsappWindow.location.href=waUrl;}
+      else {success.querySelector('#openWhatsApp').addEventListener('click',()=>window.open(waUrl,'_blank','noopener'));}
+      success.querySelector('#openWhatsApp').addEventListener('click',()=>{if(whatsappWindow && !whatsappWindow.closed)whatsappWindow.location.href=waUrl;else window.open(waUrl,'_blank','noopener');});
       window.scrollTo({top:success.getBoundingClientRect().top+window.scrollY-20,behavior:'smooth'});
     } catch (error) {
+      if (whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
       alert(error.message || 'Ocorreu um erro ao enviar o pedido. Tenta novamente ou contacta-nos pelo WhatsApp.');
       button.disabled = false;
       button.textContent = originalLabel;
