@@ -334,24 +334,6 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     }
   });
 
-  // Fotografias atualizadas pela Raquel no painel privado.
-  (async function loadProductPhotos(){
-    try{
-      const res=await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/rest/v1/mbl_product_images?select=product_key,image_url',{
-        headers:{'apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'}
-      });
-      if(!res.ok)return;
-      const photos=await res.json();
-      photos.forEach(photo=>{
-        const card=document.querySelector('[data-product-key="'+String(photo.product_key).replace(/[^a-z0-9-]/g,'')+'"]');
-        const frame=card?.querySelector('.product-icon');
-        if(!frame||!photo.image_url)return;
-        const img=document.createElement('img');
-        img.src=photo.image_url;img.alt=card.querySelector('h3')?.textContent||'Fotografia do produto';
-        img.loading='lazy';frame.replaceChildren(img);
-      });
-    }catch(error){console.warn('Fotografias do catálogo indisponíveis.',error);}
-  })();
 })();
 </script>
 </body>
