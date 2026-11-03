@@ -1073,8 +1073,17 @@ if('serviceWorker' in navigator){
       var data = await response.json().catch(function () { return {}; });
       if (!response.ok || !data.token) throw new Error(data.error || 'Não foi possível validar o PIN.');
       localStorage.setItem('mbl_panel_session', data.token);
+      MBL_TOKEN = data.token;
       if (message) message.textContent = 'Acesso validado. A abrir o painel…';
-      window.location.reload();
+      document.getElementById('loginGate').style.display = 'none';
+      document.getElementById('privateMain').style.display = 'block';
+      await mblLoadMaterialChecklist();
+      await mblLoadOrders();
+      mblSubscribeOrders();
+      if (!window.mblMaterialPoll) window.mblMaterialPoll = setInterval(mblLoadMaterialChecklist, 30000);
+      if (!window.mblOrderPoll) window.mblOrderPoll = setInterval(mblLoadOrders, 20000);
+      if ('Notification' in window && Notification.permission === 'default') mblEnableNotifications();
+      if (message) message.textContent = '';
     } catch (error) {
       if (message) message.textContent = error && error.message ? error.message : 'Falha de ligação. Tenta novamente.';
     } finally {
