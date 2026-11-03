@@ -617,14 +617,15 @@ function payment(id){
 }
 function refund(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
- if(!confirm('Cancelar esta encomenda?'))return;
+ if(o.produced&&!confirm('Esta encomenda já foi produzida e os materiais foram descontados. Cancelar não repõe automaticamente o stock. Queres continuar?'))return;
+ if(!o.produced&&!confirm('Cancelar esta encomenda?'))return;
  const received=receivedOrder(o);
  if(received>0){
-  const value=Number(prompt('Valor a devolver (€):',received));
+  const value=Number(String(prompt('Valor a devolver (€):',received)||'').replace(',','.'));
   if(!Number.isFinite(value)||value<0||value>received)return alert('Valor inválido.');
   o.refunds=(o.refunds||0)+value;
  }
- o.status='Cancelada';save();
+ o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
 function statusOrder(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
@@ -632,19 +633,48 @@ function statusOrder(id){
  if(['Recebida','Em preparação','Pronta','Entregue'].includes(s)){o.status=s;save();}
 }
 function produce(id){
- const o=d.orders.find(x=>x.id===id);if(!o||o.produced)return alert('Já foi produzida.');
- const p=d.products.find(x=>x.id===o.productId);if(!p)return;
- if(!p.recipe.length)return alert('Adiciona primeiro os materiais à ficha técnica.');
- const usage=[];let cost=0;
+ const o=d.orders.find(x=>x.id===id);
+ if(!o)return;
+ if(o.produced)return alert('Esta encomenda já foi produzida. O stock não será descontado novamente.');
+ if(['Cancelada','Cancelado'].includes(String(o.status||'')))return alert('Não podes produzir uma encomenda cancelada.');
+ const p=d.products.find(x=>x.id===o.productId);
+ if(!p)return alert('Produto associado não encontrado. Abre a encomenda e confirma o produto.');
+ if(!Array.isArray(p.recipe)||!p.recipe.length)return alert('Adiciona primeiro os materiais à ficha técnica do produto.');
+ const required=new Map();
  for(const r of p.recipe){
-  const m=d.stock.find(x=>x.id===r.material),qty=r.qty*o.qty;
-  if(!m||m.qty<qty)return alert('Stock insuficiente: '+(m?.name||'material'));
-  usage.push({m,qty});cost+=m.unitCost*qty;
+  const qty=Number(r.qty)*Math.max(1,Number(o.qty)||1);
+  if(!r.material||!Number.isFinite(qty)||qty<=0)return alert('A ficha técnica contém uma quantidade inválida. Corrige-a antes de produzir.');
+  required.set(r.material,(required.get(r.material)||0)+qty);
  }
- if(!confirm('Confirmas a utilização dos materiais?'))return;
- usage.forEach(x=>x.m.qty-=x.qty);
- o.materialCost=cost;o.produced=true;save();
- alert('Materiais descontados do stock.');
+ const usage=[];const missing=[];
+ let cost=0;
+ for(const [materialId,qty] of required){
+  const m=d.stock.find(x=>x.id===materialId);
+  if(!m){missing.push('Material removido da lista: '+materialId);continue;}
+  const available=Number(m.qty)||0;
+  if(available+1e-9<qty){missing.push(m.name+': necessário '+qty+' '+(m.unit||'unidades')+', disponível '+available);continue;}
+  const unitCost=Number(m.unitCost)||0;
+  usage.push({material:materialId,name:m.name,qty,unit:m.unit||'unidades',unitCost});
+  cost+=unitCost*qty;
+ }
+ if(missing.length)return alert('Não foi descontado nenhum material. Stock/ficha técnica a corrigir:\n\n'+missing.join('\n'));
+ const summary=usage.map(x=>x.name+': '+x.qty+' '+x.unit).join('\n');
+ if(!confirm('Confirmas a produção desta encomenda?\n\nMateriais a descontar:\n'+summary+'\n\nCusto estimado: '+money(cost)))return;
+ // Revalidar imediatamente antes da alteração para não deixar stock negativo.
+ for(const x of usage){
+  const m=d.stock.find(v=>v.id===x.material);
+  if(!m||Number(m.qty)+1e-9<x.qty)return alert('O stock foi alterado. Não foi descontado nenhum material. Atualiza e tenta novamente.');
+ }
+ usage.forEach(x=>{
+  const m=d.stock.find(v=>v.id===x.material);
+  m.qty=Number(Math.max(0,Number(m.qty)-x.qty).toFixed(4));
+ });
+ o.materialCost=Number(cost.toFixed(2));
+ o.produced=true;
+ o.producedAt=new Date().toISOString();
+ o.materialsUsed=usage;
+ save();
+ alert('Produção registada. Materiais descontados uma única vez.');
 }
 function saveDeliveryRate(){
  const rate=Number($('deliveryRate').value);
@@ -879,9 +909,10 @@ function draw(){
    <b>${esc(o.client)}</b> · ${esc(o.product)}
    <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
    <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
+   ${o.produced?'<p class="small good">✓ Produzida em '+esc(o.producedAt?new Date(o.producedAt).toLocaleString('pt-PT'):'data anterior')+' · Custo de materiais: '+money(o.materialCost||0)+'</p><div class="small">'+(Array.isArray(o.materialsUsed)?o.materialsUsed.map(x=>esc(x.name)+': '+Number(x.qty)+' '+esc(x.unit||'unidades')).join(' · '):'Registo de produção anterior sem detalhe de materiais.')+'</div>':''}
    <p class="small">${esc(o.notes||'')}</p>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
-   <button onclick="produce('${o.id}')">Confirmar produção</button>
+   <button onclick="produce('${o.id}')" ${o.produced?'disabled title="Produção já registada"':''}>${o.produced?'✓ Produção registada':'Confirmar produção'}</button>
    <button onclick="statusOrder('${o.id}')">Alterar estado</button>
    <button class="danger" onclick="refund('${o.id}')">Cancelar / devolver</button>
   </div>`
