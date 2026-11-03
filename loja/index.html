@@ -351,8 +351,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Morada: ' + (payload.address || 'A combinar'),
         'Detalhes: ' + (payload.notes || 'Sem detalhes adicionais'),
         'Podem confirmar disponibilidade, preço e entrega?'
-      ].join('
-');
+      ].join(String.fromCharCode(10));
 
       const success = document.createElement('div');
       success.className = 'card center';
