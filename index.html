@@ -276,7 +276,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   </div>
   <div class="card">
    <h2>Privacidade e armazenamento</h2>
-   <p class="muted">Não existe login nesta versão. Os dados são guardados neste navegador e dispositivo. O endereço do site é público, por isso não guardes dados sensíveis de clientes.</p>
+   <p class="muted">O painel tem acesso protegido por PIN. A lista de compras e as encomendas recebidas pela loja online sincronizam através da nuvem. Os registos internos de compras, stock, despesas, percentagens e encomendas criadas manualmente continuam guardados neste dispositivo; usa a cópia de segurança para os transferir. Não partilhes o PIN.</p>
   </div>
  </section>
 
@@ -913,7 +913,7 @@ if(MBL_TOKEN){
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
 
-// Não existe login nem autenticação nesta aplicação.
+// O acesso ao painel é validado pelo serviço seguro smart-action.
 if('serviceWorker' in navigator){
  navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
