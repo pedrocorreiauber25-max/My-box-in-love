@@ -114,6 +114,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   <button data-tab="orders">Encomendas</button>
   <button data-tab="products">Produtos</button>
   <button data-tab="purchases">Compras</button>
+  <button data-tab="materials">Lista de compras</button>
   <button data-tab="stock">Stock</button>
   <button data-tab="finance">Financeiro</button>
   <button data-tab="clients">Clientes</button>
@@ -209,6 +210,13 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="addPurchase()">Registar compra</button>
   </div>
   <div class="card"><h2>Histórico de compras</h2><div id="purchaselist"></div></div>
+ </section>
+
+ <section id="materials" class="section">
+  <div class="row"><h1 style="flex:1">Lista de compras inicial</h1><span class="pill" id="materialProgress">0% comprado</span></div>
+  <p class="muted">Lista-base criada a partir do menu atual. Assinala o que já tens. Compra alimentos frescos conforme as encomendas confirmadas para evitar desperdício.</p>
+  <div id="materialChecklist"></div>
+  <div class="notice"><b>Dica CEO:</b> começa por embalagens, utensílios e decoração reutilizável. Compra produtos frescos e chocolates em quantidades pequenas, de acordo com as encomendas da semana.</div>
  </section>
 
  <section id="stock" class="section">
@@ -313,6 +321,7 @@ try {
 } catch(e) { d=defaults; }
 d.products=(d.products||[]).map(p=>({...p,recipe:p.recipe||[],price:Number(p.price)||0}));
 d.productImages=d.productImages||{};
+d.materialChecklist=d.materialChecklist||{};
 d.orders=d.orders||[];
 d.stock=d.stock||[];
 d.purchases=d.purchases||[];
@@ -576,6 +585,40 @@ function restore(){
  reader.readAsText(file);
 }
 
+const materialGroups=[
+ {name:"Embalagens e apresentação",items:[
+  ["box-basic","Caixas para Box Basic (tamanho adequado)"],["box-classic","Caixas maiores para Box Classic"],["box-kids","Caixas para Box Kids"],["box-festa","Caixas/embalagens para Festa na Box"],["gift-box","Caixas de presente em vários formatos"],["bouquet-wrap","Papel próprio para embrulhar buquês"],["cellophane","Celofane transparente e/ou película alimentar"],["filler","Papel de enchimento / palha decorativa"],["ribbon","Fitas e laços decorativos"],["stickers","Autocolantes/etiquetas da marca"],["cards","Cartões de mensagem e agradecimento"],["food-trays","Bases, formas e divisórias alimentares"],["cups","Copos e tampas para bebidas"],["cutlery","Talheres, guardanapos e palhinhas, se necessário"]
+ ]},
+ {name:"Alimentos e bebidas do menu",items:[
+  ["croissant","Croissants simples"],["choco-croissant","Croissants de chocolate"],["nata","Mini pastéis de nata"],["pancakes","Mini panquecas"],["waffles","Waffles"],["milk-bread","Pão de leite"],["cheese-bread","Pães de queijo"],["toast","Mini tostas"],["cheese","Queijo fatiado"],["ham","Fiambre fatiado"],["salami","Salame"],["yogurt","Iogurtes naturais"],["fruit","Fruta fresca variada"],["granola","Granola"],["honey","Mel"],["butter","Manteiga"],["nutella","Nutella / mini Nutella"],["biscoff","Creme ou bolacha Biscoff"],["belgian","Mini bolachas belgas"],["palmier","Mini palmieres"],["cookies","Cookies, brownies e bolachas para a Box Kids"],["macarons","Macarons"],["kinder","Produtos Kinder"],["ferrero","Ferrero Rocher"],["raffaello","Raffaello"],["milka","Chocolates Milka e outros chocolates premium"],["ucal","Ucal 350 ml"],["compal","Compal Laranja 200 ml"],["frappuccino","Frappuccino Starbucks 250 ml"]
+ ]},
+ {name:"Personalização, flores e decoração",items:[
+  ["balloons","Balões temáticos"],["balloon-pump","Bomba para encher balões"],["message-plates","Placas de mensagem / toppers"],["frames","Molduras 20×23 cm pretas e brancas"],["photo-paper","Papel fotográfico para fotos estilo Polaroid"],["photo-sleeves","Mangas/envelopes para fotografias"],["roses","Rosas e material para as conservar"],["bouquet-sticks","Paus próprios para espetar doces no buquê"],["floral-wrap","Papel e fita para acabamento de buquês"],["gift-tags","Etiquetas/cartões para presentes"]
+ ]},
+ {name:"Higiene e preparação alimentar",items:[
+  ["gloves","Luvas descartáveis próprias para manipulação alimentar"],["hairnets","Toucas ou proteção de cabelo"],["food-boxes","Caixas herméticas para conservar alimentos"],["film","Película aderente e folha de alumínio"],["baking-paper","Papel vegetal"],["kitchen-roll","Rolo de cozinha"],["sanitizer","Detergente e desinfetante adequados às superfícies alimentares"],["handwash","Sabão para mãos"],["labels-date","Etiquetas para identificar datas e conservação"]
+ ]},
+ {name:"Ferramentas e pequenos equipamentos",items:[
+  ["scissors","Tesoura"],["cutter","X-ato/cortador"],["tape","Fita-cola e fita dupla face"],["glue-gun","Pistola de cola quente e recargas"],["ruler","Régua e base de corte"],["scale","Balança de cozinha"],["thermometer","Termómetro de frigorífico"],["storage","Caixas organizadoras para stock"]
+ ]}
+];
+function toggleMaterialItem(id,checked){
+ d.materialChecklist=d.materialChecklist||{};d.materialChecklist[id]=checked;
+ localStorage.setItem('mbl',JSON.stringify(d));drawMaterialChecklist();
+}
+function drawMaterialChecklist(){
+ const host=$('materialChecklist');if(!host)return;
+ let total=0,done=0;
+ host.innerHTML=materialGroups.map(group=>{
+  const rows=group.items.map(([id,name])=>{
+   total++;const checked=!!d.materialChecklist?.[id];if(checked)done++;
+   return '<label class="item row" style="align-items:center;gap:10px"><input type="checkbox" style="width:20px;height:20px;margin:0" '+(checked?'checked':'')+' onchange="toggleMaterialItem(\''+id+'\',this.checked)"><span style="flex:1">'+esc(name)+'</span><span class="small">'+(checked?'Comprado':'Por comprar')+'</span></label>';
+  }).join('');
+  return '<div class="card"><h2>'+esc(group.name)+'</h2>'+rows+'</div>';
+ }).join('');
+ const pct=total?Math.round(done/total*100):0;
+ $('materialProgress').textContent=done+' de '+total+' · '+pct+'% comprado';
+}
 function draw(){
  $('oproduct').innerHTML=d.products.map(p=>
   `<option value="${p.id}">${esc(p.name)} · ${esc(p.priceLabel||money(p.price))}</option>`
@@ -681,6 +724,7 @@ function draw(){
  $('sharereserve').value=sh.reserve;
 }
 
+drawMaterialChecklist();
 draw();
 go('home');
 const MBL_API='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action';
