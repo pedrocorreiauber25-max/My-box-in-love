@@ -1,24 +1,38 @@
-# My Box in Love — ficheiros iniciais
+# My Box in Love
 
-Esta pasta contém a pré-versão visual e funcional local da aplicação, com o logótipo e os ficheiros necessários para a instalação PWA.
+Aplicação de gestão privada e loja online da My Box in Love.
 
-## Publicar no GitHub Pages
-1. Abrir o repositório `My-box-in-love` no GitHub.
-2. Escolher **Add file → Upload files**.
-3. Enviar todos os ficheiros desta pasta (incluindo `assets/`), mantendo a estrutura.
-4. Carregar em **Commit changes**.
-5. Ir a **Settings → Pages**.
-6. Em **Build and deployment**, escolher **Deploy from a branch**, branch `main`, pasta `/ (root)` e guardar.
-7. Aguardar a publicação. O endereço será `https://pedrocorreiauber25-max.github.io/My-box-in-love/` se o repositório continuar com este nome e a conta mantiver este endereço.
+## Endereços
 
-## Estado e segurança — ler antes de usar
-- Esta é uma pré-versão de demonstração. Os registos ficam apenas no armazenamento local do navegador/dispositivo.
-- O botão de entrada não valida credenciais. Não é uma autenticação real.
-- Não introduzir nomes, contactos, moradas ou outros dados reais de clientes nesta versão.
-- Não existe ainda sincronização entre dispositivos, cópia de segurança na nuvem nem controlo de acesso privado.
-- A próxima etapa é configurar Supabase Auth + base de dados + políticas RLS e ligar a aplicação a esses serviços. Nunca colocar a chave `service_role` no código público.
+- **Loja online:** https://myboxinlove.pages.dev/
+- **Painel privado da Raquel:** https://pedrocorreiauber25-max.github.io/My-box-in-love/
+- **Acompanhamento de encomenda:** https://myboxinlove.pages.dev/loja/acompanhar.html?token=TOKEN_PRIVADO
+- **Página de entrega do motorista:** https://myboxinlove.pages.dev/loja/driver.html?token=TOKEN_PRIVADO
 
-## Conteúdo
-- `index.html` — interface e funcionalidades de demonstração.
-- `assets/logo-my-box-in-love.jpg` — logótipo fornecido.
-- `manifest.webmanifest` e `sw.js` — instalação e cache PWA.
+Os dois últimos endereços precisam do token privado criado para cada encomenda. Não remover o token nem partilhar publicamente estes links.
+
+## Estrutura
+
+- `index.html` — painel privado, gestão, financeiro, stock, compras, clientes, encomendas e cópias de segurança.
+- `loja/index.html` — loja online e formulário de encomenda.
+- `loja/acompanhar.html` — estado, pagamento e localização em direto quando o motorista ativa a partilha.
+- `acompanhar.html` — endereço antigo compatível; mantém o mesmo acompanhamento atualizado.
+- `loja/driver.html` — partilha temporária da localização durante a entrega.
+- `manifest.json` e `sw.js` — instalação PWA e cache do painel.
+- `assets/` — logótipo e recursos visuais.
+- `backend/` — recursos do servidor, quando aplicável.
+
+## Dados e segurança
+
+- O acesso ao painel é protegido por PIN validado no servidor. **Não alterar o PIN nem colocar segredos no código público.**
+- As encomendas online, respetivos estados e a lista partilhada de materiais usam o Supabase.
+- Os registos internos do painel (por exemplo, compras, stock, despesas e encomendas manuais) são guardados no armazenamento local do navegador deste dispositivo.
+- Usa regularmente **Definições → Cópia de segurança → Exportar cópia de segurança** e guarda o ficheiro JSON num local seguro.
+- A localização do motorista só é partilhada durante a entrega e deve ser terminada ao marcar a encomenda como entregue.
+- Nunca publicar tokens de acompanhamento, tokens de motorista ou chaves privadas.
+
+## Publicação
+
+O painel está preparado para GitHub Pages na raiz do repositório, branch `main`. A loja pública e as páginas de acompanhamento/entrega estão alojadas em `myboxinlove.pages.dev`.
+
+Depois de alterações ao `sw.js`, o número da cache deve ser incrementado para os dispositivos receberem a nova versão.
