@@ -113,16 +113,16 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  </div>
  <p class="muted">O teu negócio, organizado num só lugar.</p>
 
- <nav class="tabs">
-  <button data-tab="home">Painel</button>
-  <button data-tab="orders">Encomendas</button>
-  <button data-tab="products">Produtos</button>
-  <button data-tab="purchases">Compras</button>
-  <button data-tab="materials">Lista de compras</button>
-  <button data-tab="stock">Stock</button>
-  <button data-tab="finance">Financeiro</button>
-  <button data-tab="clients">Clientes</button>
-  <button data-tab="settings">Definições</button>
+ <nav class="tabs" aria-label="Secções da gestão">
+  <button type="button" data-tab="home" onclick="go('home')">Painel</button>
+  <button type="button" data-tab="orders" onclick="go('orders')">Encomendas</button>
+  <button type="button" data-tab="products" onclick="go('products')">Produtos</button>
+  <button type="button" data-tab="purchases" onclick="go('purchases')">Compras</button>
+  <button type="button" data-tab="materials" onclick="go('materials')">Lista de compras</button>
+  <button type="button" data-tab="stock" onclick="go('stock')">Stock</button>
+  <button type="button" data-tab="finance" onclick="go('finance')">Financeiro</button>
+  <button type="button" data-tab="clients" onclick="go('clients')">Clientes</button>
+  <button type="button" data-tab="settings" onclick="go('settings')">Definições</button>
  </nav>
 
  <section id="home" class="section show">
@@ -250,9 +250,10 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  </section>
 
  <section id="stock" class="section">
-  <h1>Stock disponível</h1>
-  <p class="muted">O stock pode ser controlado em unidades, metros, centímetros, gramas, mililitros, porções ou outra medida. Exemplo: compras 1 rolo de 50 metros de fita e registas 50 metros; cada caixa pode consumir apenas 0,35 metros.</p>
-  <div class="card"><div id="stocklist"></div></div>
+  <div class="row"><h1 style="flex:1">Stock disponível</h1><button class="primary" type="button" onclick="addStockItem()">+ Novo material</button></div>
+  <p class="muted">Entradas através de compras, correções de quantidade, custo médio, fichas técnicas e alertas de stock baixo.</p>
+  <div class="grid" id="stockSummary"></div>
+  <div class="card"><h2>Materiais e quantidades</h2><div id="stocklist"></div></div>
  </section>
 
  <section id="finance" class="section">
@@ -385,8 +386,17 @@ function save(){
  draw();
 }
 function go(id){
- document.querySelectorAll('.section').forEach(s=>s.classList.toggle('show',s.id===id));
- document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('primary',b.dataset.tab===id));
+ const target=document.getElementById(String(id));
+ if(!target||!target.classList.contains('section'))return false;
+ document.querySelectorAll('#privateMain .section').forEach(s=>{
+  const active=s===target;s.classList.toggle('show',active);s.hidden=!active;
+ });
+ document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
+  const active=b.dataset.tab===String(id);b.classList.toggle('primary',active);b.setAttribute('aria-current',active?'page':'false');
+ });
+ if(id==='materials')drawMaterialChecklist();
+ if(id==='stock')draw();
+ return true;
 }
 document.querySelector('.tabs')?.addEventListener('click',event=>{const button=event.target.closest('button[data-tab]');if(!button)return;event.preventDefault();const id=button.dataset.tab;if(!document.getElementById(id)?.classList.contains('section'))return;go(id);});
 
@@ -515,6 +525,29 @@ function deleteExtra(id){
  if(confirm('Eliminar este adicional?')){
   d.extras=d.extras.filter(x=>x.id!==id);save();
  }
+}
+function addStockItem(){
+ const name=prompt('Nome do material:');if(!name||!name.trim())return;
+ if(d.stock.some(m=>String(m.name).trim().toLowerCase()===name.trim().toLowerCase()))return alert('Material já existente. Usa Acertar quantidade.');
+ const unit=(prompt('Unidade (unidades, metros, gramas, ml…):','unidades')||'unidades').trim();
+ const raw=prompt('Quantidade inicial:','0');if(raw===null)return;
+ const qty=Number(String(raw).replace(',','.'));if(!Number.isFinite(qty)||qty<0)return alert('Quantidade inválida.');
+ const c=prompt('Custo total desta quantidade (€):','0');if(c===null)return;
+ const cost=Number(String(c).replace(',','.'));if(!Number.isFinite(cost)||cost<0)return alert('Custo inválido.');
+ d.stock.push({id:uid(),name:name.trim(),qty,unit:unit||'unidades',unitCost:qty?cost/qty:0,minQty:0});save();
+}
+function adjustStock(id){
+ const m=d.stock.find(x=>x.id===id);if(!m)return;
+ const raw=prompt('Acerto de quantidade: positivo para entrada, negativo para saída. Atual: '+m.qty+' '+(m.unit||'unidades'),'0');if(raw===null)return;
+ const delta=Number(String(raw).replace(',','.'));if(!Number.isFinite(delta)||delta===0)return alert('Acerto inválido.');
+ if((Number(m.qty)||0)+delta<0)return alert('O stock não pode ficar negativo.');
+ m.qty=Number(((Number(m.qty)||0)+delta).toFixed(4));save();
+}
+function setStockMinimum(id){
+ const m=d.stock.find(x=>x.id===id);if(!m)return;
+ const raw=prompt('Quantidade mínima ('+(m.unit||'unidades')+'):',String(m.minQty||0));if(raw===null)return;
+ const n=Number(String(raw).replace(',','.'));if(!Number.isFinite(n)||n<0)return alert('Mínimo inválido.');
+ m.minQty=n;save();
 }
 function deleteStock(id){
  const m=d.stock.find(x=>x.id===id);if(!m)return;
@@ -774,18 +807,19 @@ function draw(){
   <button class="danger" onclick="deleteExtra('${x.id}')">Eliminar</button></div>`
  ).join('')||'Ainda não existem adicionais.';
 
- $('stocklist').innerHTML=d.stock.map(m=>{
-  const unit=m.unit||'unidades';
-  const recipeUses=d.products.flatMap(p=>(p.recipe||[]).filter(r=>r.material===m.id).map(r=>esc(p.name)+' — '+r.qty+' '+unit+' por produto'));
-  return `<div class="item"><b>${esc(m.name)}</b>
-  <div><strong>${Number(m.qty.toFixed(3))} ${esc(unit)}</strong> disponíveis</div>
-  <div>Custo médio: ${money(m.unitCost)} / ${esc(unit)}</div>
-  <div>Valor em stock: ${money(m.qty*m.unitCost)}</div>
-  <div class="small">${recipeUses.length?'Ficha técnica: '+recipeUses.join(' · '):'Ainda não associado a fichas técnicas.'}</div>
-  <button class="danger" onclick="deleteStock('${m.id}')">Eliminar do stock</button></div>`;
- }).join('')||'Ainda não existem materiais.';
-
- $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`
+ const stockValue=d.stock.reduce((sum,m)=>sum+(Number(m.qty)||0)*(Number(m.unitCost)||0),0);
+  const lowStock=d.stock.filter(m=>(Number(m.qty)||0)<=(Number(m.minQty)||0));
+  $('stockSummary').innerHTML=`<div class="card"><span class="small">Materiais</span><div class="metric">${d.stock.length}</div></div><div class="card"><span class="small">Valor estimado</span><div class="metric">${money(stockValue)}</div></div><div class="card"><span class="small">Stock baixo</span><div class="metric">${lowStock.length}</div></div>`;
+  $('stocklist').innerHTML=d.stock.map(m=>{
+   const unit=m.unit||'unidades',qty=Number(m.qty)||0,cost=Number(m.unitCost)||0,min=Number(m.minQty)||0;
+   const recipeUses=d.products.flatMap(p=>(p.recipe||[]).filter(r=>r.material===m.id).map(r=>esc(p.name)+' — '+r.qty+' '+unit+' por produto'));
+   return `<div class="item"><b>${esc(m.name)}</b> ${qty<=min?'<span class="pill">Stock baixo</span>':''}
+   <div><strong>${qty.toLocaleString('pt-PT',{maximumFractionDigits:4})} ${esc(unit)}</strong> disponíveis · mínimo: ${min} ${esc(unit)}</div>
+   <div>Custo médio: ${money(cost)} / ${esc(unit)}</div><div>Valor estimado: ${money(qty*cost)}</div>
+   <div class="small">${recipeUses.length?'Ficha técnica: '+recipeUses.join(' · '):'Sem ficha técnica associada.'}</div>
+   <button type="button" onclick="adjustStock('${m.id}')">Acertar quantidade</button><button type="button" onclick="setStockMinimum('${m.id}')">Definir mínimo</button><button class="danger" type="button" onclick="deleteStock('${m.id}')">Eliminar</button></div>`;
+  }).join('')||'Ainda não existem materiais.'; 
+  $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`
   <div class="item"><b>${esc(p.name)}</b>
   <div>${Number(p.qty)} ${esc(p.unit||'unidades')} · ${money(p.price)}</div>
   <div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`
