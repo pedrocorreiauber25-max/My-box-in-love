@@ -17,7 +17,8 @@
 header{text-align:center;padding:38px 16px 30px;background:linear-gradient(145deg,#e9b8c2,#f8e5e9)}
 .logo{width:100px;height:100px;object-fit:cover;border-radius:26px;box-shadow:0 8px 24px #80502f22}
 h1{margin:12px 0 0;letter-spacing:4px;font-size:30px}.script{font:italic 25px Georgia;color:var(--brown)}
-header p{margin:12px 0 0;color:#684b43}\n.photo-gallery{margin:0 0 18px;padding:14px;overflow:hidden}.photo-gallery img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;border-radius:14px;background:#fff7f8}.gallery-copy{text-align:center;padding:10px 12px 16px}
+header p{margin:12px 0 0;color:#684b43}
+.photo-gallery{margin:0 0 18px;padding:14px;overflow:hidden}.photo-gallery img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;border-radius:14px;background:#fff7f8}.gallery-copy{text-align:center;padding:10px 12px 16px}
 main{max-width:980px;margin:24px auto;padding:0 15px}
 .intro{text-align:center;padding:22px 10px}.eyebrow{letter-spacing:2px;text-transform:uppercase;font-size:11px;color:#a47778;font-weight:800}
 h2{color:var(--brown);margin:0 0 12px}.muted{color:#927f79;line-height:1.6}
@@ -58,7 +59,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <h2>Surpreende quem amas</h2>
 <p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p><p class="note">Boxes: mínimo de 24 horas. Caixas Presente e Buquês: mínimo de 48 horas.</p>
 </section>
-<section class="photo-gallery card" aria-label="Galeria de produtos"><div class="gallery-copy"><div class="eyebrow">Um presente com personalidade</div><h2>Feito para surpreender</h2><p class="muted">Descobre algumas das criações My Box in Love. Cada detalhe é preparado com carinho e pode ser personalizado para a tua ocasião.</p></div><img src="../assets/galeria-produtos.webp" alt="Seleção de fotografias reais das boxes e presentes My Box in Love" loading="lazy"></section>\n<section class="grid" aria-label="Boxes disponíveis">
+<section class="photo-gallery card" aria-label="Galeria de produtos"><div class="gallery-copy"><div class="eyebrow">Um presente com personalidade</div><h2>Feito para surpreender</h2><p class="muted">Descobre algumas das criações My Box in Love. Cada detalhe é preparado com carinho e pode ser personalizado para a tua ocasião.</p></div><img src="../assets/galeria-produtos.webp" alt="Seleção de fotografias reais das boxes e presentes My Box in Love" loading="lazy"></section>
+<section class="grid" aria-label="Boxes disponíveis">
 <article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p></article>
 <article class="card product" data-product-key="box-classic-para-dividir"><div class="product-icon">🥐</div><h3>Box Classic · Para dividir</h3><p class="muted">Seleção generosa de delícias matinais, 3 opções de fruta, charcutaria, macarons, complementos e 2 bebidas.</p><span class="pill">Para partilhar</span><p class="price">65 €</p></article>
 <article class="card product" data-product-key="box-kids-individual"><div class="product-icon">🍭</div><h3>Box Kids · Individual</h3><p class="muted">Pão de leite, mini panquecas, croissant, pão de queijo, waffles, brownie, cookies, fruta e Kinder.</p><span class="pill">Infantil</span><p class="price">36 €</p></article>
@@ -342,7 +344,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Produto: ' + payload.product,
         ...selectedExtras.map(x=>'Adicional: '+x.name+' — '+euro(x.price)),
         ...(roses?[ 'Rosas: '+roses+' × 3 € = '+euro(roses*3) ]:[]),
-        'Resumo de preços: '+document.getElementById('summaryLines').innerText.replace(/\n/g,' | '),
+        'Resumo de preços: '+document.getElementById('summaryLines').innerText.replace(/
+/g,' | '),
         'Total indicativo: '+summaryTotal.textContent,
         'Entrega: ' + payload.delivery,
         'Data pretendida: ' + (payload.date || 'A combinar'),
@@ -350,7 +353,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
         'Morada: ' + (payload.address || 'A combinar'),
         'Detalhes: ' + (payload.notes || 'Sem detalhes adicionais'),
         'Podem confirmar disponibilidade, preço e entrega?'
-      ].join('\n');
+      ].join('
+');
 
       const success = document.createElement('div');
       success.className = 'card center';
