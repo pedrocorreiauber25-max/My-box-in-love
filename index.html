@@ -44,6 +44,9 @@ button{
  background:white;color:var(--brown);font-weight:700;
  cursor:pointer;margin:3px;
 }
+.action-link{display:inline-block;border-radius:11px;padding:11px 14px;margin:3px;background:#fff;color:var(--brown);font-weight:800;text-decoration:none;border:1px solid var(--line)}
+.action-link.primary{background:var(--brown);color:#fff;border-color:var(--brown)}
+
 button.primary{background:var(--brown);color:white}
 button.danger{background:#fbe9e9;color:#a33}
 input,select,textarea{
@@ -106,6 +109,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <div class="row">
   <h1 style="flex:1">Olá, Raquel ❤️</h1>
   <span class="pill">Área privada · <button onclick="mblLogout()">Sair</button></span>
+  <a class="action-link primary" href="https://myboxinlove.pages.dev/" target="_blank" rel="noopener">Abrir loja online ↗</a>
  </div>
  <p class="muted">O teu negócio, organizado num só lugar.</p>
 
