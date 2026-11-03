@@ -1139,25 +1139,33 @@ if('serviceWorker' in navigator){
 
 <script id="MBL_TAB_NAV_FIX">
 (function(){
- document.addEventListener('click',function(event){
-  var button=event.target&&event.target.closest?event.target.closest('.tabs button[data-tab]'):null;
-  if(!button)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  var id=button.getAttribute('data-tab');
-  var target=document.getElementById(id);
-  if(!target||!target.classList.contains('section'))return;
-  document.querySelectorAll('#privateMain .section').forEach(function(section){
-   section.removeAttribute('hidden');
-   section.classList.toggle('show',section===target);
-  });
-  document.querySelectorAll('.tabs button[data-tab]').forEach(function(tab){
-   var active=tab.getAttribute('data-tab')===id;
-   tab.classList.toggle('primary',active);
-   tab.setAttribute('aria-current',active?'page':'false');
-  });
+ function showSection(id){
+  var main=document.getElementById('privateMain');
+  var target=document.getElementById(String(id||''));
+  if(!main||!target||!target.classList.contains('section'))return false;
+  var sections=main.querySelectorAll('section.section');
+  for(var i=0;i<sections.length;i++){
+   sections[i].classList.toggle('show',sections[i]===target);
+   sections[i].style.display=sections[i]===target?'block':'none';
+   sections[i].removeAttribute('hidden');
+  }
+  var tabs=main.querySelectorAll('.tabs button[data-tab]');
+  for(var j=0;j<tabs.length;j++){
+   var active=tabs[j].getAttribute('data-tab')===String(id);
+   tabs[j].classList.toggle('primary',active);
+   tabs[j].setAttribute('aria-current',active?'page':'false');
+  }
   if(id==='materials'&&typeof window.drawMaterialChecklist==='function')window.drawMaterialChecklist();
   if(id==='stock'&&typeof window.draw==='function')window.draw();
+  return true;
+ }
+ window.go=showSection;
+ document.addEventListener('click',function(event){
+  var button=event.target&&event.target.closest?event.target.closest('#privateMain .tabs button[data-tab]'):null;
+  if(!button)return;
+  event.preventDefault();
+  event.stopPropagation();
+  showSection(button.getAttribute('data-tab'));
  },true);
 })();
 </script>
