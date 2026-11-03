@@ -1,38 +1,55 @@
 # My Box in Love
 
-Aplicação de gestão privada e loja online da My Box in Love.
+Loja pública, painel privado e acompanhamento de encomendas da My Box in Love.
 
 ## Endereços
+- Loja pública: https://myboxinlove.pages.dev/
+- Painel privado: https://pedrocorreia25-max.github.io/My-box-in-love/
+- Acompanhamento: https://myboxinlove.pages.dev/acompanhar.html?token=TOKEN_PRIVADO
+- Página do motorista: https://myboxinlove.pages.dev/driver.html?token=TOKEN_PRIVADO
 
-- **Loja online:** https://myboxinlove.pages.dev/
-- **Painel privado da Raquel:** https://pedrocorreiauber25-max.github.io/My-box-in-love/
-- **Acompanhamento de encomenda:** https://myboxinlove.pages.dev/acompanhar.html?token=TOKEN_PRIVADO
-- **Página de entrega do motorista:** https://myboxinlove.pages.dev/loja/driver.html?token=TOKEN_PRIVADO
+## Componentes
+- `loja/index.html`: catálogo, formulário de pedido, adicionais, cálculo de entrega e envio ao backend.
+- `loja/acompanhar.html`: acompanhamento privado da encomenda e instruções de pagamento autorizadas.
+- `index.html`: painel privado de gestão, encomendas, operações e notificações.
+- `driver.html`: página do motorista, navegação Waze e partilha temporária de localização.
+- `assets/`: identidade visual e fotografias reais da loja.
+- `backend/supabase/schema.sql`: estrutura inicial da base de dados.
 
-Os dois últimos endereços precisam do token privado criado para cada encomenda. Não remover o token nem partilhar publicamente estes links.
+## Backend Supabase
+Projeto: `tlhcwzpyuhitjxymapbm`
 
-## Estrutura
+Edge Functions ativas:
+- `smart-action`: autenticação do painel, gestão operacional, encomendas, links de motorista e notificações.
+- `super-handler`: receção e validação de pedidos públicos, preços oficiais, antecedência mínima, geocodificação, cálculo de rota, tracking e localização do motorista.
 
-- `index.html` — painel privado, gestão, financeiro, stock, compras, clientes, encomendas e cópias de segurança.
-- `loja/index.html` — loja online e formulário de encomenda.
-- `loja/acompanhar.html` — estado, pagamento e localização em direto quando o motorista ativa a partilha.
-- `acompanhar.html` — endereço antigo compatível; mantém o mesmo acompanhamento atualizado.
-- `loja/driver.html` — partilha temporária da localização durante a entrega.
-- `manifest.json` e `sw.js` — instalação PWA e cache do painel.
-- `assets/` — logótipo e recursos visuais.
-- `backend/` — recursos do servidor, quando aplicável.
+A loja envia os pedidos para `super-handler`. Os preços dos produtos e adicionais são validados no servidor; o preço enviado pelo navegador não é considerado autoridade. Os pedidos ficam guardados em `mbl_orders`. A leitura pública de uma encomenda exige o token privado de acompanhamento.
 
-## Dados e segurança
+## Catálogo base
+- Box Basic · Individual — 33 €
+- Box Classic · Para dividir — 65 €
+- Box Kids · Individual — 36 €
+- Festa na Box — 75 €
+- Caixa Presente — 40 € a 70 €
+- Buquê de Doces — 45 € a 70 €
+- Pedido personalizado — preço confirmado pela loja.
 
-- O acesso ao painel é protegido por PIN validado no servidor. **Não alterar o PIN nem colocar segredos no código público.**
-- As encomendas online, respetivos estados e a lista partilhada de materiais usam o Supabase.
-- Os registos internos do painel (por exemplo, compras, stock, despesas e encomendas manuais) são guardados no armazenamento local do navegador deste dispositivo.
-- Usa regularmente **Definições → Cópia de segurança → Exportar cópia de segurança** e guarda o ficheiro JSON num local seguro.
-- A localização do motorista só é partilhada durante a entrega e deve ser terminada ao marcar a encomenda como entregue.
-- Nunca publicar tokens de acompanhamento, tokens de motorista ou chaves privadas.
+Adicionais com preço fixo: balão temático (4 €), placa de mensagem (3 €), quadro personalizado (15 €), trio de fotos Polaroid (5 €) e rosas (3 € por unidade, até 30).
 
-## Publicação
+## Regras de encomenda
+- Boxes standard: pelo menos 24 horas de antecedência.
+- Caixa Presente e Buquê de Doces: pelo menos 48 horas.
+- Entrega ao domicílio: morada localizada e preço calculado por rota rodoviária antes do envio.
+- Levantamento: a combinar com a loja.
+- O pedido inicial não é confirmação final da encomenda; disponibilidade, total e pagamento são confirmados pela equipa.
 
-O painel está preparado para GitHub Pages na raiz do repositório, branch `main`. A loja pública e as páginas de acompanhamento/entrega estão alojadas em `myboxinlove.pages.dev`.
+## Segurança e operação
+- Nunca colocar a chave `service_role`, segredos VAPID ou PIN no frontend/repositório.
+- As ações administrativas usam sessão validada no servidor.
+- O link de acompanhamento é privado e assinado; não deve ser partilhado.
+- O link do motorista é temporário, assinado e limitado a entregas ao domicílio.
+- A localização do motorista só é partilhada durante a entrega e é desligada ao terminar.
+- Não criar encomendas de teste nem pagamentos fictícios em produção.
 
-Depois de alterações ao `sw.js`, o número da cache deve ser incrementado para os dispositivos receberem a nova versão.
+## Manutenção
+Após alterar ficheiros estáticos, confirmar a publicação no respetivo alojamento. Após alterar Edge Functions, confirmar que a versão ativa corresponde ao código pretendido. Testes de encomenda em produção devem ser feitos apenas com autorização explícita da proprietária.
