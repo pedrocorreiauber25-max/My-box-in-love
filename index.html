@@ -1158,7 +1158,7 @@ async function mblEnableNotifications(){
   if(!keyResult.publicKey)throw new Error('Não foi possível obter a chave pública de notificações.');
   let subscription=await registration.pushManager.getSubscription();
   if(!subscription){
-   subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:mblBase64UrlToBytes(keyResult.publicKey)});
+   subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:await mblBase64UrlToBytes(String(keyResult.publicKey).trim())});
   }
   await mblCall({action:'push_subscribe',subscription:subscription.toJSON()});
   const test=await mblCall({action:'push_test'});
