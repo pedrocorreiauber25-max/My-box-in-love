@@ -314,7 +314,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 const $ = id => document.getElementById(id);
 const money = n => (Number(n)||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random();
-const today = () => new Date().toISOString().slice(0,10);
+const localDateKey = date => {const x=date instanceof Date?date:new Date(date);if(!Number.isFinite(x.getTime()))return '';return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');};
+const today = () => localDateKey(new Date());
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const menuProducts = [
@@ -675,8 +676,8 @@ function drawCEOFinance(){
  const start=new Date(now);
  if(period==='week'){const day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);start.setHours(0,0,0,0);}
  else if(period==='month'){start.setDate(1);start.setHours(0,0,0,0);}
- const dateKey=date=>{if(!date)return '';const v=String(date).slice(0,10);return /^\\d{4}-\\d{2}-\\d{2}$/.test(v)?v:'';};
- const inPeriod=date=>{if(period==='all')return true;const key=dateKey(date);return !!key&&key>=dateKey(start.toISOString())&&key<=dateKey(now.toISOString());};
+ const dateKey=date=>{if(!date)return '';const v=String(date).slice(0,10);if(/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&String(date).length===10)return v;return localDateKey(new Date(date));};
+ const inPeriod=date=>{if(period==='all')return true;const key=dateKey(date);return !!key&&key>=dateKey(start)&&key<=dateKey(now);};
  const local=d.orders.filter(o=>inPeriod(o.date));
  const online=(window.mblOnlineOrders||[]).filter(o=>inPeriod(o.created_at||o.requested_date));
  const localSales=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+Number(o.total||0),0);
@@ -696,11 +697,11 @@ function drawCEOFinance(){
  // Gráfico de vendas: 7 dias, 5 semanas ou 6 meses conforme o período.
  const bins=[];
  if(period==='week'){
-  const monday=new Date(start);for(let i=0;i<7;i++){const dt=new Date(monday);dt.setDate(dt.getDate()+i);bins.push({key:dateKey(dt.toISOString()),label:['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i],value:0});}
+  const monday=new Date(start);for(let i=0;i<7;i++){const dt=new Date(monday);dt.setDate(dt.getDate()+i);bins.push({key:dateKey(dt),label:['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i],value:0});}
  }else if(period==='month'){
   for(let i=0;i<5;i++){const a=new Date(start);a.setDate(1+i*7);const b=new Date(a);b.setDate(b.getDate()+6);bins.push({key:dateKey(a.toISOString()),end:dateKey(b.toISOString()),label:'Sem. '+(i+1),value:0});}
  }else{
-  for(let i=5;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);const end=new Date(dt.getFullYear(),dt.getMonth()+1,0);bins.push({key:dateKey(dt.toISOString()),end:dateKey(end.toISOString()),label:dt.toLocaleDateString('pt-PT',{month:'short'}),value:0});}
+  for(let i=5;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);const end=new Date(dt.getFullYear(),dt.getMonth()+1,0);bins.push({key:dateKey(dt),end:dateKey(end.toISOString()),label:dt.toLocaleDateString('pt-PT',{month:'short'}),value:0});}
  }
  const addSale=(date,value)=>{const key=dateKey(date);if(!key)return;const bin=bins.find(b=>key>=b.key&&key<=(b.end||b.key));if(bin)bin.value+=value;};
  local.filter(o=>o.status!=='Cancelada').forEach(o=>addSale(o.date,Number(o.total||0)));
