@@ -388,7 +388,7 @@ function go(id){
  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('show',s.id===id));
  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('primary',b.dataset.tab===id));
 }
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
+document.querySelector('.tabs')?.addEventListener('click',event=>{const button=event.target.closest('button[data-tab]');if(!button)return;event.preventDefault();const id=button.dataset.tab;if(!document.getElementById(id)?.classList.contains('section'))return;go(id);});
 
 function receivedOrder(o){
  return Number(o.deposit||0)+(o.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0)-(Number(o.refunds)||0);
@@ -1011,7 +1011,7 @@ function mblSendTrackingWhatsApp(id){
  if(phone.startsWith('00'))phone=phone.slice(2);
  if(phone.length===9)phone='351'+phone;
  if(phone.length<10)return alert('O número de WhatsApp do cliente parece inválido.');
- const url='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(token);
+ const url='https://pedrocorreiauber25-max.github.io/My-box-in-love/loja/acompanhar.html?token='+encodeURIComponent(token);
  const message='Olá '+(order.customer_name||'')+'! ❤️ A tua encomenda My Box in Love foi registada. Podes acompanhar o estado através deste link privado: '+url+'\n\nObrigada pela preferência!';
  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(message),'_blank','noopener');
 }
