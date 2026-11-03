@@ -138,6 +138,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
     <div class="card"><span class="small">Encomendas no período</span><div class="metric" id="ceoOrders">0</div></div>
    </div>
    <p class="small" id="ceoPeriodNote">Inclui encomendas manuais e encomendas online. Só conta como recebido o dinheiro confirmado.</p>
+  <p class="small" id="businessSyncStatus" role="status">Os dados financeiros serão sincronizados entre os dispositivos.</p>
   </div>
   <div class="grid">
    <div class="card">Vendas recebidas<div class="metric" id="sales">0 €</div></div>
@@ -313,7 +314,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   </div>
   <div class="card">
    <h2>Privacidade e armazenamento</h2>
-   <p class="muted">O painel tem acesso protegido por PIN. A lista de compras e as encomendas recebidas pela loja online sincronizam através da nuvem. Os registos internos de compras, stock, despesas, percentagens e encomendas criadas manualmente continuam guardados neste dispositivo; usa a cópia de segurança para os transferir. Não partilhes o PIN.</p>
+   <p class="muted">O painel tem acesso protegido por PIN. A lista de compras, o stock, as encomendas manuais, compras e despesas sincronizam através da nuvem. Os produtos, adicionais e percentagens continuam guardados neste dispositivo; usa a cópia de segurança para os transferir. Não partilhes o PIN.</p>
   </div>
  </section>
 
@@ -425,6 +426,7 @@ function save(){
  localStorage.setItem('mbl',JSON.stringify(d));
  draw();
  mblQueueStockSync();
+ mblQueueBusinessSync();
 }
 function go(id){
  const target=document.getElementById(String(id));
@@ -1040,6 +1042,57 @@ async function mblSaveSharedStock(){
  localStorage.setItem('mbl',JSON.stringify(d));
 }
 let mblStockSyncTimer=null;
+let mblBusinessSyncTimer=null;
+let mblBusinessLastSync=null;
+let mblBusinessDirty=false;
+function mblBusinessPayload(){
+ return {orders:Array.isArray(d.orders)?d.orders:[],purchases:Array.isArray(d.purchases)?d.purchases:[],expenses:Array.isArray(d.expenses)?d.expenses:[]};
+}
+function mblHasBusinessData(data){
+ return !!(data&&(data.orders?.length||data.purchases?.length||data.expenses?.length));
+}
+async function mblLoadBusinessData(){
+ if(!MBL_TOKEN||mblBusinessDirty)return;
+ const state=$('businessSyncStatus');
+ try{
+  const result=await mblCall({action:'business_data_get'});
+  const remote=result.data||{orders:[],purchases:[],expenses:[]};
+  if(!mblBusinessLastSync){
+   if(mblHasBusinessData(remote)){
+    d.orders=remote.orders||[];d.purchases=remote.purchases||[];d.expenses=remote.expenses||[];
+    localStorage.setItem('mbl',JSON.stringify(d));draw();
+   }else if(mblHasBusinessData(mblBusinessPayload())){
+    await mblSaveSharedBusinessData();
+   }
+  }else if(result.updated_at&&result.updated_at!==mblBusinessLastSync){
+   d.orders=remote.orders||[];d.purchases=remote.purchases||[];d.expenses=remote.expenses||[];
+   localStorage.setItem('mbl',JSON.stringify(d));draw();
+  }
+  mblBusinessLastSync=result.updated_at||mblBusinessLastSync;
+  if(state)state.textContent='Encomendas, compras e despesas sincronizadas entre os dispositivos.';
+ }catch(e){if(state)state.textContent='Sincronização financeira indisponível: '+e.message;}
+}
+async function mblSaveSharedBusinessData(){
+ if(!MBL_TOKEN)return;
+ const state=$('businessSyncStatus');
+ mblBusinessDirty=true;
+ try{
+  const result=await mblCall({action:'business_data_save',data:mblBusinessPayload()});
+  mblBusinessLastSync=result.updated_at||mblBusinessLastSync;
+  mblBusinessDirty=false;
+  localStorage.setItem('mbl',JSON.stringify(d));
+  if(state)state.textContent='Encomendas, compras e despesas sincronizadas entre os dispositivos.';
+ }catch(e){
+  mblBusinessDirty=false;
+  if(state)state.textContent='Dados guardados neste dispositivo, mas a sincronização falhou: '+e.message;
+ }
+}
+function mblQueueBusinessSync(){
+ if(!MBL_TOKEN)return;
+ mblBusinessDirty=true;
+ if(mblBusinessSyncTimer)clearTimeout(mblBusinessSyncTimer);
+ mblBusinessSyncTimer=setTimeout(()=>mblSaveSharedBusinessData(),700);
+}
 function mblQueueStockSync(){
  if(mblStockSyncTimer)clearTimeout(mblStockSyncTimer);
  mblStockSyncTimer=setTimeout(()=>mblSaveSharedStock().catch(e=>{
@@ -1054,8 +1107,10 @@ async function mblLogin(){
   const result=await mblCall({action:'login',pin});
   MBL_TOKEN=result.token;localStorage.setItem('mbl_panel_session',MBL_TOKEN);
   $('loginGate').style.display='none';$('privateMain').style.display='block';
+  await mblLoadBusinessData();
   await mblLoadMaterialChecklist();
   await mblLoadOrders();mblSubscribeOrders();
+  if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);
   if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);
   if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
   if('Notification' in window&&Notification.permission==='default')mblEnableNotifications();
@@ -1067,8 +1122,9 @@ $('panelPin').addEventListener('input',()=>{$('loginError').textContent='';});
 function mblStartPanel(){
  if(MBL_TOKEN){
   $('loginGate').style.display='none';$('privateMain').style.display='block';
+  mblLoadBusinessData();
   mblLoadMaterialChecklist();
-  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);})
+  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
   .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
 }
