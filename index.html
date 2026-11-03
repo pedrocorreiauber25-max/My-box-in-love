@@ -149,6 +149,15 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   </div>
 
   <div class="card">
+   <h2>Evolução das vendas</h2>
+   <p class="small">Vendas registadas no período selecionado, incluindo encomendas online e manuais.</p>
+   <div id="ceoSalesChart"></div>
+  </div>
+  <div class="card">
+   <h2>Produtos mais vendidos</h2>
+   <div id="ceoTopProducts"></div>
+  </div>
+  <div class="card">
    <h2>Distribuição do lucro</h2>
    <div id="distribution"></div>
   </div>
@@ -217,8 +226,12 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
      <input id="mprice" type="number" min="0" step=".01">
     </div>
     <div class="field">
-     <label>UNIDADES NO PACOTE</label>
-     <input id="mqty" type="number" min="1" step="1">
+     <label>QUANTIDADE QUE ENTRA NO STOCK</label>
+     <input id="mqty" type="number" min="0.001" step="0.001" placeholder="Ex.: 50">
+    </div>
+    <div class="field">
+     <label>UNIDADE DE CONTROLO</label>
+     <input id="munit" placeholder="Ex.: metros, unidades, gramas" value="unidades">
     </div>
    </div>
    <label>DATA</label><input id="mdate" type="date">
@@ -238,7 +251,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 
  <section id="stock" class="section">
   <h1>Stock disponível</h1>
-  <p class="muted">O custo médio é atualizado com cada compra.</p>
+  <p class="muted">O stock pode ser controlado em unidades, metros, centímetros, gramas, mililitros, porções ou outra medida. Exemplo: compras 1 rolo de 50 metros de fita e registas 50 metros; cada caixa pode consumir apenas 0,35 metros.</p>
   <div class="card"><div id="stocklist"></div></div>
  </section>
 
@@ -464,13 +477,21 @@ function editProduct(id){
  const price=Number(prompt('Preço de venda (€):',p.price));
  if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
  p.name=name.trim();p.price=price;
- if(confirm('Queres adicionar um material à ficha técnica?')){
-  const material=prompt('Nome exato do material que está no stock:');
-  const m=d.stock.find(x=>x.name.toLowerCase()===String(material).toLowerCase());
-  if(!m)return alert('Material não encontrado. Regista primeiro uma compra.');
-  const qty=Number(prompt('Quantidade utilizada por unidade de produto:','1'));
-  if(qty>0)p.recipe.push({material:m.id,qty});
+ if(!Array.isArray(p.recipe))p.recipe=[];
+ let keep=true;
+ while(keep&&d.stock.length){
+  const choices=d.stock.map((m,i)=>(i+1)+'. '+m.name+' ('+m.qty+' '+(m.unit||'unidades')+')').join('\n');
+  const raw=prompt('Ficha técnica — escolhe o número do material a adicionar ou 0 para terminar:\n'+choices,'0');
+  if(raw===null||raw.trim()==='0')break;
+  const index=Number(raw)-1,m=d.stock[index];
+  if(!m)return alert('Escolhe um número válido da lista.');
+  const qty=Number(prompt('Quanto deste material é usado por cada produto? Unidade: '+(m.unit||'unidades')+'. Podes usar decimais. Ex.: 0,35','1'.replace(',', '.')).replace(',','.'));
+  if(!Number.isFinite(qty)||qty<=0)return alert('Quantidade inválida.');
+  const existing=p.recipe.find(r=>r.material===m.id);
+  if(existing)existing.qty=qty;else p.recipe.push({material:m.id,qty});
+  keep=confirm('Queres adicionar outro material à ficha técnica?');
  }
+ if(confirm('Queres limpar toda a ficha técnica e começar de novo?'))p.recipe=[];
  save();
 }
 function getCost(p){
@@ -502,19 +523,24 @@ function deleteStock(id){
 function addPurchase(){
  const name=$('mname').value.trim();
  const price=Number($('mprice').value);
- const qty=Number($('mqty').value);
- if(!name||price<=0||qty<=0||!Number.isInteger(qty))
-  return alert('Indica material, preço e quantidade inteira.');
+ const qty=Number(String($('mqty').value).replace(',','.'));
+ const unit=$('munit').value.trim()||'unidades';
+ if(!name||!Number.isFinite(price)||price<=0||!Number.isFinite(qty)||qty<=0)
+  return alert('Indica material, preço e quantidade válida.');
  let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
- if(!m){m={id:uid(),name,qty:0,unitCost:0};d.stock.push(m);}
+ if(m&&m.unit&&m.unit.toLowerCase()!==unit.toLowerCase())
+  return alert('Este material já está controlado em '+m.unit+'. Mantém a mesma unidade para não misturar medidas.');
+ if(!m){m={id:uid(),name,qty:0,unit,unitCost:0};d.stock.push(m);}
+ m.unit=m.unit||unit;
  const oldValue=m.qty*m.unitCost;
  m.qty+=qty;
  m.unitCost=(oldValue+price)/m.qty;
  d.purchases.push({
-  id:uid(),name,price,qty,unitCost:price/qty,
+  id:uid(),name,price,qty,unit:m.unit,unitCost:price/qty,
   date:$('mdate').value||today(),supplier:$('msupplier').value
  });
  ['mname','mprice','mqty','msupplier'].forEach(id=>$(id).value='');
+ $('munit').value='unidades';
  save();alert('Compra registada e stock atualizado!');
 }
 function addExpense(){
@@ -645,30 +671,51 @@ function drawCEOFinance(){
  const period=$('ceoPeriod')?.value||'week';
  const now=new Date();
  const start=new Date(now);
- if(period==='week'){
-  const day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);start.setHours(0,0,0,0);
- }else if(period==='month'){start.setDate(1);start.setHours(0,0,0,0);}
- const inPeriod=date=>{
-  if(period==='all')return true;
-  if(!date)return false;
-  const parsed=new Date(date);
-  return !Number.isNaN(parsed.getTime())&&parsed>=start&&parsed<=now;
- };
+ if(period==='week'){const day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);start.setHours(0,0,0,0);}
+ else if(period==='month'){start.setDate(1);start.setHours(0,0,0,0);}
+ const dateKey=date=>{if(!date)return '';const v=String(date).slice(0,10);return /^\\d{4}-\\d{2}-\\d{2}$/.test(v)?v:'';};
+ const inPeriod=date=>{if(period==='all')return true;const key=dateKey(date);return !!key&&key>=dateKey(start.toISOString())&&key<=dateKey(now.toISOString());};
  const local=d.orders.filter(o=>inPeriod(o.date));
  const online=(window.mblOnlineOrders||[]).filter(o=>inPeriod(o.created_at||o.requested_date));
  const localSales=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+Number(o.total||0),0);
- const localReceived=local.reduce((s,o)=>s+receivedOrder(o),0);
+ const localReceived=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+receivedOrder(o),0);
  const localPending=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
- const onlineSales=online.filter(o=>o.status!=='Cancelado').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
- const onlineReceived=online.filter(o=>o.payment_status==='Pago').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
- const onlinePending=online.filter(o=>o.status!=='Cancelado'&&o.payment_status!=='Pago').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
+ const onlineTotal=o=>Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100;
+ const onlineSales=online.filter(o=>o.status!=='Cancelado').reduce((s,o)=>s+onlineTotal(o),0);
+ const onlineReceived=online.filter(o=>o.status!=='Cancelado'&&o.payment_status==='Pago').reduce((s,o)=>s+onlineTotal(o),0);
+ const onlinePending=online.filter(o=>o.status!=='Cancelado'&&o.payment_status!=='Pago').reduce((s,o)=>s+onlineTotal(o),0);
  const expenses=d.purchases.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.price||0),0)+d.expenses.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.value||0),0);
  const sales=localSales+onlineSales,received=localReceived+onlineReceived,pending=localPending+onlinePending,balance=received-expenses;
  $('ceoSales').textContent=money(sales);$('ceoReceived').textContent=money(received);
  $('ceoPending').textContent=money(pending);$('ceoExpenses').textContent=money(expenses);
  $('ceoBalance').textContent=money(balance);$('ceoBalance').className='metric '+(balance<0?'bad':'good');
- $('ceoOrders').textContent=local.length+online.length;
+ $('ceoOrders').textContent=local.filter(o=>o.status!=='Cancelada').length+online.filter(o=>o.status!=='Cancelado').length;
  $('ceoPeriodNote').textContent=(period==='week'?'Período: segunda-feira até hoje.':period==='month'?'Período: primeiro dia deste mês até hoje.':'Período: todo o histórico disponível.')+' Inclui encomendas manuais e online. Só conta como recebido o dinheiro confirmado. O saldo é uma estimativa de caixa, não inclui impostos nem custos ainda não registados.';
+ // Gráfico de vendas: 7 dias, 5 semanas ou 6 meses conforme o período.
+ const bins=[];
+ if(period==='week'){
+  const monday=new Date(start);for(let i=0;i<7;i++){const dt=new Date(monday);dt.setDate(dt.getDate()+i);bins.push({key:dateKey(dt.toISOString()),label:['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][i],value:0});}
+ }else if(period==='month'){
+  for(let i=0;i<5;i++){const a=new Date(start);a.setDate(1+i*7);const b=new Date(a);b.setDate(b.getDate()+6);bins.push({key:dateKey(a.toISOString()),end:dateKey(b.toISOString()),label:'Sem. '+(i+1),value:0});}
+ }else{
+  for(let i=5;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);const end=new Date(dt.getFullYear(),dt.getMonth()+1,0);bins.push({key:dateKey(dt.toISOString()),end:dateKey(end.toISOString()),label:dt.toLocaleDateString('pt-PT',{month:'short'}),value:0});}
+ }
+ const addSale=(date,value)=>{const key=dateKey(date);if(!key)return;const bin=bins.find(b=>key>=b.key&&key<=(b.end||b.key));if(bin)bin.value+=value;};
+ local.filter(o=>o.status!=='Cancelada').forEach(o=>addSale(o.date,Number(o.total||0)));
+ online.filter(o=>o.status!=='Cancelado').forEach(o=>addSale(o.created_at||o.requested_date,onlineTotal(o)));
+ const max=Math.max(1,...bins.map(b=>b.value));
+ $('ceoSalesChart').innerHTML='<div style="display:grid;grid-template-columns:repeat('+bins.length+',minmax(0,1fr));gap:8px;align-items:end;height:170px;padding:8px 0">'+bins.map(b=>'<div style="display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:5px"><span class="small">'+money(b.value)+'</span><div title="'+b.label+' · '+money(b.value)+'" style="width:100%;max-width:42px;height:'+Math.max(4,b.value/max*105)+'px;background:linear-gradient(180deg,#e9b8c2,#80502f);border-radius:7px 7px 2px 2px"></div><span class="small">'+b.label+'</span></div>').join('')+'</div>';
+ // Ranking de produtos: junta encomendas manuais e linhas de encomendas online.
+ const ranking={};
+ const addProduct=(name,qty,revenue)=>{const key=String(name||'Produto').trim()||'Produto';if(!ranking[key])ranking[key]={qty:0,revenue:0};ranking[key].qty+=qty;ranking[key].revenue+=revenue;};
+ local.filter(o=>o.status!=='Cancelada').forEach(o=>addProduct(o.product,Number(o.qty)||1,Number(o.total)||0));
+ online.filter(o=>o.status!=='Cancelado').forEach(o=>{
+  const items=Array.isArray(o.order_items)?o.order_items:[];
+  if(items.length)items.forEach(it=>addProduct(it.name,Number(it.quantity)||1,(Number(it.total_cents)||0)/100));
+  else addProduct(o.product_name,1,onlineTotal(o));
+ });
+ const top=Object.entries(ranking).sort((a,b)=>b[1].qty-a[1].qty||b[1].revenue-a[1].revenue).slice(0,5);
+ $('ceoTopProducts').innerHTML=top.length?top.map(([name,v],i)=>'<div class="item"><div class="row"><b style="flex:1">'+(i+1)+'. '+esc(name)+'</b><span class="pill">'+v.qty+' un.</span></div><div class="small">Vendas associadas: '+money(v.revenue)+'</div></div>').join(''):'Ainda não há vendas neste período.';
 }
 function draw(){
  $('oproduct').innerHTML=d.products.map(p=>
@@ -724,17 +771,20 @@ function draw(){
   <button class="danger" onclick="deleteExtra('${x.id}')">Eliminar</button></div>`
  ).join('')||'Ainda não existem adicionais.';
 
- $('stocklist').innerHTML=d.stock.map(m=>`
-  <div class="item"><b>${esc(m.name)}</b>
-  <div>${m.qty} unidades disponíveis</div>
-  <div>Custo médio: ${money(m.unitCost)} / unidade</div>
+ $('stocklist').innerHTML=d.stock.map(m=>{
+  const unit=m.unit||'unidades';
+  const recipeUses=d.products.flatMap(p=>(p.recipe||[]).filter(r=>r.material===m.id).map(r=>esc(p.name)+' — '+r.qty+' '+unit+' por produto'));
+  return `<div class="item"><b>${esc(m.name)}</b>
+  <div><strong>${Number(m.qty.toFixed(3))} ${esc(unit)}</strong> disponíveis</div>
+  <div>Custo médio: ${money(m.unitCost)} / ${esc(unit)}</div>
   <div>Valor em stock: ${money(m.qty*m.unitCost)}</div>
-  <button class="danger" onclick="deleteStock('${m.id}')">Eliminar do stock</button></div>`
- ).join('')||'Ainda não existem materiais.';
+  <div class="small">${recipeUses.length?'Ficha técnica: '+recipeUses.join(' · '):'Ainda não associado a fichas técnicas.'}</div>
+  <button class="danger" onclick="deleteStock('${m.id}')">Eliminar do stock</button></div>`;
+ }).join('')||'Ainda não existem materiais.';
 
  $('purchaselist').innerHTML=d.purchases.slice().reverse().map(p=>`
   <div class="item"><b>${esc(p.name)}</b>
-  <div>${p.qty} unidades · ${money(p.price)}</div>
+  <div>${Number(p.qty)} ${esc(p.unit||'unidades')} · ${money(p.price)}</div>
   <div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`
  ).join('')||'Ainda não existem compras.';
 
