@@ -7,7 +7,6 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="My Box in Love | Presentes feitos com carinho">
 <meta property="og:description" content="Boxes e presentes personalizados para tornar cada momento especial. Faz o teu pedido pelo WhatsApp.">
-<meta property="og:image" content="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg">
 <meta property="og:url" content="https://myboxinlove.pages.dev/">
 <meta name="twitter:card" content="summary">
 <title>My Box in Love | Loja</title>
@@ -18,7 +17,7 @@ header{text-align:center;padding:38px 16px 30px;background:linear-gradient(145de
 .logo{width:100px;height:100px;object-fit:cover;border-radius:26px;box-shadow:0 8px 24px #80502f22}
 h1{margin:12px 0 0;letter-spacing:4px;font-size:30px}.script{font:italic 25px Georgia;color:var(--brown)}
 header p{margin:12px 0 0;color:#684b43}
-.photo-gallery{margin:0 0 18px;padding:14px;overflow:hidden}.photo-gallery img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain;border-radius:14px;background:#fff7f8}.gallery-copy{text-align:center;padding:10px 12px 16px}
+
 main{max-width:980px;margin:24px auto;padding:0 15px}
 .intro{text-align:center;padding:22px 10px}.eyebrow{letter-spacing:2px;text-transform:uppercase;font-size:11px;color:#a47778;font-weight:800}
 h2{color:var(--brown);margin:0 0 12px}.muted{color:#927f79;line-height:1.6}
@@ -34,7 +33,7 @@ textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns
 .btn.secondary{background:var(--brown);color:white}.center{text-align:center}.note{font-size:12px;color:#927f79;line-height:1.5}
 .float-wa{position:fixed;right:16px;bottom:16px;z-index:5;border-radius:30px;padding:13px 17px;background:#25d366;color:#fff;text-decoration:none;font-weight:800;box-shadow:0 6px 22px #0002}
 footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
-@media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}.photo-gallery{padding:10px}.photo-gallery img{border-radius:10px}}
+@media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -49,7 +48,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 </head>
 <body>
 <header>
-<img class="logo" src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="Logótipo My Box in Love">
+<div class="logo-text">My Box in Love</div>
 <h1>MY BOX</h1><div class="script">in love</div>
 <p>Pequenos momentos, grandes emoções. ❤️</p>
 </header>
@@ -59,7 +58,6 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <h2>Surpreende quem amas</h2>
 <p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p><p class="note">Boxes: mínimo de 24 horas. Caixas Presente e Buquês: mínimo de 48 horas.</p>
 </section>
-<section class="photo-gallery card" aria-label="Galeria de produtos"><div class="gallery-copy"><div class="eyebrow">Um presente com personalidade</div><h2>Feito para surpreender</h2><p class="muted">Descobre algumas das criações My Box in Love. Cada detalhe é preparado com carinho e pode ser personalizado para a tua ocasião.</p></div><img src="../assets/galeria-produtos.webp" alt="Seleção de fotografias reais das boxes e presentes My Box in Love" loading="lazy"></section>
 <section class="grid" aria-label="Boxes disponíveis">
 <article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p></article>
 <article class="card product" data-product-key="box-classic-para-dividir"><div class="product-icon">🥐</div><h3>Box Classic · Para dividir</h3><p class="muted">Seleção generosa de delícias matinais, 3 opções de fruta, charcutaria, macarons, complementos e 2 bebidas.</p><span class="pill">Para partilhar</span><p class="price">65 €</p></article>
