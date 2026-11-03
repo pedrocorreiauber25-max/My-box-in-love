@@ -501,31 +501,49 @@ function addProduct(){
  d.products.push({id:uid(),name:name.trim(),price,recipe:[]});
  save();
 }
+let recipeEditorProductId=null;
 function editProduct(id){
  const p=d.products.find(x=>x.id===id);if(!p)return;
- const name=prompt('Nome do produto:',p.name);
- if(name===null)return;
- const price=Number(prompt('Preço de venda (€):',p.price));
- if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
- p.name=name.trim();p.price=price;
- if(!Array.isArray(p.recipe))p.recipe=[];
- if(confirm('Queres limpar a ficha técnica atual antes de a configurar novamente?'))p.recipe=[];
- let keep=true;
- while(keep&&d.stock.length){
-  const choices=d.stock.map((m,i)=>(i+1)+'. '+m.name+' ('+m.qty+' '+(m.unit||'unidades')+')').join('\n');
-  const raw=prompt('Ficha técnica — escolhe o número do material a adicionar ou 0 para terminar:\n'+choices,'0');
-  if(raw===null||raw.trim()==='0')break;
-  const index=Number(raw)-1,m=d.stock[index];
-  if(!m)return alert('Escolhe um número válido da lista.');
-  const rawQty=prompt('Quanto deste material é usado por cada produto? Unidade: '+(m.unit||'unidades')+'. Podes usar decimais. Ex.: 0,35','1');
-  if(rawQty===null)break;
-  const qty=Number(rawQty.replace(',','.'));
-  if(!Number.isFinite(qty)||qty<=0)return alert('Quantidade inválida.');
-  const existing=p.recipe.find(r=>r.material===m.id);
-  if(existing)existing.qty=qty;else p.recipe.push({material:m.id,qty});
-  keep=confirm('Queres adicionar outro material à ficha técnica?');
+ recipeEditorProductId=id;
+ let modal=document.getElementById('recipeEditor');
+ if(!modal){
+  modal=document.createElement('div');modal.id='recipeEditor';
+  modal.style.cssText='position:fixed;inset:0;z-index:99999;background:#24171099;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto';
+  modal.innerHTML='<div style="background:#fffaf8;color:#49352c;border-radius:20px;padding:20px;width:min(100%,620px);max-height:92vh;overflow:auto;box-shadow:0 12px 45px #0004"><div style="display:flex;align-items:center;gap:10px"><h2 style="flex:1;margin:0">Ficha técnica</h2><button type="button" onclick="closeRecipeEditor()" aria-label="Fechar">✕</button></div><p class="small">Define os materiais e a quantidade usada para fabricar uma unidade do produto.</p><label>Nome do produto</label><input id="recipeProductName" type="text"><label>Preço de venda (€)</label><input id="recipeProductPrice" type="number" min="0" step="0.01"><div style="display:flex;align-items:center;gap:8px;margin:18px 0 8px"><b style="flex:1">Materiais e quantidades</b><span class="small">por unidade</span></div><div id="recipeMaterialRows"></div><div id="recipeNoStock" class="notice" style="display:none">Ainda não tens materiais no Stock. Adiciona primeiro os materiais no separador Stock e volta aqui.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button type="button" class="primary" style="flex:1" onclick="saveRecipeEditor()">Guardar ficha técnica</button><button type="button" onclick="closeRecipeEditor()">Cancelar</button></div><p class="small" style="margin-bottom:0">A ficha anterior só é alterada quando carregares em Guardar.</p></div>';
+  document.body.appendChild(modal);
  }
- save();
+ document.getElementById('recipeProductName').value=p.name||'';
+ document.getElementById('recipeProductPrice').value=Number(p.price)||0;
+ renderRecipeEditorRows(p);
+ modal.style.display='flex';
+}
+function renderRecipeEditorRows(p){
+ const host=document.getElementById('recipeMaterialRows');if(!host)return;
+ if(!d.stock.length){host.innerHTML='';document.getElementById('recipeNoStock').style.display='block';return;}
+ document.getElementById('recipeNoStock').style.display='none';
+ const recipe=Array.isArray(p.recipe)?p.recipe:[];
+ host.innerHTML=d.stock.map(m=>{
+  const line=recipe.find(r=>r.material===m.id),checked=!!line;
+  return '<div class="item" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(95px,125px);gap:10px;align-items:center;margin:8px 0"><label style="display:flex;align-items:center;gap:9px;margin:0;min-width:0"><input class="recipe-material-check" type="checkbox" data-material="'+esc(m.id)+'" '+(checked?'checked':'')+'><span><b>'+esc(m.name)+'</b><span class="small" style="display:block">Stock: '+Number(m.qty||0)+' '+esc(m.unit||'unidades')+'</span></span></label><div><input class="recipe-material-qty" data-material="'+esc(m.id)+'" type="number" min="0.0001" step="any" inputmode="decimal" placeholder="Qtd." value="'+(checked?String(line.qty).replace(/"/g,'&quot;'):'')+'" style="width:100%;box-sizing:border-box"><span class="small">'+esc(m.unit||'unidades')+'</span></div></div>';
+ }).join('');
+}
+function closeRecipeEditor(){const modal=document.getElementById('recipeEditor');if(modal)modal.style.display='none';recipeEditorProductId=null;}
+function saveRecipeEditor(){
+ const p=d.products.find(x=>x.id===recipeEditorProductId);if(!p)return closeRecipeEditor();
+ const name=document.getElementById('recipeProductName').value.trim();
+ const price=Number(String(document.getElementById('recipeProductPrice').value).replace(',','.'));
+ if(!name)return alert('Indica o nome do produto.');
+ if(!Number.isFinite(price)||price<0)return alert('Indica um preço válido.');
+ const recipe=[];
+ for(const check of document.querySelectorAll('.recipe-material-check:checked')){
+  const id=check.dataset.material,field=[...document.querySelectorAll('.recipe-material-qty')].find(x=>x.dataset.material===id);
+  const qty=Number(String(field?.value||'').replace(',','.'));
+  if(!Number.isFinite(qty)||qty<=0)return alert('Indica uma quantidade válida para cada material selecionado.');
+  recipe.push({material:id,qty});
+ }
+ p.name=name;p.price=price;p.recipe=recipe;
+ save();closeRecipeEditor();
+ alert('Ficha técnica guardada com sucesso!');
 }
 function getCost(p){
  return (p.recipe||[]).reduce((s,r)=>{
