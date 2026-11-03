@@ -765,7 +765,7 @@ function mblSendTrackingWhatsApp(id){
  if(!order)return alert('Atualiza a lista de encomendas e tenta novamente.');
  const token=order.tracking_token;
  if(!token)return alert('Esta encomenda ainda não tem link de acompanhamento disponível.');
- let phone=String(order.customer_phone||'').replace(/\\D/g,'');
+ let phone=String(order.customer_phone||'').replace(/\D/g,'');
  if(phone.startsWith('00'))phone=phone.slice(2);
  if(phone.length===9)phone='351'+phone;
  if(phone.length<10)return alert('O número de WhatsApp do cliente parece inválido.');
