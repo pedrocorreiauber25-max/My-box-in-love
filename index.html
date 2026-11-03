@@ -312,6 +312,7 @@ try {
  d=old?{...defaults,...old}:defaults;
 } catch(e) { d=defaults; }
 d.products=(d.products||[]).map(p=>({...p,recipe:p.recipe||[],price:Number(p.price)||0}));
+d.productImages=d.productImages||{};
 d.orders=d.orders||[];
 d.stock=d.stock||[];
 d.purchases=d.purchases||[];
@@ -393,6 +394,33 @@ function saveOrder(){
  ['oc','op','onotes'].forEach(id=>$(id).value='');
  $('odeposit').value=0;
  closeOrder();save();
+}
+
+function productImageKey(name){
+ return String(name||'produto').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
+}
+async function uploadProductImage(id,input){
+ const file=input.files&&input.files[0];if(!file)return;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)){alert('Escolhe uma imagem JPG, PNG ou WebP.');input.value='';return;}
+ if(file.size>5*1024*1024){alert('A fotografia deve ter até 5 MB.');input.value='';return;}
+ const product=d.products.find(x=>x.id===id);if(!product)return;
+ input.disabled=true;
+ try{
+  const bitmap=await createImageBitmap(file);
+  const scale=Math.min(1,1400/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+  const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Não foi possível otimizar a fotografia.')),'image/webp',0.82));
+  const base64=await new Promise((resolve,reject)=>{
+   const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=()=>reject(new Error('Não foi possível ler a fotografia.'));reader.readAsDataURL(blob);
+  });
+  const result=await mblCall({action:'product_image_upload',product_key:productImageKey(product.name),image_base64:base64});
+  d.productImages=d.productImages||{};d.productImages[id]=result.image_url;save();
+  alert('Fotografia atualizada na loja online!');
+ }catch(e){alert(e.message||'Não foi possível enviar a fotografia.');}
+ finally{input.disabled=false;input.value='';}
 }
 
 function addProduct(){
@@ -580,13 +608,22 @@ function draw(){
   <p>Reinvestimento (${sh.reinvest}%): <b>${money(positive*sh.reinvest/100)}</b></p>
   <p>Reserva (${sh.reserve}%): <b>${money(positive*sh.reserve/100)}</b></p>`;
 
- $('productlist').innerHTML=d.products.map(p=>`
-  <div class="card">
-   <b>${esc(p.name)}</b>
-   <p>Venda: <b>${esc(p.priceLabel||money(p.price))}</b> · Custo estimado: ${money(getCost(p))}</p>
-   <p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p>
+ $('productlist').innerHTML=d.products.map(p=>{
+  const image=(d.productImages||{})[p.id]||'';
+  return `<div class="card">
+   <div class="row" style="align-items:flex-start">
+    <img src="${esc(image||'data:,')}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:13px;background:#faedf0;${image?'':'display:none'}">
+    <div style="flex:1;min-width:150px"><b>${esc(p.name)}</b>
+     <p>Venda: <b>${esc(p.priceLabel||money(p.price))}</b> · Custo estimado: ${money(getCost(p))}</p>
+     <p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p>
+    </div>
+   </div>
+   <label>FOTOGRAFIA DO PRODUTO</label>
+   <input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadProductImage('${p.id}',this)">
+   <p class="small">Escolhe uma fotografia do telemóvel. A imagem é otimizada e aparece na loja online. Máximo 5 MB.</p>
    <button onclick="editProduct('${p.id}')">Editar produto e ficha técnica</button>
-  </div>`).join('');
+  </div>`;
+ }).join('');
 
  $('extralist').innerHTML=d.extras.map(x=>`
   <div class="item">${esc(x.name)} · ${money(x.price)}
