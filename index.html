@@ -373,12 +373,12 @@ d.extras=d.extras||[];
 
 // Limpeza única dos dados de teste existentes neste dispositivo.
 // Preserva catálogo, preços, adicionais, fichas técnicas, PIN e lista de compras.
-if(localStorage.getItem('mbl_clean_start_v1')!=='done'){
+if(localStorage.getItem('mbl_clean_start_v2')!=='done'){
  d.orders=[];
  d.purchases=[];
  d.stock=[];
  d.expenses=[];
- localStorage.setItem('mbl_clean_start_v1','done');
+ localStorage.setItem('mbl_clean_start_v2','done');
 }
 const savedShares=d.shares&&typeof d.shares==='object'?d.shares:{};
 const shareValue=(value,fallback)=>{const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=100?n:fallback;};
