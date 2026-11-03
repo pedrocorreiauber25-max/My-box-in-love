@@ -1,4 +1,4 @@
-const CACHE = "my-box-in-love-v11";
+const CACHE = "my-box-in-love-v12";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
