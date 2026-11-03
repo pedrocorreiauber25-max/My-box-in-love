@@ -222,25 +222,27 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <section id="purchases" class="section">
   <h1>Compras de materiais</h1>
   <div class="card">
-   <h2>Registar compra</h2>
-   <label>MATERIAL</label><input id="mname" placeholder="Ex.: Caixas">
+   <h2>Registar compra de um pacote</h2>
+   <p class="muted">Indica quanto pagaste pelo pacote e quantas unidades ele traz. A aplicação calcula o custo de cada unidade e atualiza o stock automaticamente.</p>
+   <label>NOME DO MATERIAL</label><input id="mname" placeholder="Ex.: Caixas para as boxes">
    <div class="row">
     <div class="field">
-     <label>PREÇO DO PACOTE (€)</label>
-     <input id="mprice" type="number" min="0" step=".01">
+     <label>QUANTO CUSTOU O PACOTE (€)</label>
+     <input id="mprice" type="number" min="0.01" step=".01" inputmode="decimal" placeholder="Ex.: 15,00" oninput="updatePurchasePreview()">
     </div>
     <div class="field">
-     <label>QUANTIDADE QUE ENTRA NO STOCK</label>
-     <input id="mqty" type="number" min="0.001" step="0.001" placeholder="Ex.: 50">
+     <label>QUANTAS UNIDADES TRAZ O PACOTE?</label>
+     <input id="mqty" type="number" min="0.001" step="0.001" inputmode="decimal" placeholder="Ex.: 30" oninput="updatePurchasePreview()">
     </div>
     <div class="field">
-     <label>UNIDADE DE CONTROLO</label>
-     <input id="munit" placeholder="Ex.: metros, unidades, gramas" value="unidades">
+     <label>UNIDADE</label>
+     <input id="munit" placeholder="Ex.: caixas, metros, gramas" value="unidades" oninput="updatePurchasePreview()">
     </div>
    </div>
-   <label>DATA</label><input id="mdate" type="date">
-   <label>FORNECEDOR</label><input id="msupplier" placeholder="Opcional">
-   <button class="primary" onclick="addPurchase()">Registar compra</button>
+   <div class="notice" id="purchasePreview" aria-live="polite">Preenche o preço e a quantidade para veres o custo por unidade.</div>
+   <label>DATA DA COMPRA</label><input id="mdate" type="date">
+   <label>FORNECEDOR (OPCIONAL)</label><input id="msupplier" placeholder="Nome da loja ou fornecedor">
+   <button class="primary" onclick="addPurchase()">Registar compra e atualizar stock</button>
   </div>
   <div class="card"><h2>Histórico de compras</h2><div id="purchaselist"></div></div>
  </section>
@@ -593,6 +595,18 @@ function deleteStock(id){
  d.stock=d.stock.filter(x=>x.id!==id);
  d.products.forEach(p=>{p.recipe=(p.recipe||[]).filter(r=>r.material!==id);});
  save();
+}
+function updatePurchasePreview(){
+ const price=Number(String($('mprice')?.value||'').replace(',','.'));
+ const qty=Number(String($('mqty')?.value||'').replace(',','.'));
+ const unit=($('munit')?.value||'unidades').trim()||'unidades';
+ const preview=$('purchasePreview');if(!preview)return;
+ if(!Number.isFinite(price)||price<=0||!Number.isFinite(qty)||qty<=0){
+  preview.textContent='Preenche o preço do pacote e a quantidade que ele traz para calcular o custo por unidade.';
+  return;
+ }
+ const each=price/qty;
+ preview.innerHTML='<b>Resumo da compra</b><br>Vais adicionar <b>'+qty.toLocaleString('pt-PT')+' '+esc(unit)+'</b> ao stock.<br>Custo por unidade: <b>'+money(each)+'</b>.<br>Exemplo: cada unidade usada numa ficha técnica terá este custo.';
 }
 function addPurchase(){
  const name=$('mname').value.trim();
