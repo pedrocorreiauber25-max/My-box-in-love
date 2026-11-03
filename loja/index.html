@@ -56,7 +56,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <section class="intro">
 <div class="eyebrow">Feito com carinho, pensado em ti</div>
 <h2>Surpreende quem amas</h2>
-<p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p>
+<p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p><p class="note">Boxes: mínimo de 24 horas. Caixas Presente e Buquês: mínimo de 48 horas.</p>
 </section>
 <section class="grid" aria-label="Boxes disponíveis">
 <article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p></article>
@@ -245,9 +245,26 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
     button.disabled=false; button.textContent='Localizar morada e calcular entrega';
   });
   const dateField = document.getElementById('data');
-  const today = new Date();
-  const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0,10);
-  dateField.min = localToday;
+  const timeField = document.getElementById('hora');
+  const leadInfo = document.createElement('p');
+  leadInfo.className = 'note';
+  dateField.closest('.row').after(leadInfo);
+  dateField.required = true;
+  timeField.required = true;
+  function requiredLeadHours() {
+    const selected = productField.selectedOptions[0]?.textContent || '';
+    return /Caixa Presente|Buquê de Doces/i.test(selected) ? 48 : 24;
+  }
+  function updateLeadTime() {
+    const hours = requiredLeadHours();
+    const earliest = new Date(Date.now() + hours * 3600000);
+    const localDate = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,10);
+    dateField.min = localDate(earliest);
+    leadInfo.textContent = 'Encomenda com pelo menos ' + hours + ' horas de antecedência. Escolhe a data e a hora pretendidas.';
+    if (dateField.value && dateField.value < dateField.min) dateField.value = '';
+  }
+  productField.addEventListener('change', updateLeadTime);
+  updateLeadTime();
 
   form.addEventListener('submit', async function(event) {
     event.preventDefault();
