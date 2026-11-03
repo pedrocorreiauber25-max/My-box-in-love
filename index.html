@@ -127,6 +127,18 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 
  <section id="home" class="section show">
   <h1>Painel CEO</h1>
+  <div class="card">
+   <div class="row"><h2 style="flex:1">Resumo financeiro CEO</h2><select id="ceoPeriod" style="width:auto;min-width:145px;margin:0" onchange="drawCEOFinance()"><option value="week">Esta semana</option><option value="month">Este mês</option><option value="all">Todo o histórico</option></select></div>
+   <div class="grid">
+    <div class="card"><span class="small">Vendas registadas</span><div class="metric" id="ceoSales">0 €</div></div>
+    <div class="card"><span class="small">Dinheiro recebido</span><div class="metric good" id="ceoReceived">0 €</div></div>
+    <div class="card"><span class="small">Por receber</span><div class="metric" id="ceoPending">0 €</div></div>
+    <div class="card"><span class="small">Despesas pagas</span><div class="metric" id="ceoExpenses">0 €</div></div>
+    <div class="card"><span class="small">Saldo de caixa estimado</span><div class="metric" id="ceoBalance">0 €</div></div>
+    <div class="card"><span class="small">Encomendas no período</span><div class="metric" id="ceoOrders">0</div></div>
+   </div>
+   <p class="small" id="ceoPeriodNote">Inclui encomendas manuais e encomendas online. Só conta como recebido o dinheiro confirmado.</p>
+  </div>
   <div class="grid">
    <div class="card">Vendas recebidas<div class="metric" id="sales">0 €</div></div>
    <div class="card">Despesas registadas<div class="metric" id="costs">0 €</div></div>
@@ -629,6 +641,35 @@ function drawMaterialChecklist(){
  const pct=total?Math.round(done/total*100):0;
  $('materialProgress').textContent=done+' de '+total+' · '+pct+'% comprado';
 }
+function drawCEOFinance(){
+ const period=$('ceoPeriod')?.value||'week';
+ const now=new Date();
+ const start=new Date(now);
+ if(period==='week'){
+  const day=(now.getDay()+6)%7;start.setDate(now.getDate()-day);start.setHours(0,0,0,0);
+ }else if(period==='month'){start.setDate(1);start.setHours(0,0,0,0);}
+ const inPeriod=date=>{
+  if(period==='all')return true;
+  if(!date)return false;
+  const parsed=new Date(date);
+  return !Number.isNaN(parsed.getTime())&&parsed>=start&&parsed<=now;
+ };
+ const local=d.orders.filter(o=>inPeriod(o.date));
+ const online=(window.mblOnlineOrders||[]).filter(o=>inPeriod(o.created_at||o.requested_date));
+ const localSales=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+Number(o.total||0),0);
+ const localReceived=local.reduce((s,o)=>s+receivedOrder(o),0);
+ const localPending=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
+ const onlineSales=online.filter(o=>o.status!=='Cancelado').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
+ const onlineReceived=online.filter(o=>o.payment_status==='Pago').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
+ const onlinePending=online.filter(o=>o.status!=='Cancelado'&&o.payment_status!=='Pago').reduce((s,o)=>s+Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100,0);
+ const expenses=d.purchases.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.price||0),0)+d.expenses.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.value||0),0);
+ const sales=localSales+onlineSales,received=localReceived+onlineReceived,pending=localPending+onlinePending,balance=received-expenses;
+ $('ceoSales').textContent=money(sales);$('ceoReceived').textContent=money(received);
+ $('ceoPending').textContent=money(pending);$('ceoExpenses').textContent=money(expenses);
+ $('ceoBalance').textContent=money(balance);$('ceoBalance').className='metric '+(balance<0?'bad':'good');
+ $('ceoOrders').textContent=local.length+online.length;
+ $('ceoPeriodNote').textContent=(period==='week'?'Período: segunda-feira até hoje.':period==='month'?'Período: primeiro dia deste mês até hoje.':'Período: todo o histórico disponível.')+' Inclui encomendas manuais e online. Só conta como recebido o dinheiro confirmado. O saldo é uma estimativa de caixa, não inclui impostos nem custos ainda não registados.';
+}
 function draw(){
  $('oproduct').innerHTML=d.products.map(p=>
   `<option value="${p.id}">${esc(p.name)} · ${esc(p.priceLabel||money(p.price))}</option>`
@@ -732,6 +773,7 @@ function draw(){
  $('deliveryRate').value=d.deliveryRate.toFixed(2);
  $('sharereinvest').value=sh.reinvest;
  $('sharereserve').value=sh.reserve;
+ drawCEOFinance();
 }
 
 drawMaterialChecklist();
@@ -849,7 +891,7 @@ async function mblLoadOrders(){
  const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
  try{
   const data=await mblCall({action:'orders'});
-  const orders=data.orders||[];window.mblOnlineOrders=orders;
+  const orders=data.orders||[];window.mblOnlineOrders=orders;drawCEOFinance();
   if(mblOrdersInitialized){
    const fresh=orders.filter(o=>!mblSeenOrders.has(o.id));
    fresh.forEach(o=>{
