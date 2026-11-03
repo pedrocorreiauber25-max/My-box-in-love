@@ -1041,7 +1041,7 @@ async function mblShowDeliveryLive(id,silent=false){
   const stamp=d.updated_at?new Date(d.updated_at).toLocaleTimeString('pt-PT'):'agora';
   let frame=box.querySelector('iframe');
   if(!frame){
-   box.innerHTML='<p class="mbl-live-status"></p><iframe title="Localização do motorista" width="100%" height="260" style="border:0;border-radius:12px" loading="lazy"></iframe><button type="button" onclick="mblShowDeliveryLive(\\''+id+'\\')">Atualizar agora</button>';
+   box.innerHTML='<p class="mbl-live-status"></p><iframe title="Localização do motorista" width="100%" height="260" style="border:0;border-radius:12px" loading="lazy"></iframe><button type="button" onclick="mblShowDeliveryLive(\''+id+'\')">Atualizar agora</button>';
    frame=box.querySelector('iframe');
   }
   box.querySelector('.mbl-live-status').innerHTML='<b>Motorista em percurso · atualização '+esc(stamp)+'</b><br><span class="small">Atualização automática a cada 15 segundos.</span>';
