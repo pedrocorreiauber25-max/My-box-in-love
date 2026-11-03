@@ -13,7 +13,7 @@
 <title>My Box in Love | Loja</title>
 <style>
 :root{--pink:#e9b8c2;--pale:#fff6f8;--brown:#80502f;--ink:#46332e;--line:#f0dce1}
-*{box-sizing:border-box}body{margin:0;background:var(--pale);color:var(--ink);font:16px system-ui,-apple-system,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--pale);color:var(--ink);font:16px system-ui,-apple-system,sans-serif}
 header{text-align:center;padding:38px 16px 30px;background:linear-gradient(145deg,#e9b8c2,#f8e5e9)}
 .logo{width:100px;height:100px;object-fit:cover;border-radius:26px;box-shadow:0 8px 24px #80502f22}
 h1{margin:12px 0 0;letter-spacing:4px;font-size:30px}.script{font:italic 25px Georgia;color:var(--brown)}
@@ -40,7 +40,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <style>
 #deliveryMap{height:300px;border-radius:14px;border:1px solid var(--line);z-index:1}
 .map-help{font-size:12px;color:#927f79;margin:7px 0}
-.delivery-quote{margin:14px 0 4px;padding:16px 18px;border:2px solid #d7a0aa;border-radius:16px;background:linear-gradient(135deg,#fff0f4,#fffaf7);color:var(--ink);box-shadow:0 6px 18px #80502f12}
+.delivery-quote{display:block!important;visibility:visible!important;min-height:76px;margin:14px 0 4px;padding:16px 18px;border:2px solid #d7a0aa;border-radius:16px;background:linear-gradient(135deg,#fff0f4,#fffaf7);color:var(--ink);box-shadow:0 6px 18px #80502f12}
 .delivery-quote .quote-label{display:block;font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#94616a}
 .delivery-quote .quote-price{display:block;margin:3px 0 5px;font-size:clamp(30px,8vw,42px);line-height:1.1;font-weight:900;letter-spacing:-1px;color:#75452f}
 .delivery-quote .quote-detail{display:block;font-size:13px;font-weight:650;color:#80645c;line-height:1.5}
@@ -96,8 +96,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <div id="addressChoicesWrap" hidden><label for="addressChoices">Encontrámos mais do que uma morada. Confirma a correta:</label><select id="addressChoices"></select></div>
 <p id="selectedPoint" class="note">Ainda não foi localizada nenhuma morada.</p>
 <div id="deliveryMap" role="application" aria-label="Confirmação do local de entrega"></div>
-<div id="quoteBox" class="delivery-quote is-pending" role="status" aria-live="polite"><span class="quote-label">Preço da entrega</span><span class="quote-detail">Indica a morada para calcular a entrega.</span></div>
 </div>
+<div id="quoteBox" class="delivery-quote is-pending" role="status" aria-live="polite"><span class="quote-label">Preço da entrega</span><span class="quote-detail">Seleciona “Entrega ao domicílio”, indica a morada e calcula o valor.</span></div>
 <div class="card" style="padding:15px;background:#fff9fa"><h3 style="margin:0 0 10px;color:var(--brown)">Adicionais com preço definido</h3>
 <div class="row"><label><input class="extra-check" type="checkbox" data-name="Balão temático" data-price="4" style="width:auto"> Balão temático · 4 €</label><label><input class="extra-check" type="checkbox" data-name="Placa de mensagem" data-price="3" style="width:auto"> Placa de mensagem · 3 €</label><label><input class="extra-check" type="checkbox" data-name="Quadro personalizado" data-price="15" style="width:auto"> Quadro personalizado · 15 €</label><label><input class="extra-check" type="checkbox" data-name="Trio de fotos Polaroid" data-price="5" style="width:auto"> Trio Polaroid · 5 €</label></div>
 <label for="rosesQty">Rosas (3 € cada)</label><input id="rosesQty" type="number" min="0" max="30" step="1" value="0">
