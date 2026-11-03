@@ -1023,30 +1023,20 @@ async function mblLoadMaterialChecklist(){
  try{
   const result=await mblCall({action:'materials_get'});
   const remote=result.checklist&&typeof result.checklist==='object'&&!Array.isArray(result.checklist)?result.checklist:{};
-  const remoteHasItems=Object.keys(remote).length>0;
-  const local=d.materialChecklist&&typeof d.materialChecklist==='object'?d.materialChecklist:{};
-  const remoteStock=Array.isArray(remote.__stock)?remote.__stock:null;
-  const localStock=Array.isArray(d.stock)?d.stock:[];
-  if(remoteHasItems){
-   d.materialChecklist=remote;
-   if(remoteStock)d.stock=remoteStock;
-   else if(localStock.length)await mblSaveSharedStock();
-   localStorage.setItem('mbl',JSON.stringify(d));
-   drawMaterialChecklist();draw();
-  }else if(Object.keys(local).length||localStock.length){
-   await mblSaveSharedStock();
-   drawMaterialChecklist();
-  }else{
-   d.materialChecklist={};
-  }
+  d.materialChecklist=remote;
+  const stockResult=await mblCall({action:'stock_get'});
+  const remoteStock=Array.isArray(stockResult.stock)?stockResult.stock:[];
+  if(remoteStock.length||!Array.isArray(d.stock)||!d.stock.length)d.stock=remoteStock;
+  else await mblSaveSharedStock();
+  localStorage.setItem('mbl',JSON.stringify(d));
+  drawMaterialChecklist();draw();
   if(state)state.textContent='Lista de compras e stock sincronizados entre os dispositivos.';
  }catch(e){if(state)state.textContent='Sincronização indisponível: '+e.message;}
 }
 async function mblSaveSharedStock(){
- const checklist=d.materialChecklist&&typeof d.materialChecklist==='object'?d.materialChecklist:{};
- const payload={...checklist,__stock:d.stock||[]};
- const saved=await mblCall({action:'materials_save',checklist:payload});
- d.materialChecklist=saved.checklist||payload;
+ const payload=Array.isArray(d.stock)?d.stock:[];
+ const saved=await mblCall({action:'stock_save',stock:payload});
+ if(Array.isArray(saved.stock))d.stock=saved.stock;
  localStorage.setItem('mbl',JSON.stringify(d));
 }
 let mblStockSyncTimer=null;
