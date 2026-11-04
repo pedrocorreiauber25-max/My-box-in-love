@@ -993,7 +993,7 @@ function drawCEOFinance(){
  const dateKey=date=>{if(!date)return '';const v=String(date).slice(0,10);if(/^\\d{4}-\\d{2}-\\d{2}$/.test(v)&&String(date).length===10)return v;return localDateKey(new Date(date));};
  const inPeriod=date=>{if(period==='all')return true;const key=dateKey(date);return !!key&&key>=dateKey(start)&&key<=dateKey(now);};
  const local=d.orders.filter(o=>inPeriod(o.date));
- const online=(window.mblOnlineOrders||[]).filter(o=>inPeriod(o.created_at||o.requested_date));
+ const online=(window.mblOnlineOrders||[]).filter(o=>!o.manual_source_id&&inPeriod(o.created_at||o.requested_date));
  const localSales=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+Number(o.total||0),0);
  const localReceived=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+receivedOrder(o),0);
  const localPending=local.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
@@ -1051,7 +1051,7 @@ function draw(){
  ).join('')||'<span class="muted">Sem adicionais.</span>';
  $('ototal').textContent=money(totalOrder());
 
- const onlineOrders=(window.mblOnlineOrders||[]).filter(o=>!d.orders.some(local=>String(local.id)===String(o.id)));
+ const onlineOrders=(window.mblOnlineOrders||[]).filter(o=>!o.manual_source_id&&!d.orders.some(local=>String(local.id)===String(o.id)));
  const onlineTotal=o=>Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100;
  const validOnline=onlineOrders.filter(o=>o.status!=='Cancelado');
  const receivedLocal=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+receivedOrder(o),0);
@@ -1441,7 +1441,7 @@ async function mblLoadOrders(){
   const data=await mblCall({action:'orders'});
   const orders=data.orders||[];window.mblOnlineOrders=orders;draw();drawCEOFinance();drawCEOAlerts();
   if(mblOrdersInitialized){
-   const fresh=orders.filter(o=>!mblSeenOrders.has(o.id));
+   const fresh=orders.filter(o=>!o.manual_source_id&&!mblSeenOrders.has(o.id));
    fresh.forEach(o=>{
     $('newOrderToast').textContent='❤️ Nova encomenda '+(o.reference||'')+' recebida de '+(o.customer_name||'cliente')+'!';
     $('newOrderToast').style.display='block';
@@ -1457,7 +1457,7 @@ async function mblLoadOrders(){
   orders.forEach(o=>mblSeenOrders.add(o.id));
   mblOrdersInitialized=true;
   const statuses=['Novo','Em contacto','Confirmado','Em preparação','Pronto','Entregue','Cancelado'];
-  const displayOrders=orders.filter(o=>!d.orders.some(local=>String(local.id)===String(o.id)));
+  const displayOrders=orders.filter(o=>!o.manual_source_id&&!d.orders.some(local=>String(local.id)===String(o.id)));
   box.innerHTML=displayOrders.map(o=>{
    const items=Array.isArray(o.order_items)?o.order_items:[];
    const itemHtml=items.map(it=>'<div class="row" style="justify-content:space-between"><span>'+esc(it.name)+(it.quantity>1?' × '+Number(it.quantity):'')+'</span><b>'+money((Number(it.total_cents)||0)/100)+'</b></div>').join('');
