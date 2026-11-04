@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-PT"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e9b8c2"><title>Diagnóstico de acompanhamento · My Box in Love</title>
+<style>
+:root{--pink:#e9b8c2;--brown:#80502f;--ink:#46332e;--line:#f0dce1;--green:#397b59;--red:#b94c55}
+*{box-sizing:border-box}body{margin:0;background:#fbf6f4;color:var(--ink);font:15px system-ui,-apple-system,sans-serif}
+header{background:linear-gradient(135deg,#e9b8c2,#f5dce1);color:#fff;text-align:center;padding:22px 12px}
+main{max-width:720px;margin:20px auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+h1{font-size:22px}h2{font-size:17px;color:var(--brown)}label{display:block;font-size:12px;font-weight:700;color:#927f79;margin-top:10px}
+input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit;margin:5px 0}
+button{border:0;border-radius:10px;padding:12px 15px;background:var(--brown);color:white;font-weight:700;margin:4px;cursor:pointer}
+button.secondary{background:#f8edf0;color:var(--brown)}button:disabled{opacity:.5}
+.small{font-size:13px;color:#927f79}.status{padding:11px;border-radius:10px;background:#f8edf0;margin:10px 0;overflow-wrap:anywhere}
+.good{color:var(--green)}.bad{color:var(--red)}.step{padding:9px 0;border-bottom:1px solid var(--line)}a{color:var(--brown);overflow-wrap:anywhere}
+</style></head><body>
+<header><div style="font-size:25px;font-weight:900;letter-spacing:3px">MY BOX</div><div style="font:italic 20px Georgia">in love</div><small>FERRAMENTA INDEPENDENTE · DIAGNÓSTICO DE LINK DO CLIENTE</small></header>
+<main>
+<div class="card"><h1>Diagnóstico do acompanhamento</h1><p class="small">Esta página é independente do painel de gestão. Só consulta encomendas e testa a geração do link. Não altera encomendas, pagamentos, stock ou dados financeiros. Não tem qualquer função para criar ou enviar links do motorista.</p>
+<label>PIN de acesso ao painel</label><input id="pin" type="password" inputmode="numeric" maxlength="4" placeholder="PIN de 4 números" autocomplete="current-password">
+<button id="login">Validar acesso</button><div id="auth" class="status">Ainda não autenticado.</div>
+</div>
+<div class="card"><h2>1 · Escolher encomenda</h2><button id="load" class="secondary" disabled>Carregar encomendas</button><label>Encomenda</label><select id="order" disabled><option value="">Valida o acesso e carrega as encomendas</option></select><div id="orderInfo" class="small"></div></div>
+<div class="card"><h2>2 · Testar link do cliente</h2><button id="test" disabled>Executar diagnóstico</button><div id="results" class="small">Aguarda a seleção de uma encomenda.</div><div id="linkbox" class="status" hidden></div><button id="copy" class="secondary" hidden>Copiar link</button><button id="open" class="secondary" hidden>Abrir página de acompanhamento</button></div>
+<p class="small">Por segurança, o PIN e o token de sessão ficam apenas na memória desta página e desaparecem quando a fechas. O diagnóstico nunca abre WhatsApp nem envia mensagens automaticamente.</p>
+</main>
+<script>
+const API='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/smart-action';
+const KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
+let token='',orders=[],testedUrl='';
+const $=id=>document.getElementById(id);
+async function call(payload){
+ const response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY,...(token?{'Authorization':'Bearer '+token}:{})},body:JSON.stringify(payload)});
+ const data=await response.json().catch(()=>({error:'O servidor devolveu uma resposta que não é JSON.'}));
+ if(!response.ok)throw new Error(data.error||('Erro HTTP '+response.status));
+ return data;
+}
+function line(label,ok,detail){return '<div class="step"><b class="'+(ok?'good':'bad')+'">'+(ok?'✓ ':'✕ ')+label+'</b><br>'+detail+'</div>'}
+$('login').onclick=async()=>{
+ $('auth').textContent='A validar PIN…';$('login').disabled=true;
+ try{const data=await call({action:'login',pin:$('pin').value.trim()});if(!data.token)throw new Error(data.error||'O servidor não devolveu uma sessão.');token=data.token;$('auth').innerHTML='<span class="good">✓ Acesso validado.</span>';$('load').disabled=false;$('order').disabled=false;}
+ catch(e){token='';$('auth').innerHTML='<span class="bad">Falha no acesso:</span> '+e.message;}
+ finally{$('login').disabled=false;}
+};
+$('load').onclick=async()=>{
+ $('load').disabled=true;$('orderInfo').textContent='A consultar encomendas…';
+ try{const data=await call({action:'orders'});orders=Array.isArray(data.orders)?data.orders:[];const select=$('order');select.innerHTML='<option value="">Seleciona uma encomenda…</option>'+orders.map((o,i)=>'<option value="'+i+'">'+String(o.reference||o.id||'Sem referência')+' · '+String(o.customer_name||'Cliente')+' · '+String(o.status||'')+'</option>').join('');$('orderInfo').textContent=orders.length+' encomenda(s) recebida(s) do servidor.';$('test').disabled=true;}
+ catch(e){$('orderInfo').textContent='Erro ao carregar: '+e.message;}
+ finally{$('load').disabled=false;}
+};
+$('order').onchange=()=>{
+ const o=orders[Number($('order').value)];$('test').disabled=!o;
+ $('orderInfo').textContent=o?('Cliente: '+(o.customer_name||'—')+' · Telefone: '+(o.customer_phone||'não indicado')+' · Estado: '+(o.status||'—')):'';
+ $('results').textContent='Seleciona uma encomenda e executa o diagnóstico.';$('linkbox').hidden=true;$('copy').hidden=true;$('open').hidden=true;testedUrl='';
+};
+$('test').onclick=async()=>{
+ const o=orders[Number($('order').value)];if(!o)return;
+ $('test').disabled=true;$('results').textContent='A executar testes…';
+ let out='',all=true;
+ const hasId=!!(o.id||o.manual_source_id);out+=line('Encomenda identificada',hasId,'ID: '+(o.id||'em falta')+' · referência: '+(o.reference||'em falta'));all=all&&hasId;
+ const hasPhone=!!String(o.customer_phone||'').replace(/\D/g,'');out+=line('Contacto da cliente',hasPhone,hasPhone?'Telefone encontrado.':'A encomenda não tem telefone registado.');all=all&&hasPhone;
+ const hasToken=!!String(o.tracking_token||'').trim();out+=line('Token de acompanhamento',hasToken,hasToken?'O servidor devolveu um token.':'Não foi devolvido token de acompanhamento.');all=all&&hasToken;
+ if(hasToken){
+  testedUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(o.tracking_token);
+  const validPath=testedUrl.startsWith('https://myboxinlove.pages.dev/loja/acompanhar.html?token=');
+  out+=line('Endereço de destino',validPath,testedUrl);all=all&&validPath;
+  $('linkbox').hidden=false;$('linkbox').innerHTML='<b>Link gerado para esta cliente:</b><br><a href="'+testedUrl+'" target="_blank" rel="noopener">'+testedUrl+'</a>';
+  $('copy').hidden=false;$('open').hidden=false;
+ }else{$('linkbox').hidden=true;$('copy').hidden=true;$('open').hidden=true;}
+ $('results').innerHTML=out+'<p><b class="'+(all?'good':'bad')+'">'+(all?'Diagnóstico concluído: verificações básicas passaram.':'Diagnóstico encontrou um problema. Consulta os passos assinalados acima.')+'</b></p>';
+ $('test').disabled=false;
+};
+$('copy').onclick=async()=>{if(!testedUrl)return;try{await navigator.clipboard.writeText(testedUrl);$('copy').textContent='Link copiado ✓';}catch(e){$('copy').textContent='Não foi possível copiar automaticamente';}};
+$('open').onclick=()=>{if(testedUrl)window.open(testedUrl,'_blank','noopener');};
+</script></body></html>
