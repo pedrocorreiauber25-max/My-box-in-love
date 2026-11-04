@@ -1506,20 +1506,21 @@ if(MBL_TOKEN){
  (async function mblBootstrapPanel(){
   try{
    await mblCall({action:'verify'});
-   await mblLoadBusinessData();
-   await mblLoadCatalogData();
-   await mblLoadMaterialChecklist();
-   await mblLoadOrders();
-   mblSubscribeOrders();
-   if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);
-   if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,30000);
-   if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
-   if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);
   }catch(error){
    mblLogout();
    const message=$('loginError');
-   if(message)message.textContent='A sessão expirou ou não foi possível carregar os dados. Entra novamente com o PIN.';
+   if(message)message.textContent='A sessão expirou. Introduz novamente o PIN.';
+   return;
   }
+  // Falhas de sincronização não podem terminar a sessão nem expulsar a utilizadora do painel.
+  try{await mblLoadBusinessData();}catch(error){const s=$('businessSyncStatus');if(s)s.textContent='Falha ao sincronizar dados: '+error.message;}
+  try{await mblLoadCatalogData();}catch(error){const s=$('catalogSyncStatus');if(s)s.textContent='Falha ao sincronizar catálogo: '+error.message;}
+  try{await mblLoadMaterialChecklist();}catch(error){const s=$('materialSyncStatus');if(s)s.textContent='Falha ao sincronizar stock: '+error.message;}
+  try{await mblLoadOrders();mblSubscribeOrders();}catch(error){const s=$('onlineOrders');if(s)s.innerHTML='<p class="small">Não foi possível carregar as encomendas online. A sessão continua ativa. '+esc(error.message)+'</p>';}
+  if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);
+  if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,30000);
+  if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
+  if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);
  })();
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
