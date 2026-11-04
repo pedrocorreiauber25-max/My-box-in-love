@@ -91,6 +91,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 #loginGate input{text-align:center;font-size:24px;letter-spacing:8px}
 #newOrderToast{position:fixed;right:14px;bottom:14px;z-index:20;background:#80502f;color:white;padding:14px 18px;border-radius:14px;box-shadow:0 8px 28px #0003;display:none}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>#omanualMap{height:300px;border-radius:14px;border:1px solid var(--line);z-index:1;margin:8px 0}.manual-map-help{font-size:12px;color:#927f79;margin:7px 0}.manual-quote{display:block;padding:12px;border:1px solid #e9b8c2;border-radius:12px;background:#fff9fa;margin:8px 0}</style>
 </head>
 
 <body>
@@ -193,7 +195,15 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <label>ADICIONAIS</label><div id="oextras"></div>
    <label>DATA DE ENTREGA</label><input id="odate" type="date">
    <label>TIPO DE ENTREGA</label><select id="odelivery" onchange="updateManualDelivery()"><option value="Levantamento a combinar">Levantamento</option><option value="Entrega ao domicílio">Entrega ao domicílio</option></select>
-   <div id="omanualAddress" class="hidden"><label>MORADA DE ENTREGA</label><input id="oaddress" placeholder="Rua, número, código postal e localidade"><button type="button" onclick="calculateManualDelivery()">Calcular preço da entrega</button><p class="small" id="omanualQuote">Indica a morada para calcular a entrega.</p></div>
+   <div id="omanualAddress" class="hidden">
+    <label>MORADA DE ENTREGA</label>
+    <input id="oaddress" autocomplete="street-address" maxlength="180" placeholder="Rua, número, localidade e código postal">
+    <p class="manual-map-help">Escreve a morada completa e carrega em localizar. Também podes escolher diretamente o ponto no mapa, tal como na loja online.</p>
+    <button type="button" class="primary" id="omanualLocate" onclick="calculateManualDelivery()">Localizar morada e calcular entrega</button>
+    <p class="small" id="omanualPoint">Ainda não foi localizada nenhuma morada.</p>
+    <div id="omanualMap" role="application" aria-label="Escolher local de entrega no mapa"></div>
+    <p class="manual-quote" id="omanualQuote" role="status" aria-live="polite">Indica a morada e calcula o valor, ou escolhe o ponto no mapa.</p>
+   </div>
    <label>ESTADO</label>
    <select id="ostatus">
     <option>Recebida</option>
@@ -333,6 +343,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 <footer>MY BOX IN LOVE · Gestão com amor ❤️</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 const $ = id => document.getElementById(id);
 const money = n => (Number(n)||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
@@ -478,29 +489,67 @@ function totalOrder(){
  return p ? p.price*q+extras+(Number(window.mblManualDeliveryFee)||0) : 0;
 }
 window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;
+let mblManualMap=null,mblManualMarker=null,mblManualCoords=null;
+const mblManualStorePoint=[41.2067818168,-8.5588216782];
+function mblInitManualMap(){
+ if(mblManualMap||!window.L)return;
+ const bounds=L.latLngBounds([[40.85,-8.85],[41.45,-8.05]]);
+ mblManualMap=L.map('omanualMap',{maxBounds:bounds,maxBoundsViscosity:1,minZoom:9,maxZoom:18}).setView(mblManualStorePoint,12);
+ mblManualMap.setMaxBounds(bounds);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{minZoom:9,maxZoom:19,bounds,noWrap:true,attribution:'&copy; OpenStreetMap contributors'}).addTo(mblManualMap);
+ L.marker(mblManualStorePoint).addTo(mblManualMap).bindPopup('Local de partida da loja');
+ mblManualMap.on('click',async ev=>{
+  mblManualCoords={lat:ev.latlng.lat,lon:ev.latlng.lng};
+  if(mblManualMarker)mblManualMarker.setLatLng(ev.latlng);else mblManualMarker=L.marker(ev.latlng).addTo(mblManualMap);
+  $('omanualPoint').textContent='Ponto escolhido no mapa: '+ev.latlng.lat.toFixed(6)+', '+ev.latlng.lng.toFixed(6);
+  try{await mblRequestManualQuote();}catch(e){$('omanualQuote').textContent=e.message;}
+ });
+ setTimeout(()=>mblManualMap.invalidateSize(),180);
+}
 function updateManualDelivery(){
  const home=$('odelivery')?.value==='Entrega ao domicílio';
  $('omanualAddress')?.classList.toggle('hidden',!home);
- if(!home){window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;}
+ if(home)setTimeout(mblInitManualMap,120);
+ else{window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;mblManualCoords=null;}
+ $('ototal').textContent=money(totalOrder());
+}
+async function mblRequestManualQuote(){
+ if(!mblManualCoords)throw new Error('Localiza a morada ou escolhe o ponto no mapa.');
+ const address=$('oaddress').value.trim(),status=$('omanualQuote');
+ status.textContent='A calcular a rota de carro…';
+ const base='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler';
+ const res=await fetch(base,{method:'POST',headers:{'Content-Type':'application/json','apikey':MBL_KEY},body:JSON.stringify({action:'quote',address,lat:mblManualCoords.lat,lon:mblManualCoords.lon})});
+ const data=await res.json();
+ if(!res.ok||!data.ok||!data.quote)throw new Error(data.error||'Não foi possível calcular a entrega.');
+ window.mblManualDeliveryQuote=data.quote;
+ window.mblManualDeliveryFee=Number(data.quote.delivery_fee_cents)/100;
+ const rate=(Number(data.quote.delivery_rate_cents)/100).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+ status.textContent='PREÇO DA ENTREGA: '+money(window.mblManualDeliveryFee)+' · '+data.quote.delivery_km+' km por estrada · '+rate+'/km';
  $('ototal').textContent=money(totalOrder());
 }
 async function calculateManualDelivery(){
- const address=$('oaddress').value.trim(),status=$('omanualQuote');
- if(address.length<5){status.textContent='Indica rua, número, código postal e localidade.';return;}
- status.textContent='A localizar morada e calcular rota…';
+ const address=$('oaddress').value.trim(),status=$('omanualQuote'),button=$('omanualLocate');
+ if(address.length<5){status.textContent='Escreve a rua, número e localidade da entrega.';return;}
+ button.disabled=true;button.textContent='A localizar e calcular…';status.textContent='A procurar a morada…';
  try{
-  const headers={'Content-Type':'application/json','apikey':MBL_KEY};
   const base='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler';
-  const geo=await fetch(base,{method:'POST',headers,body:JSON.stringify({action:'geocode',address})});
-  const gd=await geo.json();if(!geo.ok||!gd.ok||!gd.point)throw new Error(gd.error||'Morada não localizada.');
-  const quote=await fetch(base,{method:'POST',headers,body:JSON.stringify({action:'quote',address,lat:Number(gd.point.lat),lon:Number(gd.point.lon)})});
-  const qd=await quote.json();if(!quote.ok||!qd.ok||!qd.quote)throw new Error(qd.error||'Não foi possível calcular a entrega.');
-  window.mblManualDeliveryQuote=qd.quote;
-  window.mblManualDeliveryFee=Number(qd.quote.delivery_fee_cents)/100;
-  status.textContent='Entrega: '+money(window.mblManualDeliveryFee)+' · '+qd.quote.delivery_km+' km por estrada.';
-  $('ototal').textContent=money(totalOrder());
- }catch(e){window.mblManualDeliveryQuote=null;window.mblManualDeliveryFee=0;status.textContent=e.message;}
+  const geo=await fetch(base,{method:'POST',headers:{'Content-Type':'application/json','apikey':MBL_KEY},body:JSON.stringify({action:'geocode',address})});
+  const gd=await geo.json();
+  if(!geo.ok||!gd.ok||!gd.point)throw new Error(gd.error||'Não foi possível localizar a morada. Confirma rua, número e código postal.');
+  mblManualCoords={lat:Number(gd.point.lat),lon:Number(gd.point.lon)};
+  $('omanualPoint').textContent='Morada localizada: '+(gd.point.label||address);
+  if(mblManualMap){const point=[mblManualCoords.lat,mblManualCoords.lon];mblManualMap.setView(point,17);if(mblManualMarker)mblManualMarker.setLatLng(point);else mblManualMarker=L.marker(point).addTo(mblManualMap);setTimeout(()=>mblManualMap.invalidateSize(),100);}
+  await mblRequestManualQuote();
+ }catch(e){window.mblManualDeliveryQuote=null;window.mblManualDeliveryFee=0;status.textContent=e.message;$('ototal').textContent=money(totalOrder());}
+ finally{button.disabled=false;button.textContent='Localizar morada e calcular entrega';}
 }
+$('oaddress')?.addEventListener('input',()=>{
+ mblManualCoords=null;window.mblManualDeliveryQuote=null;window.mblManualDeliveryFee=0;
+ $('omanualPoint').textContent='Morada alterada. Localiza novamente ou escolhe o ponto no mapa.';
+ $('omanualQuote').textContent='A morada mudou; é necessário recalcular a entrega.';
+ $('ototal').textContent=money(totalOrder());
+});
+
 function newOrder(){
  const form=$('orderform');
  if(!form)return alert('Não foi possível abrir o formulário de encomenda.');
