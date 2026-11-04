@@ -798,10 +798,14 @@ function shareManualDelivery(id){
 }
 function shareManualCustomer(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
- let phone=String(o.phone||'').replace(/\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
- const msg='Olá '+o.client+'! ❤️ A tua encomenda My Box in Love ('+o.product+') foi registada. Estado: '+o.status+'. Total: '+money(o.total)+'. Obrigada pela preferência!';
+ let phone=String(o.phone||'').replace(/\\D/g,'');
+ if(phone.startsWith('00'))phone=phone.slice(2);
+ if(phone.length===9)phone='351'+phone;
+ const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
+ const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
+ const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Obrigada pela preferência!';
  const url='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
- const w=window.open(url,'_blank');if(!w)location.href=url;
+ location.href=url;
 }
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
