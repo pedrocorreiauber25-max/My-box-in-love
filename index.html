@@ -1503,7 +1503,24 @@ async function mblSaveOrder(id){
 }
 if(MBL_TOKEN){
  $('loginGate').style.display='none';$('privateMain').style.display='block';
- mblCall({action:'verify'}).then(()=>{mblLoadCatalogData();mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblCatalogPoll){window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);}if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
+ (async function mblBootstrapPanel(){
+  try{
+   await mblCall({action:'verify'});
+   await mblLoadBusinessData();
+   await mblLoadCatalogData();
+   await mblLoadMaterialChecklist();
+   await mblLoadOrders();
+   mblSubscribeOrders();
+   if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);
+   if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,30000);
+   if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);
+   if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);
+  }catch(error){
+   mblLogout();
+   const message=$('loginError');
+   if(message)message.textContent='A sessão expirou ou não foi possível carregar os dados. Entra novamente com o PIN.';
+  }
+ })();
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
