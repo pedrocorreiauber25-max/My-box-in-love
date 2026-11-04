@@ -1138,7 +1138,7 @@ function draw(){
    <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
     <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
     ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar link do motorista + Waze por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
-    <button type="button" onclick="shareManualCustomer(\''+o.id+'\')">Enviar link de acompanhamento à cliente por WhatsApp</button>
+    <button type="button" class="mbl-customer-track" data-order-id="'+o.id+'">Enviar link de acompanhamento à cliente por WhatsApp</button>
     <p class="small">A cliente acompanha o estado e a localização do motorista. O motorista inicia a entrega pelo link e partilha o GPS.</p>
    </details>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
@@ -1539,6 +1539,24 @@ if(MBL_TOKEN){
 if('serviceWorker' in navigator){
  navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
+</script>
+
+<script id="MBL_CUSTOMER_TRACK_CLICK_FIX">
+(function(){
+ document.addEventListener('click',function(event){
+  var button=event.target&&event.target.closest?event.target.closest('button.mbl-customer-track'):null;
+  if(!button)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  var id=button.getAttribute('data-order-id');
+  if(!id){alert('Não foi possível identificar esta encomenda.');return;}
+  if(typeof window.shareManualCustomer!=='function'){
+   alert('A função de acompanhamento da cliente não foi carregada. Fecha a aplicação e abre novamente.');
+   return;
+  }
+  window.shareManualCustomer(id);
+ },true);
+})();
 </script>
 
 <script id="MBL_SAFE_LOGIN_FALLBACK">
