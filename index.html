@@ -1552,6 +1552,10 @@ if('serviceWorker' in navigator){
       await mblLoadCatalogData();
       await mblLoadMaterialChecklist();
       await mblLoadOrders();
+      if (typeof draw === 'function') draw();
+      if (typeof drawCEOFinance === 'function') drawCEOFinance();
+      if (typeof drawCEOAlerts === 'function') drawCEOAlerts();
+      if (typeof go === 'function') go('home');
       mblSubscribeOrders();
       if (!window.mblBusinessPoll) window.mblBusinessPoll = setInterval(mblLoadBusinessData, 10000);
       if (!window.mblCatalogPoll) window.mblCatalogPoll = setInterval(mblLoadCatalogData, 15000);
