@@ -798,8 +798,8 @@ async function shareManualDelivery(id){
   const result=await mblCall({action:'driver_link',id});
   const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
   const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nLink do motorista (iniciar entrega, GPS e Waze): '+result.url+'\\nNavegação Waze: '+waze;
-  let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
-  location.href='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
+  const phone='351927414119';
+  location.href='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
  }catch(e){alert(e.message||'Não foi possível criar o link do motorista.');}
 }
 function openManualWaze(id){
