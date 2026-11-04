@@ -953,7 +953,7 @@ function draw(){
  $('fprofit').textContent=money(recordedResult);
  $('profit').className='metric '+(profit<0?'bad':'good');
 
- const sh=d.shares,positive=Math.max(0,profit);
+ const sh=d.shares,positive=Math.max(0,recordedResult);
  $('distribution').innerHTML=`
   <p>Raquel (${sh.personal}%): <b>${money(positive*sh.personal/100)}</b></p>
   <p>Reinvestimento (${sh.reinvest}%): <b>${money(positive*sh.reinvest/100)}</b></p>
