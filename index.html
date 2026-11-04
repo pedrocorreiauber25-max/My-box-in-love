@@ -788,9 +788,15 @@ function refund(id){
 function shareManualDelivery(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
  if(!o.address)return alert('Esta encomenda não tem morada de entrega.');
- const map='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(o.address);
- const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nMapa: '+map;
+ const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
+ const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nAbrir navegação no Waze: '+waze;
  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');
+}
+function openManualWaze(id){
+ const o=d.orders.find(x=>x.id===id);if(!o)return;
+ if(!o.address)return alert('Esta encomenda não tem morada de entrega.');
+ const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
+ window.open(waze,'_blank','noopener');
 }
 function shareManualCustomer(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
@@ -1111,7 +1117,7 @@ function draw(){
    <p class="small">${esc(o.notes||'')}</p>
    <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
     <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
-    ${o.delivery==='Entrega ao domicílio'&&o.address?'<a class="action-link primary" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(o.address)+'">📍 Abrir morada no Google Maps</a><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar morada ao motorista por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
+    ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar morada + Waze ao motorista por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
     <button type="button" onclick="shareManualCustomer(\''+o.id+'\')">Enviar confirmação à cliente por WhatsApp</button>
     <p class="small">Nota: nas encomendas manuais, estes atalhos permitem abrir e partilhar a morada. O acompanhamento em tempo real exige criar também o registo de entrega no sistema online.</p>
    </details>
