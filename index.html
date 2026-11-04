@@ -394,14 +394,10 @@ d.purchases=d.purchases||[];
 d.expenses=d.expenses||[];
 d.extras=d.extras||[];
 
-// Limpeza única dos dados de teste existentes neste dispositivo.
-// Preserva catálogo, preços, adicionais, fichas técnicas, PIN e lista de compras.
-if(localStorage.getItem('mbl_clean_start_v2')!=='done'){
- d.orders=[];
- d.purchases=[];
- d.stock=[];
- d.expenses=[];
- localStorage.setItem('mbl_clean_start_v2','done');
+// Migração de segurança: preservar sempre os registos comerciais.
+// Nunca apagar encomendas, compras, stock ou despesas automaticamente.
+if(localStorage.getItem('mbl_clean_start_v2')!=='preserved'){
+ localStorage.setItem('mbl_clean_start_v2','preserved');
 }
 const savedShares=d.shares&&typeof d.shares==='object'?d.shares:{};
 const shareValue=(value,fallback)=>{const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=100?n:fallback;};
@@ -1221,6 +1217,8 @@ async function mblLoadBusinessData(){
    const localHasExtra=JSON.stringify(merged)!==JSON.stringify(remote);
    d.orders=merged.orders;d.purchases=merged.purchases;d.expenses=merged.expenses;
    localStorage.setItem('mbl',JSON.stringify(d));draw();
+   if(typeof drawCEOFinance==='function')drawCEOFinance();
+   if(typeof drawCEOAlerts==='function')drawCEOAlerts();
    if(localHasExtra)await mblSaveSharedBusinessData();
   }
   mblBusinessLastSync=result.updated_at||mblBusinessLastSync;
