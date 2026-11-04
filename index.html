@@ -798,10 +798,10 @@ function shareManualDelivery(id){
 }
 function shareManualCustomer(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
- let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+ let phone=String(o.phone||'').replace(/\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
  const msg='Olá '+o.client+'! ❤️ A tua encomenda My Box in Love ('+o.product+') foi registada. Estado: '+o.status+'. Total: '+money(o.total)+'. Obrigada pela preferência!';
  const url='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
- window.open(url,'_blank','noopener');
+ const w=window.open(url,'_blank');if(!w)location.href=url;
 }
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
