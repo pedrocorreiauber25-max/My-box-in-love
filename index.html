@@ -1522,11 +1522,14 @@ if('serviceWorker' in navigator){
       if (message) message.textContent = 'Acesso validado. A abrir o painel…';
       document.getElementById('loginGate').style.display = 'none';
       document.getElementById('privateMain').style.display = 'block';
+      await mblLoadBusinessData();
       await mblLoadCatalogData();
       await mblLoadMaterialChecklist();
       await mblLoadOrders();
       mblSubscribeOrders();
-      if (!window.mblMaterialPoll) window.mblMaterialPoll = setInterval(mblLoadMaterialChecklist, 30000);
+      if (!window.mblBusinessPoll) window.mblBusinessPoll = setInterval(mblLoadBusinessData, 10000);
+      if (!window.mblCatalogPoll) window.mblCatalogPoll = setInterval(mblLoadCatalogData, 15000);
+      if (!window.mblMaterialPoll) window.mblMaterialPoll = setInterval(mblLoadMaterialChecklist, 20000);
       if (!window.mblOrderPoll) window.mblOrderPoll = setInterval(mblLoadOrders, 20000);
       if ('Notification' in window && Notification.permission === 'default') mblEnableNotifications();
       if (message) message.textContent = '';
