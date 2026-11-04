@@ -133,7 +133,11 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
     <div class="card"><span class="small">Vendas registadas</span><div class="metric" id="ceoSales">0 €</div></div>
     <div class="card"><span class="small">Dinheiro recebido</span><div class="metric good" id="ceoReceived">0 €</div></div>
     <div class="card"><span class="small">Por receber</span><div class="metric" id="ceoPending">0 €</div></div>
-    <div class="card"><span class="small">Despesas pagas</span><div class="metric" id="ceoExpenses">0 €</div></div>
+    <div class="card"><span class="small">Saídas de caixa</span><div class="metric" id="ceoExpenses">0 €</div></div>
+    <div class="card"><span class="small">Compras de materiais</span><div class="metric" id="ceoPurchases">0 €</div></div>
+    <div class="card"><span class="small">Outras despesas</span><div class="metric" id="ceoOtherExpenses">0 €</div></div>
+    <div class="card"><span class="small">Materiais consumidos (produção registada)</span><div class="metric" id="ceoConsumed">0 €</div></div>
+    <div class="card"><span class="small">Resultado após custos registados</span><div class="metric" id="ceoMargin">0 €</div></div>
     <div class="card"><span class="small">Saldo de caixa estimado</span><div class="metric" id="ceoBalance">0 €</div></div>
     <div class="card"><span class="small">Encomendas no período</span><div class="metric" id="ceoOrders">0</div></div>
    </div>
@@ -266,9 +270,12 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  <section id="finance" class="section">
   <h1>Financeiro</h1>
   <div class="grid">
-   <div class="card">Recebido<div class="metric" id="freceived">0 €</div></div>
-   <div class="card">Despesas<div class="metric" id="fexpenses">0 €</div></div>
-   <div class="card">Resultado<div class="metric" id="fprofit">0 €</div></div>
+   <div class="card">Dinheiro recebido<div class="metric" id="freceived">0 €</div></div>
+   <div class="card">Compras de materiais<div class="metric" id="fpurchases">0 €</div></div>
+   <div class="card">Outras despesas<div class="metric" id="fotherexpenses">0 €</div></div>
+   <div class="card">Materiais consumidos<div class="metric" id="fconsumed">0 €</div></div>
+   <div class="card">Saldo de caixa<div class="metric" id="fexpenses">0 €</div></div>
+   <div class="card">Resultado registado<div class="metric" id="fprofit">0 €</div></div>
   </div>
   <div class="card">
    <h2>Outra despesa</h2>
@@ -864,13 +871,20 @@ function drawCEOFinance(){
  const onlineSales=online.filter(o=>o.status!=='Cancelado').reduce((s,o)=>s+onlineTotal(o),0);
  const onlineReceived=online.filter(o=>o.status!=='Cancelado'&&o.payment_status==='Pago').reduce((s,o)=>s+onlineTotal(o),0);
  const onlinePending=online.filter(o=>o.status!=='Cancelado'&&o.payment_status!=='Pago').reduce((s,o)=>s+onlineTotal(o),0);
- const expenses=d.purchases.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.price||0),0)+d.expenses.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.value||0),0);
+ const purchases=d.purchases.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.price||0),0);
+ const otherExpenses=d.expenses.filter(x=>inPeriod(x.date)).reduce((s,x)=>s+Number(x.value||0),0);
+ const expenses=purchases+otherExpenses;
+ const consumed=local.filter(o=>o.status!=='Cancelada'&&o.produced).reduce((s,o)=>s+Number(o.materialCost||0),0);
  const sales=localSales+onlineSales,received=localReceived+onlineReceived,pending=localPending+onlinePending,balance=received-expenses;
+ const recordedResult=sales-consumed-otherExpenses;
  $('ceoSales').textContent=money(sales);$('ceoReceived').textContent=money(received);
  $('ceoPending').textContent=money(pending);$('ceoExpenses').textContent=money(expenses);
+ $('ceoPurchases').textContent=money(purchases);$('ceoOtherExpenses').textContent=money(otherExpenses);
+ $('ceoConsumed').textContent=money(consumed);$('ceoMargin').textContent=money(recordedResult);
+ $('ceoMargin').className='metric '+(recordedResult<0?'bad':'good');
  $('ceoBalance').textContent=money(balance);$('ceoBalance').className='metric '+(balance<0?'bad':'good');
  $('ceoOrders').textContent=local.filter(o=>o.status!=='Cancelada').length+online.filter(o=>o.status!=='Cancelado').length;
- $('ceoPeriodNote').textContent=(period==='week'?'Período: segunda-feira até hoje.':period==='month'?'Período: primeiro dia deste mês até hoje.':'Período: todo o histórico disponível.')+' Inclui encomendas manuais e online. Só conta como recebido o dinheiro confirmado. O saldo é uma estimativa de caixa, não inclui impostos nem custos ainda não registados.';
+ $('ceoPeriodNote').textContent=(period==='week'?'Período: segunda-feira até hoje.':period==='month'?'Período: primeiro dia deste mês até hoje.':'Período: todo o histórico disponível.')+' Inclui encomendas manuais e online. As compras são saídas de caixa e permanecem em stock até serem consumidas. O resultado registado desconta materiais de encomendas manuais com produção confirmada e outras despesas; ainda não estima materiais de encomendas online nem impostos.';
  // Gráfico de vendas: 7 dias, 5 semanas ou 6 meses conforme o período.
  const bins=[];
  if(period==='week'){
@@ -907,11 +921,21 @@ function draw(){
  ).join('')||'<span class="muted">Sem adicionais.</span>';
  $('ototal').textContent=money(totalOrder());
 
- const received=d.orders.reduce((s,o)=>s+receivedOrder(o),0);
- const expenses=d.purchases.reduce((s,x)=>s+x.price,0)+d.expenses.reduce((s,x)=>s+x.value,0);
+ const onlineOrders=window.mblOnlineOrders||[];
+ const onlineTotal=o=>Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100;
+ const validOnline=onlineOrders.filter(o=>o.status!=='Cancelado');
+ const receivedLocal=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+receivedOrder(o),0);
+ const receivedOnline=validOnline.filter(o=>o.payment_status==='Pago').reduce((s,o)=>s+onlineTotal(o),0);
+ const received=receivedLocal+receivedOnline;
+ const purchases=d.purchases.reduce((s,x)=>s+Number(x.price||0),0);
+ const otherExpenses=d.expenses.reduce((s,x)=>s+Number(x.value||0),0);
+ const expenses=purchases+otherExpenses;
+ const consumed=d.orders.filter(o=>o.produced&&o.status!=='Cancelada').reduce((s,o)=>s+Number(o.materialCost||0),0);
  const profit=received-expenses;
- const open=d.orders.filter(o=>!['Entregue','Cancelada'].includes(o.status)).length;
- const pending=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
+ const open=d.orders.filter(o=>!['Entregue','Cancelada'].includes(o.status)).length+validOnline.filter(o=>!['Entregue','Cancelado'].includes(o.status)).length;
+ const pendingLocal=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
+ const pendingOnline=validOnline.filter(o=>o.payment_status!=='Pago').reduce((s,o)=>s+onlineTotal(o),0);
+ const pending=pendingLocal+pendingOnline;
 
  $('sales').textContent=money(received);
  $('costs').textContent=money(expenses);
@@ -920,8 +944,11 @@ function draw(){
  $('pending').textContent=money(pending);
  $('materialsCount').textContent=d.stock.reduce((s,x)=>s+x.qty,0);
  $('freceived').textContent=money(received);
- $('fexpenses').textContent=money(expenses);
- $('fprofit').textContent=money(profit);
+ $('fpurchases').textContent=money(purchases);
+ $('fotherexpenses').textContent=money(otherExpenses);
+ $('fconsumed').textContent=money(consumed);
+ $('fexpenses').textContent=money(received-expenses);
+ $('fprofit').textContent=money(received-consumed-otherExpenses);
  $('profit').className='metric '+(profit<0?'bad':'good');
 
  const sh=d.shares,positive=Math.max(0,profit);
@@ -985,18 +1012,19 @@ function draw(){
  ).join('')||'Ainda não existem encomendas.';
 
  const movements=[
-  ...d.purchases.map(x=>({name:'Compra: '+x.name,value:-x.price,date:x.date})),
-  ...d.expenses.map(x=>({name:x.name,value:-x.value,date:x.date})),
+  ...d.purchases.map(x=>({name:'Compra: '+x.name,value:-Number(x.price||0),date:x.date})),
+  ...d.expenses.map(x=>({name:x.name,value:-Number(x.value||0),date:x.date})),
   ...d.orders.flatMap(o=>[
    {name:'Sinal: '+o.client,value:o.deposit||0,date:o.date},
    ...(o.payments||[]).map(p=>({name:'Pagamento: '+o.client,value:p.amount,date:p.date})),
    ...(o.refunds?[{name:'Devolução: '+o.client,value:-o.refunds,date:o.date}]:[])
-  ])
+  ]),
+  ...validOnline.map(o=>({name:'Venda online: '+(o.reference||o.customer_name||'Encomenda'),value:onlineTotal(o),date:(o.created_at||o.requested_date||'').slice(0,10),kind:'online'}))
  ];
  $('financelist').innerHTML=movements.sort((a,b)=>(b.date||'').localeCompare(a.date||''))
  .map(x=>`<div class="item">${esc(x.name)} <b>${money(x.value)}</b><div class="small">${x.date||''}</div></div>`).join('')||'Sem movimentos.';
 
- $('clientlist').innerHTML=[...new Set(d.orders.map(o=>o.client))]
+ $('clientlist').innerHTML=[...new Set([...d.orders.map(o=>o.client),...validOnline.map(o=>o.customer_name)].filter(Boolean))]
  .map(n=>`<div class="item">${esc(n)}</div>`).join('')||'Ainda sem clientes.';
 
  $('recent').innerHTML=d.orders.slice(-5).reverse()
