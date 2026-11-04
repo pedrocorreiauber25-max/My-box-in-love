@@ -787,8 +787,14 @@ function refund(id){
 }
 async function getManualTrackingOrder(id){
  const result=await mblCall({action:'orders'});
- const order=(result.orders||[]).find(x=>String(x.manual_source_id||'')===String(id)||String(x.id)===String(id));
- if(!order||!order.tracking_token)throw new Error('Não foi possível gerar o link privado de acompanhamento.');
+ const rows=Array.isArray(result.orders)?result.orders:[];
+ const wanted=String(id??'').trim().toLowerCase();
+ const local=(d.orders||[]).find(x=>String(x.id??'').trim().toLowerCase()===wanted);
+ const reference=String(local?.reference||local?.order_reference||'').trim().toLowerCase();
+ const order=rows.find(x=>[x.id,x.manual_source_id].some(v=>String(v??'').trim().toLowerCase()===wanted))
+  ||(reference?rows.find(x=>String(x.reference||'').trim().toLowerCase()===reference):null);
+ if(!order)throw new Error('A encomenda não foi localizada na nuvem. Foram recebidas '+rows.length+' encomendas; confirma a sincronização e tenta novamente.');
+ if(!order.tracking_token)throw new Error('A encomenda foi localizada, mas o servidor não gerou o token de acompanhamento. Atualiza a aplicação e tenta novamente.');
  return order;
 }
 async function shareManualDelivery(id){
