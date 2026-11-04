@@ -4,7 +4,7 @@
   "short_name": "My Box",
   "description": "Gestão privada da My Box in Love",
   "lang": "pt-PT",
-  "start_url": "/My-box-in-love/?versao=novo",
+  "start_url": "/My-box-in-love/?versao=38",
   "scope": "/My-box-in-love/",
   "display": "standalone",
   "orientation": "portrait",
