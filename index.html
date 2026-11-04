@@ -192,6 +192,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <label>QUANTIDADE</label><input id="oqty" type="number" min="1" value="1">
    <label>ADICIONAIS</label><div id="oextras"></div>
    <label>DATA DE ENTREGA</label><input id="odate" type="date">
+   <label>TIPO DE ENTREGA</label><select id="odelivery" onchange="updateManualDelivery()"><option value="Levantamento a combinar">Levantamento</option><option value="Entrega ao domicílio">Entrega ao domicílio</option></select>
+   <div id="omanualAddress" class="hidden"><label>MORADA DE ENTREGA</label><input id="oaddress" placeholder="Rua, número, código postal e localidade"><button type="button" onclick="calculateManualDelivery()">Calcular preço da entrega</button><p class="small" id="omanualQuote">Indica a morada para calcular a entrega.</p></div>
    <label>ESTADO</label>
    <select id="ostatus">
     <option>Recebida</option>
@@ -473,7 +475,31 @@ function totalOrder(){
   const x=d.extras.find(e=>e.id===c.value);
   if(x)extras+=Number(x.price)||0;
  });
- return p ? p.price*q+extras : 0;
+ return p ? p.price*q+extras+(Number(window.mblManualDeliveryFee)||0) : 0;
+}
+window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;
+function updateManualDelivery(){
+ const home=$('odelivery')?.value==='Entrega ao domicílio';
+ $('omanualAddress')?.classList.toggle('hidden',!home);
+ if(!home){window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;}
+ $('ototal').textContent=money(totalOrder());
+}
+async function calculateManualDelivery(){
+ const address=$('oaddress').value.trim(),status=$('omanualQuote');
+ if(address.length<5){status.textContent='Indica rua, número, código postal e localidade.';return;}
+ status.textContent='A localizar morada e calcular rota…';
+ try{
+  const headers={'Content-Type':'application/json','apikey':MBL_KEY};
+  const base='https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler';
+  const geo=await fetch(base,{method:'POST',headers,body:JSON.stringify({action:'geocode',address})});
+  const gd=await geo.json();if(!geo.ok||!gd.ok||!gd.point)throw new Error(gd.error||'Morada não localizada.');
+  const quote=await fetch(base,{method:'POST',headers,body:JSON.stringify({action:'quote',address,lat:Number(gd.point.lat),lon:Number(gd.point.lon)})});
+  const qd=await quote.json();if(!quote.ok||!qd.ok||!qd.quote)throw new Error(qd.error||'Não foi possível calcular a entrega.');
+  window.mblManualDeliveryQuote=qd.quote;
+  window.mblManualDeliveryFee=Number(qd.quote.delivery_fee_cents)/100;
+  status.textContent='Entrega: '+money(window.mblManualDeliveryFee)+' · '+qd.quote.delivery_km+' km por estrada.';
+  $('ototal').textContent=money(totalOrder());
+ }catch(e){window.mblManualDeliveryQuote=null;window.mblManualDeliveryFee=0;status.textContent=e.message;}
 }
 function newOrder(){
  const form=$('orderform');
@@ -497,16 +523,22 @@ function saveOrder(){
  const qty=Math.max(1,Number($('oqty').value)||1);
  if(!client||!p)return alert('Indica o cliente e o produto.');
  const total=totalOrder();
- const deposit=Number($('odeposit').value)||0;
- if(deposit<0||deposit>total)return alert('Sinal inválido.');
+ const deposit=Number(String($('odeposit').value).replace(',','.'))||0;
+ if(!Number.isFinite(deposit)||deposit<0||deposit>total+0.005)return alert('O sinal tem de ser um valor entre 0 € e o total da encomenda.');
+ if($('odelivery').value==='Entrega ao domicílio'&&!window.mblManualDeliveryQuote)return alert('Calcula primeiro o preço da entrega pela morada.');
  const extras=[...document.querySelectorAll('.ox:checked')].map(c=>c.value);
  d.orders.push({
   id:uid(),client,phone:$('op').value,product:p.name,productId:p.id,
   qty,date:$('odate').value,status:$('ostatus').value,total,deposit,
   payments:[],refunds:0,produced:false,materialCost:0,
-  extras,notes:$('onotes').value
+  extras,notes:$('onotes').value,
+  delivery:$('odelivery').value,address:$('oaddress').value.trim(),
+  deliveryFee:Number(window.mblManualDeliveryFee)||0
  });
- ['oc','op','onotes'].forEach(id=>$(id).value='');
+ ['oc','op','onotes','oaddress'].forEach(id=>$(id).value='');
+ window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;
+ $('omanualQuote').textContent='Indica a morada para calcular a entrega.';
+ $('odelivery').value='Levantamento a combinar';updateManualDelivery();$('ototal').textContent=money(totalOrder());
  $('odeposit').value=0;
  closeOrder();save();
 }
@@ -1083,6 +1115,15 @@ let mblBusinessDirty=false;
 function mblBusinessPayload(){
  return {orders:Array.isArray(d.orders)?d.orders:[],purchases:Array.isArray(d.purchases)?d.purchases:[],expenses:Array.isArray(d.expenses)?d.expenses:[]};
 }
+function mblMergeById(remote,local){
+ const map=new Map();
+ (Array.isArray(remote)?remote:[]).forEach(x=>{if(x&&x.id!=null)map.set(String(x.id),x);});
+ (Array.isArray(local)?local:[]).forEach(x=>{if(x&&x.id!=null&&!map.has(String(x.id)))map.set(String(x.id),x);});
+ return [...map.values()];
+}
+function mblMergeBusiness(remote,local){
+ return {orders:mblMergeById(remote.orders,local.orders),purchases:mblMergeById(remote.purchases,local.purchases),expenses:mblMergeById(remote.expenses,local.expenses)};
+}
 function mblHasBusinessData(data){
  return !!(data&&(data.orders?.length||data.purchases?.length||data.expenses?.length));
 }
@@ -1092,16 +1133,13 @@ async function mblLoadBusinessData(){
  try{
   const result=await mblCall({action:'business_data_get'});
   const remote=result.data||{orders:[],purchases:[],expenses:[]};
-  if(!mblBusinessLastSync){
-   if(mblHasBusinessData(remote)){
-    d.orders=remote.orders||[];d.purchases=remote.purchases||[];d.expenses=remote.expenses||[];
-    localStorage.setItem('mbl',JSON.stringify(d));draw();
-   }else if(mblHasBusinessData(mblBusinessPayload())){
-    await mblSaveSharedBusinessData();
-   }
-  }else if(result.updated_at&&result.updated_at!==mblBusinessLastSync){
-   d.orders=remote.orders||[];d.purchases=remote.purchases||[];d.expenses=remote.expenses||[];
+  if(!mblBusinessLastSync || (result.updated_at&&result.updated_at!==mblBusinessLastSync)){
+   const local=mblBusinessPayload();
+   const merged=mblMergeBusiness(remote,local);
+   const localHasExtra=JSON.stringify(merged)!==JSON.stringify(remote);
+   d.orders=merged.orders;d.purchases=merged.purchases;d.expenses=merged.expenses;
    localStorage.setItem('mbl',JSON.stringify(d));draw();
+   if(localHasExtra)await mblSaveSharedBusinessData();
   }
   mblBusinessLastSync=result.updated_at||mblBusinessLastSync;
   if(state)state.textContent='Encomendas, compras e despesas sincronizadas entre os dispositivos.';
