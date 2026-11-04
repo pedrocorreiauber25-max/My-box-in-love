@@ -1194,7 +1194,7 @@ const MBL_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
 let MBL_TOKEN=localStorage.getItem('mbl_panel_session')||'';
 let mblRealtime=null;
 const MBL_URL='https://tlhcwzpyuhitjxymapbm.supabase.co';
-async function mblCall(data){
+async async function mblCall(data){
  const res=await fetch(MBL_API,{method:'POST',headers:{'Content-Type':'application/json','apikey':MBL_KEY,...(MBL_TOKEN?{'Authorization':'Bearer '+MBL_TOKEN}:{})},body:JSON.stringify(data)});
  const json=await res.json().catch(()=>({error:'Resposta inválida.'}));
  if(!res.ok)throw new Error(json.error||'Erro de ligação.');
