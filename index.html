@@ -809,16 +809,26 @@ function openManualWaze(id){
  window.open(waze,'_blank','noopener');
 }
 async function shareManualCustomer(id){
- const o=d.orders.find(x=>x.id===id);if(!o)return;
+ const o=d.orders.find(x=>String(x.id)===String(id));
+ if(!o){alert('Não encontrei esta encomenda no painel. Atualiza a página e tenta novamente.');return;}
+ // Abre uma janela imediatamente no clique para evitar que o Android bloqueie
+ // a abertura do WhatsApp depois da resposta assíncrona do servidor.
+ const waWindow=window.open('about:blank','_blank');
  try{
   const linked=await getManualTrackingOrder(id);
   let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+  if(phone.length<10)throw new Error('Esta encomenda não tem um número de telemóvel válido da cliente.');
   const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
   const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
   const trackingUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
   const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\\n\\nObrigada pela preferência!';
-  location.href='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
- }catch(e){alert(e.message||'Não foi possível criar o link de acompanhamento.');}
+  const waUrl='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+  if(waWindow&&!waWindow.closed)waWindow.location.href=waUrl;
+  else location.href=waUrl;
+ }catch(e){
+  if(waWindow&&!waWindow.closed)waWindow.close();
+  alert(e.message||'Não foi possível criar o link de acompanhamento.');
+ }
 }
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
