@@ -785,12 +785,22 @@ function refund(id){
  }
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
-function shareManualDelivery(id){
+async function getManualTrackingOrder(id){
+ const result=await mblCall({action:'orders'});
+ const order=(result.orders||[]).find(x=>String(x.id)===String(id));
+ if(!order||!order.tracking_token)throw new Error('Não foi possível gerar o link privado de acompanhamento.');
+ return order;
+}
+async function shareManualDelivery(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
  if(!o.address)return alert('Esta encomenda não tem morada de entrega.');
- const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
- const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nAbrir navegação no Waze: '+waze;
- window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');
+ try{
+  const result=await mblCall({action:'driver_link',id});
+  const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
+  const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nLink do motorista (iniciar entrega, GPS e Waze): '+result.url+'\\nNavegação Waze: '+waze;
+  let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+  location.href='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
+ }catch(e){alert(e.message||'Não foi possível criar o link do motorista.');}
 }
 function openManualWaze(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
@@ -798,16 +808,17 @@ function openManualWaze(id){
  const waze='https://waze.com/ul?q='+encodeURIComponent(o.address)+'&navigate=yes';
  window.open(waze,'_blank','noopener');
 }
-function shareManualCustomer(id){
+async function shareManualCustomer(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
- let phone=String(o.phone||'').replace(/\\D/g,'');
- if(phone.startsWith('00'))phone=phone.slice(2);
- if(phone.length===9)phone='351'+phone;
- const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
- const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
- const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Obrigada pela preferência!';
- const url='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
- location.href=url;
+ try{
+  const linked=await getManualTrackingOrder(id);
+  let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+  const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
+  const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
+  const trackingUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
+  const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\\n\\nObrigada pela preferência!';
+  location.href='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
+ }catch(e){alert(e.message||'Não foi possível criar o link de acompanhamento.');}
 }
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
@@ -1030,7 +1041,7 @@ function draw(){
  ).join('')||'<span class="muted">Sem adicionais.</span>';
  $('ototal').textContent=money(totalOrder());
 
- const onlineOrders=window.mblOnlineOrders||[];
+ const onlineOrders=(window.mblOnlineOrders||[]).filter(o=>!d.orders.some(local=>String(local.id)===String(o.id)));
  const onlineTotal=o=>Number(o.order_total_cents??(Number(o.order_subtotal_cents||o.product_total_cents||0)+Number(o.delivery_fee_cents||0)))/100;
  const validOnline=onlineOrders.filter(o=>o.status!=='Cancelado');
  const receivedLocal=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+receivedOrder(o),0);
@@ -1117,9 +1128,9 @@ function draw(){
    <p class="small">${esc(o.notes||'')}</p>
    <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
     <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
-    ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar morada + Waze ao motorista por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
-    <button type="button" onclick="shareManualCustomer(\''+o.id+'\')">Enviar confirmação à cliente por WhatsApp</button>
-    <p class="small">Nota: nas encomendas manuais, estes atalhos permitem abrir e partilhar a morada. O acompanhamento em tempo real exige criar também o registo de entrega no sistema online.</p>
+    ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar link do motorista + Waze por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
+    <button type="button" onclick="shareManualCustomer(\''+o.id+'\')">Enviar link de acompanhamento à cliente por WhatsApp</button>
+    <p class="small">A cliente acompanha o estado e a localização do motorista. O motorista inicia a entrega pelo link e partilha o GPS.</p>
    </details>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
    <button onclick="produce('${o.id}')" ${o.produced?'disabled title="Produção já registada"':''}>${o.produced?'✓ Produção registada':'Confirmar produção'}</button>
@@ -1436,7 +1447,8 @@ async function mblLoadOrders(){
   orders.forEach(o=>mblSeenOrders.add(o.id));
   mblOrdersInitialized=true;
   const statuses=['Novo','Em contacto','Confirmado','Em preparação','Pronto','Entregue','Cancelado'];
-  box.innerHTML=orders.map(o=>{
+  const displayOrders=orders.filter(o=>!d.orders.some(local=>String(local.id)===String(o.id)));
+  box.innerHTML=displayOrders.map(o=>{
    const items=Array.isArray(o.order_items)?o.order_items:[];
    const itemHtml=items.map(it=>'<div class="row" style="justify-content:space-between"><span>'+esc(it.name)+(it.quantity>1?' × '+Number(it.quantity):'')+'</span><b>'+money((Number(it.total_cents)||0)/100)+'</b></div>').join('');
    const subtotal=Number(o.order_subtotal_cents ?? o.product_total_cents ?? 0)/100;
