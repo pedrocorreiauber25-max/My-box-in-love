@@ -1019,7 +1019,7 @@ function draw(){
    ...(o.payments||[]).map(p=>({name:'Pagamento: '+o.client,value:p.amount,date:p.date})),
    ...(o.refunds?[{name:'Devolução: '+o.client,value:-o.refunds,date:o.date}]:[])
   ]),
-  ...validOnline.map(o=>({name:'Venda online: '+(o.reference||o.customer_name||'Encomenda'),value:onlineTotal(o),date:(o.created_at||o.requested_date||'').slice(0,10),kind:'online'}))
+  ...validOnline.filter(o=>o.payment_status==='Pago').map(o=>({name:'Venda online recebida: '+(o.reference||o.customer_name||'Encomenda'),value:onlineTotal(o),date:(o.created_at||o.requested_date||'').slice(0,10),kind:'online'}))
  ];
  $('financelist').innerHTML=movements.sort((a,b)=>(b.date||'').localeCompare(a.date||''))
  .map(x=>`<div class="item">${esc(x.name)} <b>${money(x.value)}</b><div class="small">${x.date||''}</div></div>`).join('')||'Sem movimentos.';
@@ -1212,7 +1212,7 @@ async function mblLoadOrders(){
  const box=document.getElementById('onlineOrders');if(!box||!MBL_TOKEN)return;
  try{
   const data=await mblCall({action:'orders'});
-  const orders=data.orders||[];window.mblOnlineOrders=orders;drawCEOFinance();drawCEOAlerts();
+  const orders=data.orders||[];window.mblOnlineOrders=orders;draw();drawCEOFinance();drawCEOAlerts();
   if(mblOrdersInitialized){
    const fresh=orders.filter(o=>!mblSeenOrders.has(o.id));
    fresh.forEach(o=>{
