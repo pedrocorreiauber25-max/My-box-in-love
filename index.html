@@ -147,7 +147,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   <div class="grid">
    <div class="card">Vendas recebidas<div class="metric" id="sales">0 €</div></div>
    <div class="card">Despesas registadas<div class="metric" id="costs">0 €</div></div>
-   <div class="card">Resultado financeiro<div class="metric" id="profit">0 €</div></div>
+   <div class="card">Saldo de caixa estimado<div class="metric" id="profit">0 €</div></div>
    <div class="card">Encomendas abertas<div class="metric" id="open">0</div></div>
    <div class="card">Por receber<div class="metric" id="pending">0 €</div></div>
    <div class="card">Unidades em stock<div class="metric" id="materialsCount">0</div></div>
@@ -275,7 +275,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <div class="card">Outras despesas<div class="metric" id="fotherexpenses">0 €</div></div>
    <div class="card">Materiais consumidos<div class="metric" id="fconsumed">0 €</div></div>
    <div class="card">Saldo de caixa<div class="metric" id="fexpenses">0 €</div></div>
-   <div class="card">Resultado registado<div class="metric" id="fprofit">0 €</div></div>
+   <div class="card">Resultado após custos registados<div class="metric" id="fprofit">0 €</div></div>
   </div>
   <div class="card">
    <h2>Outra despesa</h2>
@@ -931,7 +931,9 @@ function draw(){
  const otherExpenses=d.expenses.reduce((s,x)=>s+Number(x.value||0),0);
  const expenses=purchases+otherExpenses;
  const consumed=d.orders.filter(o=>o.produced&&o.status!=='Cancelada').reduce((s,o)=>s+Number(o.materialCost||0),0);
+ const sales=d.orders.filter(o=>o.status!=='Cancelada').reduce((sum,o)=>sum+Number(o.total||0),0)+validOnline.reduce((sum,o)=>sum+onlineTotal(o),0);
  const profit=received-expenses;
+ const recordedResult=sales-consumed-otherExpenses;
  const open=d.orders.filter(o=>!['Entregue','Cancelada'].includes(o.status)).length+validOnline.filter(o=>!['Entregue','Cancelado'].includes(o.status)).length;
  const pendingLocal=d.orders.filter(o=>o.status!=='Cancelada').reduce((s,o)=>s+pendingOrder(o),0);
  const pendingOnline=validOnline.filter(o=>o.payment_status!=='Pago').reduce((s,o)=>s+onlineTotal(o),0);
@@ -948,7 +950,7 @@ function draw(){
  $('fotherexpenses').textContent=money(otherExpenses);
  $('fconsumed').textContent=money(consumed);
  $('fexpenses').textContent=money(received-expenses);
- $('fprofit').textContent=money(received-consumed-otherExpenses);
+ $('fprofit').textContent=money(recordedResult);
  $('profit').className='metric '+(profit<0?'bad':'good');
 
  const sh=d.shares,positive=Math.max(0,profit);
