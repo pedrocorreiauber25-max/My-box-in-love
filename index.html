@@ -789,10 +789,10 @@ function refund(id){
  }
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
-function statusOrder(id){
+function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
- const s=prompt('Novo estado: Recebida, Em preparação, Pronta ou Entregue',o.status);
- if(['Recebida','Em preparação','Pronta','Entregue'].includes(s)){o.status=s;save();}
+ if(!['Recebida','Em preparação','Pronta','Entregue'].includes(status))return;
+ o.status=status;save();
 }
 function produce(id){
  const o=d.orders.find(x=>x.id===id);
@@ -1097,7 +1097,10 @@ function draw(){
    <p class="small">${esc(o.notes||'')}</p>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
    <button onclick="produce('${o.id}')" ${o.produced?'disabled title="Produção já registada"':''}>${o.produced?'✓ Produção registada':'Confirmar produção'}</button>
-   <button onclick="statusOrder('${o.id}')">Alterar estado</button>
+    <label for="manual-status-${o.id}">ESTADO DA ENCOMENDA</label>
+    <select id="manual-status-${o.id}" onchange="setManualOrderStatus('${o.id}',this.value)">
+     ${['Recebida','Em preparação','Pronta','Entregue'].map(s=>'<option '+(s===o.status?'selected':'')+'>'+s+'</option>').join('')}
+    </select>
    <button class="danger" onclick="refund('${o.id}')">Cancelar / devolver</button>
   </div>`
  ).join('')||'Ainda não existem encomendas.';
