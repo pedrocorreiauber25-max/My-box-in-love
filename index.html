@@ -321,7 +321,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   </div>
   <div class="card">
    <h2>Privacidade e armazenamento</h2>
-   <p class="muted">O painel tem acesso protegido por PIN. A lista de compras, o stock, as encomendas manuais, compras e despesas sincronizam através da nuvem. Os produtos, adicionais e percentagens continuam guardados neste dispositivo; usa a cópia de segurança para os transferir. Não partilhes o PIN.</p>
+   <p class="muted">O painel tem acesso protegido por PIN. A lista de compras, o stock, as encomendas, compras, despesas, catálogo, adicionais e percentagens sincronizam através da nuvem. Não partilhes o PIN.</p>
+   <p class="small" id="catalogSyncStatus" role="status">A sincronização do catálogo será verificada ao entrar.</p>
   </div>
  </section>
 
@@ -437,6 +438,7 @@ function save(){
  draw();
  mblQueueStockSync();
  mblQueueBusinessSync();
+ mblQueueCatalogSync();
 }
 function go(id){
  const target=document.getElementById(String(id));
@@ -1126,6 +1128,78 @@ function mblQueueBusinessSync(){
  if(mblBusinessSyncTimer)clearTimeout(mblBusinessSyncTimer);
  mblBusinessSyncTimer=setTimeout(()=>mblSaveSharedBusinessData(),700);
 }
+let mblCatalogLastSync=null;
+let mblCatalogLastPayload=null;
+let mblCatalogDirty=false;
+let mblCatalogSyncTimer=null;
+function mblCatalogPayload(){
+ return {
+  products:Array.isArray(d.products)?d.products:[],
+  extras:Array.isArray(d.extras)?d.extras:[],
+  shares:d.shares||{personal:50,reinvest:30,reserve:20},
+  deliveryRate:Number(d.deliveryRate)||0,
+  productImages:d.productImages||{}
+ };
+}
+async function mblLoadCatalogData(){
+ if(!MBL_TOKEN||mblCatalogDirty)return;
+ const state=$('catalogSyncStatus');
+ try{
+  const result=await mblCall({action:'catalog_data_get'});
+  const remote=result.data;
+  if(remote&&Array.isArray(remote.products)&&Array.isArray(remote.extras)&&remote.shares){
+   const current=JSON.stringify(mblCatalogPayload());
+   if(!mblCatalogLastSync&&current!==JSON.stringify(remote)){
+    localStorage.setItem('mbl_catalog_local_backup_before_cloud_sync',current);
+   }
+   if(mblCatalogLastSync&&result.updated_at!==mblCatalogLastSync&&mblCatalogLastPayload&&current!==mblCatalogLastPayload){
+    if(state)state.textContent='O catálogo foi alterado noutro dispositivo. Mantive as alterações locais; guarda uma cópia e atualiza antes de editar novamente.';
+    return;
+   }
+   d.products=remote.products;
+   d.extras=remote.extras;
+   d.shares=remote.shares;
+   d.deliveryRate=Number(remote.deliveryRate)||0;
+   d.productImages=remote.productImages||{};
+   mblCatalogLastSync=result.updated_at||null;
+   mblCatalogLastPayload=JSON.stringify(mblCatalogPayload());
+   localStorage.setItem('mbl',JSON.stringify(d));
+   draw();
+   if(state)state.textContent='Catálogo, adicionais, percentagens e tarifa sincronizados entre dispositivos.';
+  }else{
+   mblCatalogLastSync=null;
+   mblCatalogLastPayload=null;
+   await mblSaveCatalogData();
+  }
+ }catch(e){
+  if(state)state.textContent='Sincronização do catálogo indisponível: '+e.message;
+ }
+}
+async function mblSaveCatalogData(){
+ if(!MBL_TOKEN)return;
+ const state=$('catalogSyncStatus');
+ const data=mblCatalogPayload();
+ const snapshot=JSON.stringify(data);
+ if(snapshot===mblCatalogLastPayload)return;
+ mblCatalogDirty=true;
+ try{
+  const result=await mblCall({action:'catalog_data_save',data,expected_updated_at:mblCatalogLastSync});
+  mblCatalogLastSync=result.updated_at||mblCatalogLastSync;
+  mblCatalogLastPayload=snapshot;
+  mblCatalogDirty=false;
+  localStorage.setItem('mbl',JSON.stringify(d));
+  if(state)state.textContent='Catálogo, adicionais, percentagens e tarifa guardados na nuvem.';
+ }catch(e){
+  mblCatalogDirty=false;
+  if(state)state.textContent=e.message||'Não foi possível sincronizar o catálogo. As alterações continuam neste dispositivo.';
+ }
+}
+function mblQueueCatalogSync(){
+ if(!MBL_TOKEN)return;
+ if(JSON.stringify(mblCatalogPayload())===mblCatalogLastPayload)return;
+ if(mblCatalogSyncTimer)clearTimeout(mblCatalogSyncTimer);
+ mblCatalogSyncTimer=setTimeout(()=>mblSaveCatalogData(),900);
+}
 function mblQueueStockSync(){
  if(mblStockSyncTimer)clearTimeout(mblStockSyncTimer);
  mblStockSyncTimer=setTimeout(()=>mblSaveSharedStock().catch(e=>{
@@ -1141,6 +1215,7 @@ async function mblLogin(){
   MBL_TOKEN=result.token;localStorage.setItem('mbl_panel_session',MBL_TOKEN);
   $('loginGate').style.display='none';$('privateMain').style.display='block';
   await mblLoadBusinessData();
+  await mblLoadCatalogData();
   await mblLoadMaterialChecklist();
   await mblLoadOrders();mblSubscribeOrders();
   if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);
@@ -1156,7 +1231,9 @@ function mblStartPanel(){
  if(MBL_TOKEN){
   $('loginGate').style.display='none';$('privateMain').style.display='block';
   mblLoadBusinessData();
+  mblLoadCatalogData();
   mblLoadMaterialChecklist();
+  if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);
   mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
   .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
@@ -1164,6 +1241,8 @@ function mblStartPanel(){
 function mblLogout(){
  if(window.mblOrderPoll){clearInterval(window.mblOrderPoll);window.mblOrderPoll=null;}
  if(window.mblMaterialPoll){clearInterval(window.mblMaterialPoll);window.mblMaterialPoll=null;}
+ if(window.mblCatalogPoll){clearInterval(window.mblCatalogPoll);window.mblCatalogPoll=null;}
+ if(mblCatalogSyncTimer){clearTimeout(mblCatalogSyncTimer);mblCatalogSyncTimer=null;}
  if(mblRealtime){mblRealtime.unsubscribe();mblRealtime=null;}
  MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');
  $('privateMain').style.display='none';$('loginGate').style.display='block';
@@ -1304,7 +1383,7 @@ async function mblSaveOrder(id){
 }
 if(MBL_TOKEN){
  $('loginGate').style.display='none';$('privateMain').style.display='block';
- mblCall({action:'verify'}).then(()=>{mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
+ mblCall({action:'verify'}).then(()=>{mblLoadCatalogData();mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblCatalogPoll){window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);}if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
@@ -1349,6 +1428,7 @@ if('serviceWorker' in navigator){
       if (message) message.textContent = 'Acesso validado. A abrir o painel…';
       document.getElementById('loginGate').style.display = 'none';
       document.getElementById('privateMain').style.display = 'block';
+      await mblLoadCatalogData();
       await mblLoadMaterialChecklist();
       await mblLoadOrders();
       mblSubscribeOrders();
