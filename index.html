@@ -787,7 +787,7 @@ function refund(id){
 }
 async function getManualTrackingOrder(id){
  const result=await mblCall({action:'orders'});
- const order=(result.orders||[]).find(x=>String(x.id)===String(id));
+ const order=(result.orders||[]).find(x=>String(x.manual_source_id||'')===String(id)||String(x.id)===String(id));
  if(!order||!order.tracking_token)throw new Error('Não foi possível gerar o link privado de acompanhamento.');
  return order;
 }
@@ -816,7 +816,7 @@ async function shareManualCustomer(id){
  const waWindow=window.open('about:blank','_blank');
  try{
   const linked=await getManualTrackingOrder(id);
-  let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+  let phone=String(o.phone||'').replace(/\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
   if(phone.length<10)throw new Error('Esta encomenda não tem um número de telemóvel válido da cliente.');
   const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
   const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
