@@ -786,10 +786,10 @@ function refund(id){
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
 async function getManualTrackingOrder(id){
- const local=(d.orders||[]).find(x=>String(x.id??'').trim()===String(id??'').trim());
- const result=await mblCall({action:'customer_tracking_link',id:String(id??'').trim(),reference:String(local?.reference||local?.order_reference||'').trim()});
- if(!result.order||!result.tracking_token)throw new Error(result.error||'O servidor não conseguiu preparar o acompanhamento desta encomenda.');
- return {...result.order,tracking_token:result.tracking_token};
+ const result=await mblCall({action:'orders'});
+ const order=(result.orders||[]).find(x=>String(x.manual_source_id||'')===String(id)||String(x.id)===String(id));
+ if(!order||!order.tracking_token)throw new Error('Não foi possível gerar o link privado de acompanhamento.');
+ return order;
 }
 async function shareManualDelivery(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
