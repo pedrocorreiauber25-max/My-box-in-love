@@ -811,8 +811,6 @@ function openManualWaze(id){
 async function shareManualCustomer(id){
  const o=d.orders.find(x=>String(x.id)===String(id));
  if(!o){alert('Não encontrei esta encomenda no painel. Atualiza a página e tenta novamente.');return;}
- const button=event?.currentTarget;
- if(button){button.disabled=true;button.textContent='A preparar link...';}
  try{
   const linked=await getManualTrackingOrder(id);
   let phone=String(o.phone||'').replace(/\D/g,'');
