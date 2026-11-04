@@ -789,6 +789,20 @@ function refund(id){
  }
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
+function shareManualDelivery(id){
+ const o=d.orders.find(x=>x.id===id);if(!o)return;
+ if(!o.address)return alert('Esta encomenda não tem morada de entrega.');
+ const map='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(o.address);
+ const msg='Entrega My Box in Love\\nCliente: '+o.client+'\\nContacto: '+(o.phone||'Não indicado')+'\\nMorada: '+o.address+'\\nMapa: '+map;
+ window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');
+}
+function shareManualCustomer(id){
+ const o=d.orders.find(x=>x.id===id);if(!o)return;
+ let phone=String(o.phone||'').replace(/\\D/g,'');if(phone.startsWith('00'))phone=phone.slice(2);if(phone.length===9)phone='351'+phone;
+ const msg='Olá '+o.client+'! ❤️ A tua encomenda My Box in Love ('+o.product+') foi registada. Estado: '+o.status+'. Total: '+money(o.total)+'. Obrigada pela preferência!';
+ const url='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(msg);
+ window.open(url,'_blank','noopener');
+}
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
  if(!['Recebida','Em preparação','Pronta','Entregue'].includes(status))return;
@@ -1095,6 +1109,12 @@ function draw(){
    <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
    ${o.produced?'<p class="small good">✓ Produzida em '+esc(o.producedAt?new Date(o.producedAt).toLocaleString('pt-PT'):'data anterior')+' · Custo de materiais: '+money(o.materialCost||0)+'</p><div class="small">'+(Array.isArray(o.materialsUsed)?o.materialsUsed.map(x=>esc(x.name)+': '+Number(x.qty)+' '+esc(x.unit||'unidades')).join(' · '):'Registo de produção anterior sem detalhe de materiais.')+'</div>':''}
    <p class="small">${esc(o.notes||'')}</p>
+   <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
+    <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
+    ${o.delivery==='Entrega ao domicílio'&&o.address?'<a class="action-link primary" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(o.address)+'">📍 Abrir morada no Google Maps</a><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar morada ao motorista por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
+    <button type="button" onclick="shareManualCustomer(\''+o.id+'\')">Enviar confirmação à cliente por WhatsApp</button>
+    <p class="small">Nota: nas encomendas manuais, estes atalhos permitem abrir e partilhar a morada. O acompanhamento em tempo real exige criar também o registo de entrega no sistema online.</p>
+   </details>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
    <button onclick="produce('${o.id}')" ${o.produced?'disabled title="Produção já registada"':''}>${o.produced?'✓ Produção registada':'Confirmar produção'}</button>
     <label for="manual-status-${o.id}">ESTADO DA ENCOMENDA</label>
