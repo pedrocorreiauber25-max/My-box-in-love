@@ -822,15 +822,12 @@ async function shareManualCustomer(id){
   const trackingUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
   const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\n\nObrigada pela preferência!';
   const waUrl='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
-  // Igual ao fluxo do motorista: navegar diretamente para o WhatsApp,
-  // sem abrir uma janela intermédia que o Android/PWA pode bloquear.
-  location.href=waUrl;
+  location.assign(waUrl);
  }catch(e){
-  alert(e.message||'Não foi possível criar o link de acompanhamento.');
- }finally{
-  if(button){button.disabled=false;button.textContent='Enviar link de acompanhamento à cliente por WhatsApp';}
+  alert('Não foi possível preparar o link da cliente: '+(e&&e.message?e.message:String(e)));
  }
 }
+window.shareManualCustomer=shareManualCustomer;
 
 function setManualOrderStatus(id,status){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
