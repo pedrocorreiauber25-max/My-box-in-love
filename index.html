@@ -809,20 +809,29 @@ function openManualWaze(id){
  window.open(waze,'_blank','noopener');
 }
 async function shareManualCustomer(id){
- const o=d.orders.find(x=>String(x.id)===String(id));
- if(!o){alert('Não encontrei esta encomenda no painel. Atualiza a página e tenta novamente.');return;}
  try{
+  // A encomenda pode estar apenas na lista sincronizada da nuvem.
   const linked=await getManualTrackingOrder(id);
-  let phone=String(o.phone||'').replace(/\D/g,'');
+  const local=(d.orders||[]).find(x=>String(x.id)===String(id)||String(x.id)===String(linked.manual_source_id||''));
+  const o=local||{
+   id:linked.manual_source_id||linked.id,
+   client:linked.customer_name||'',
+   phone:linked.customer_phone||'',
+   product:linked.product_name||'',
+   status:linked.status||'Recebida',
+   total:Number(linked.order_total_cents??(Number(linked.order_subtotal_cents||linked.product_total_cents||0)+Number(linked.delivery_fee_cents||0)))/100,
+   payment_status:linked.payment_status||''
+  };
+  let phone=String(o.phone||linked.customer_phone||'').replace(/\D/g,'');
   if(phone.startsWith('00'))phone=phone.slice(2);
   if(phone.length===9)phone='351'+phone;
   if(phone.length<10)throw new Error('Esta encomenda não tem um número de telemóvel válido da cliente.');
-  const paid=receivedOrder(o)>=Number(o.total||0)-0.009;
+  const paid=local?receivedOrder(local)>=Number(local.total||0)-0.009:(String(linked.payment_status||'').toLowerCase()==='pago');
   const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
   const trackingUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
-  const msg='Olá '+o.client+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+o.product+'). '+paymentText+' Estado: '+o.status+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\n\nObrigada pela preferência!';
+  const msg='Olá '+(o.client||linked.customer_name||'')+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+(o.product||linked.product_name||'encomenda')+'). '+paymentText+' Estado: '+(o.status||'Recebida')+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\n\nObrigada pela preferência!';
   const waUrl='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
-  location.assign(waUrl);
+  location.href=waUrl;
  }catch(e){
   alert('Não foi possível preparar o link da cliente: '+(e&&e.message?e.message:String(e)));
  }
