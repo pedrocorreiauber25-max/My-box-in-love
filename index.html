@@ -487,7 +487,10 @@ function totalOrder(){
   const x=d.extras.find(e=>e.id===c.value);
   if(x)extras+=Number(x.price)||0;
  });
- return p ? p.price*q+extras+(Number(window.mblManualDeliveryFee)||0) : 0;
+ const productCents=Math.round((Number(p?.price)||0)*100)*q;
+  const extrasCents=Math.round(extras*100);
+  const deliveryCents=Math.round((Number(window.mblManualDeliveryFee)||0)*100);
+  return p ? (productCents+extrasCents+deliveryCents)/100 : 0;
 }
 window.mblManualDeliveryFee=0;window.mblManualDeliveryQuote=null;
 let mblManualMap=null,mblManualMarker=null,mblManualCoords=null;
@@ -681,8 +684,10 @@ function getCost(p){
 function addExtra(){
  const name=prompt('Nome do adicional:');
  if(!name?.trim())return;
- const price=Number(prompt('Preço do adicional (€):','0'));
- if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
+ const rawPrice=prompt('Preço do adicional (€):','0');
+  if(rawPrice===null)return;
+  const price=Number(String(rawPrice).trim().replace(/\s/g,'').replace(',','.'));
+  if(!Number.isFinite(price)||price<0)return alert('Preço inválido. Usa um valor como 2,50.');
  d.extras.push({id:uid(),name:name.trim(),price});
  save();
 }
@@ -1001,7 +1006,7 @@ function draw(){
   `<option value="${p.id}">${esc(p.name)} · ${esc(p.priceLabel||money(p.price))}</option>`
  ).join('');
  $('oextras').innerHTML=d.extras.map(x=>
-  `<label class="pill"><input class="ox" type="checkbox" value="${x.id}"> ${esc(x.name)} (+${money(x.price)})</label>`
+  `<label class="extra-option"><input class="ox" type="checkbox" value="${esc(x.id)}"><span>${esc(x.name)}</span><b>+${money(x.price)}</b></label>`
  ).join('')||'<span class="muted">Sem adicionais.</span>';
  $('ototal').textContent=money(totalOrder());
 
