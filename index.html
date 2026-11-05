@@ -218,8 +218,8 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="saveOrder()">Guardar encomenda</button>
    <button onclick="closeOrder()">Fechar</button>
   </div>
-  <div id="orderlist"></div>
-  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button><button onclick="mblEnableNotifications()">Ativar notificações</button></div><p class="small" id="notificationState">Ativa as notificações neste dispositivo.</p><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
+  <div class="card" id="orderArchiveFilters"><div class="row"><b style="flex:1">Visualização</b><button type="button" id="showActiveOrders" class="primary" onclick="setOrderArchiveView(false)">Em aberto</button><button type="button" id="showDeliveredOrders" onclick="setOrderArchiveView(true)">Entregues</button></div><p class="small">As encomendas entregues ficam arquivadas aqui e continuam disponíveis para consulta.</p></div><div id="orderlist"></div>
+  <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button><button onclick="mblEnableNotifications()">Ativar notificações</button></div><p class="small" id="notificationState">Ativa as notificações neste dispositivo.</p><div class="row"><button type="button" id="showActiveOnline" class="primary" onclick="setOrderArchiveView(false)">Em aberto</button><button type="button" id="showDeliveredOnline" onclick="setOrderArchiveView(true)">Entregues</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
  </section>
 
  <section id="products" class="section">
@@ -1049,6 +1049,9 @@ function drawCEOFinance(){
  const top=Object.entries(ranking).sort((a,b)=>b[1].qty-a[1].qty||b[1].revenue-a[1].revenue).slice(0,5);
  $('ceoTopProducts').innerHTML=top.length?top.map(([name,v],i)=>'<div class="item"><div class="row"><b style="flex:1">'+(i+1)+'. '+esc(name)+'</b><span class="pill">'+v.qty+' un.</span></div><div class="small">Vendas associadas: '+money(v.revenue)+'</div></div>').join(''):'Ainda não há vendas neste período.';
 }
+window.MBL_SHOW_DELIVERED_ORDERS=window.MBL_SHOW_DELIVERED_ORDERS||false;
+function setOrderArchiveView(delivered){window.MBL_SHOW_DELIVERED_ORDERS=!!delivered;const a=document.getElementById('showActiveOrders'),d=document.getElementById('showDeliveredOrders'),oa=document.getElementById('showActiveOnline'),od=document.getElementById('showDeliveredOnline');[a,oa].forEach(b=>b&&b.classList.toggle('primary',!delivered));[d,od].forEach(b=>b&&b.classList.toggle('primary',!!delivered));draw();mblLoadOrders();}
+window.setOrderArchiveView=setOrderArchiveView;
 function draw(){
  drawCEOAlerts();
  $('oproduct').innerHTML=d.products.map(p=>
@@ -1137,7 +1140,8 @@ function draw(){
   <div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`
  ).join('')||'Ainda não existem compras.';
 
- $('orderlist').innerHTML=d.orders.slice().reverse().map(o=>`
+ const visibleManualOrders=d.orders.filter(o=>window.MBL_SHOW_DELIVERED_ORDERS?(o.status==='Entregue'):(o.status!=='Entregue'));
+ $('orderlist').innerHTML=visibleManualOrders.slice().reverse().map(o=>`
   <div class="card">
    <b>${esc(o.client)}</b> · ${esc(o.product)}
    <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
@@ -1465,7 +1469,7 @@ async function mblLoadOrders(){
   orders.forEach(o=>mblSeenOrders.add(o.id));
   mblOrdersInitialized=true;
   const statuses=['Novo','Em contacto','Confirmado','Em preparação','Pronto','Entregue','Cancelado'];
-  const displayOrders=orders.filter(o=>!o.manual_source_id&&!d.orders.some(local=>String(local.id)===String(o.id)));
+  const displayOrders=orders.filter(o=>!o.manual_source_id&&!d.orders.some(local=>String(local.id)===String(o.id))&&(window.MBL_SHOW_DELIVERED_ORDERS?o.status==='Entregue':o.status!=='Entregue'));
   box.innerHTML=displayOrders.map(o=>{
    const items=Array.isArray(o.order_items)?o.order_items:[];
    const itemHtml=items.map(it=>'<div class="row" style="justify-content:space-between"><span>'+esc(it.name)+(it.quantity>1?' × '+Number(it.quantity):'')+'</span><b>'+money((Number(it.total_cents)||0)/100)+'</b></div>').join('');
