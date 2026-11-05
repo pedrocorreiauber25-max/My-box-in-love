@@ -828,7 +828,7 @@ async function shareManualCustomer(id){
   if(phone.length<10)throw new Error('Esta encomenda não tem um número de telemóvel válido da cliente.');
   const paid=local?receivedOrder(local)>=Number(local.total||0)-0.009:(String(linked.payment_status||'').toLowerCase()==='pago');
   const paymentText=paid?'O pagamento já foi recebido e confirmado.':'A tua encomenda foi registada e está a ser acompanhada pela nossa equipa.';
-  const trackingUrl='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
+  const trackingUrl='https://myboxinlove.pages.dev/acompanhar.html?token='+encodeURIComponent(linked.tracking_token);
   const msg='Olá '+(o.client||linked.customer_name||'')+'! ❤️ Confirmamos a tua encomenda My Box in Love ('+(o.product||linked.product_name||'encomenda')+'). '+paymentText+' Estado: '+(o.status||'Recebida')+'. Total: '+money(o.total)+'. Acompanha o estado e a localização do motorista aqui: '+trackingUrl+'\n\nObrigada pela preferência!';
   const waUrl='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
   location.href=waUrl;
@@ -1519,7 +1519,7 @@ function mblSendTrackingWhatsApp(id){
  if(phone.startsWith('00'))phone=phone.slice(2);
  if(phone.length===9)phone='351'+phone;
  if(phone.startsWith('00351'))phone=phone.slice(2);
- const url='https://myboxinlove.pages.dev/loja/acompanhar.html?token='+encodeURIComponent(token);
+ const url='https://myboxinlove.pages.dev/acompanhar.html?token='+encodeURIComponent(token);
  const message='Olá '+(order.customer_name||'')+'! ❤️ Aqui está o link privado para acompanhares a tua encomenda My Box in Love, consultar o estado e, durante a entrega, ver o percurso do motorista: '+url+'\n\nObrigada pela preferência! ❤️';
  const wa='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(message);
  // Navegação na mesma página evita que o bloqueador de pop-ups impeça a abertura do WhatsApp.
