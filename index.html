@@ -786,10 +786,9 @@ function refund(id){
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
 async function getManualTrackingOrder(id){
- const result=await mblCall({action:'orders'});
- const order=(result.orders||[]).find(x=>String(x.manual_source_id||'')===String(id)||String(x.id)===String(id));
- if(!order||!order.tracking_token)throw new Error('Não foi possível gerar o link privado de acompanhamento.');
- return order;
+ const result=await mblCall({action:'customer_tracking_link',id:String(id)});
+ if(!result||!result.order||!result.tracking_token)throw new Error('A encomenda ainda não está sincronizada para acompanhamento. Confirma a sincronização e tenta novamente.');
+ return {...result.order,tracking_token:result.tracking_token};
 }
 async function shareManualDelivery(id){
  const o=d.orders.find(x=>x.id===id);if(!o)return;
