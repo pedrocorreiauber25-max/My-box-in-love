@@ -1,4 +1,4 @@
-const CACHE = "my-box-in-love-v50";
+const CACHE = "my-box-in-love-v51";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
@@ -7,6 +7,7 @@ self.addEventListener("install", event => {
       cache.addAll([
         "./",
         "./index.html",
+        "./responder-encomenda.html",
         "./manifest.json",
         "./assets/logo-my-box-in-love.jpg"
       ])
