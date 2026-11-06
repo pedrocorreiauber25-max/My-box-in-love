@@ -579,6 +579,7 @@ function saveOrder(){
  if($('odelivery').value==='Entrega ao domicílio'&&!window.mblManualDeliveryQuote)return alert('Calcula primeiro o preço da entrega pela morada.');
  const extras=[...document.querySelectorAll('.ox:checked')].map(c=>c.value);
  const manualItems=getManualLineItems();
+ if(document.querySelectorAll(".manual-line-row").length!==manualItems.length)return alert("Preenche o nome, preço e quantidade de cada produto avulso.");
  d.orders.push({
   id:uid(),client,phone:$('op').value,product:p.name,productId:p.id,
   qty,date:$('odate').value,status:$('ostatus').value,total,deposit,
@@ -799,9 +800,10 @@ function addManualLineItem(name, price, qty) {
 function getManualLineItems() {
  return Array.from(document.querySelectorAll(".manual-line-row")).map(row=>{
   const name=row.querySelector(".manual-line-name").value.trim();
-  const price=Number(String(row.querySelector(".manual-line-price").value).replace(",","."));
+  const priceText=String(row.querySelector(".manual-line-price").value).trim();
+  const price=Number(priceText.replace(",", "."));
   const qty=Math.max(1,Math.floor(Number(row.querySelector(".manual-line-qty").value)||1));
-  if(!name||!Number.isFinite(price)||price<0)return null;
+  if(!name||!priceText||!Number.isFinite(price)||price<0)return null;
   const unitCents=Math.round(price*100),totalCents=unitCents*qty;
   return {name:name,qty:qty,unitPrice:unitCents/100,total:totalCents/100,totalCents:totalCents};
  }).filter(Boolean);
