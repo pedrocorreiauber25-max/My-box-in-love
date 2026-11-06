@@ -103,7 +103,10 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
   if(Array.isArray(a.fruits))document.querySelectorAll("input[name=fruit]").forEach(el=>el.checked=a.fruits.includes(el.value));
   if(a.drink){const el=document.querySelector('input[name="drink"][value="'+CSS.escape(a.drink)+'"]');if(el)el.checked=true;}
   $("cardMessage").value=a.card_message||"";
-  const knownRibbon=Array.from($("ribbon").options).some(o=>o.value===a.ribbon_color);\n  $("ribbon").value=knownRibbon?(a.ribbon_color||""):(a.ribbon_color?"Outra cor":"");\n  $("ribbonOther").value=knownRibbon?"":(a.ribbon_color||"");\n  $("ribbonOther").classList.toggle("hide",$("ribbon").value!=="Outra cor");
+  const knownRibbon=Array.from($("ribbon").options).some(o=>o.value===a.ribbon_color);
+  $("ribbon").value=knownRibbon?(a.ribbon_color||""):(a.ribbon_color?"Outra cor":"");
+  $("ribbonOther").value=knownRibbon?"":(a.ribbon_color||"");
+  $("ribbonOther").classList.toggle("hide",$("ribbon").value!=="Outra cor");
   $("details").value=a.details||"";
   $("recipient").value=a.recipient_name||"";
   $("deliveryTime").value=a.delivery_time||"";
@@ -115,7 +118,8 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
    const order=data.order||{};
    isBasic=String(order.product||"").toLowerCase().includes("basic");
    $("orderInfo").textContent=(order.product||"A tua encomenda")+(order.date?" · Entrega prevista: "+new Date(order.date+"T12:00:00").toLocaleDateString("pt-PT"):"");
-   $("customFields").classList.remove("hide");\n   $("ribbon").required=isBasic;
+   $("customFields").classList.remove("hide");
+   $("ribbon").required=isBasic;
    fill(order.questionnaire);
    $("loading").classList.add("hide");$("form").classList.remove("hide");
    if(order.completed_at)$("message").textContent="Já recebemos as tuas respostas. Podes alterá-las e voltar a enviar se precisares.";
@@ -126,14 +130,18 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
   const button=$("submit"),message=$("message");
   const fruits=Array.from(document.querySelectorAll("input[name=fruit]:checked")).map(el=>el.value);
   const drink=document.querySelector('input[name="drink"]:checked');
-  if(isBasic&&fruits.length!==2){message.textContent="Escolhe exatamente duas frutas.";return;}
-  if(isBasic&&!drink){message.textContent="Escolhe uma bebida.";return;}
-  if(isBasic&&!$("ribbon").value.trim()){message.textContent="Indica a cor da fita e do laço.";return;}
+  if(fruits.length>2){message.textContent="Escolhe no máximo duas frutas.";return;}
+  if(isBasic&&fruits.length!==2){message.textContent="Na Box Basic, escolhe exatamente duas frutas.";return;}
+  if(isBasic&&!drink){message.textContent="Na Box Basic, escolhe uma bebida.";return;}
+  const ribbonChoice=$("ribbon").value;
+  const ribbonColor=ribbonChoice==="Outra cor"?$("ribbonOther").value.trim():ribbonChoice;
+  if(isBasic&&!ribbonColor){message.textContent="Escolhe a cor da fita e do laço.";return;}
+  if(ribbonChoice==="Outra cor"&&!ribbonColor){message.textContent="Escreve a cor da fita e do laço.";return;}
   if(!$("recipient").value.trim()){message.textContent="Indica o nome de quem vai receber a box.";return;}
   if(!$("deliveryTime").value){message.textContent="Escolhe o horário pretendido.";return;}
-  const answers={recipient_name:$("recipient").value.trim(),delivery_time:$("deliveryTime").value};
-  if(isBasic){answers.fruits=fruits;answers.drink=drink.value;answers.card_message=$("cardMessage").value.trim();answers.ribbon_color=$("ribbon").value.trim();}
-  else answers.details=$("details").value.trim();
+  const answers={recipient_name:$("recipient").value.trim(),delivery_time:$("deliveryTime").value,
+   fruits:fruits,drink:drink?drink.value:"",card_message:$("cardMessage").value.trim(),
+   ribbon_color:ribbonColor,details:$("details").value.trim()};
   button.disabled=true;button.textContent="A enviar…";message.textContent="";
   try{await call("save",answers);message.textContent="As tuas escolhas foram enviadas com sucesso! Obrigada ❤️";button.textContent="Respostas enviadas";}
   catch(e){message.textContent=e.message;button.disabled=false;button.textContent="Enviar as minhas escolhas";}
