@@ -789,6 +789,30 @@ function refund(id){
  }
  o.status='Cancelada';o.cancelledAt=new Date().toISOString();save();
 }
+function addManualLineItem(name, price, qty) {
+ const box=document.getElementById("manualLineItems"); if(!box)return;
+ const row=document.createElement("div"); row.className="manual-line-row card";
+ row.style.cssText="display:grid;grid-template-columns:minmax(100px,2fr) minmax(75px,1fr) minmax(65px,1fr) auto;gap:7px;align-items:end;padding:9px;margin:7px 0";
+ row.innerHTML="<div><label>PRODUTO</label><input class='manual-line-name' maxlength='100' placeholder='Ex.: Rosa' value='"+esc(name||"")+"' oninput='updateManualLineTotal()'></div><div><label>PREÇO UNIT. (€)</label><input class='manual-line-price' type='number' min='0' step='0.01' placeholder='3,00' value='"+(price==null?"":esc(price))+"' oninput='updateManualLineTotal()'></div><div><label>QUANTIDADE</label><input class='manual-line-qty' type='number' min='1' step='1' value='"+(qty||1)+"' oninput='updateManualLineTotal()'></div><button type='button' class='danger' onclick='this.closest(\".manual-line-row\").remove();updateManualLineTotal()'>✕</button>";
+ box.appendChild(row); updateManualLineTotal();
+}
+function getManualLineItems() {
+ return Array.from(document.querySelectorAll(".manual-line-row")).map(row=>{
+  const name=row.querySelector(".manual-line-name").value.trim();
+  const price=Number(String(row.querySelector(".manual-line-price").value).replace(",","."));
+  const qty=Math.max(1,Math.floor(Number(row.querySelector(".manual-line-qty").value)||1));
+  if(!name||!Number.isFinite(price)||price<0)return null;
+  const unitCents=Math.round(price*100),totalCents=unitCents*qty;
+  return {name:name,qty:qty,unitPrice:unitCents/100,total:totalCents/100,totalCents:totalCents};
+ }).filter(Boolean);
+}
+function updateManualLineTotal() {
+ const subtotal=getManualLineItems().reduce((s,x)=>s+x.totalCents,0)/100;
+ const label=document.getElementById("manualLineItemsTotal");
+ if(label)label.textContent="Subtotal dos produtos avulsos: "+money(subtotal);
+ const total=document.getElementById("ototal"); if(total)total.textContent=money(totalOrder());
+}
+
 async function getManualTrackingOrder(id){
  const result=await mblCall({action:'customer_tracking_link',id:String(id)});
  if(!result||!result.order||!result.tracking_token)throw new Error('A encomenda ainda não está sincronizada para acompanhamento. Confirma a sincronização e tenta novamente.');
