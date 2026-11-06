@@ -1219,8 +1219,8 @@ function draw(){
    <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
     <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
     ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar link do motorista + Waze por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
-    <button type="button" onclick="shareManualQuestionnaire(''+o.id+'')">Enviar formulário de personalização à cliente por WhatsApp</button>
-    <button type="button" onclick="openManualOrderPDF(''+o.id+'')">📄 Ficha de preparação · Imprimir / PDF</button>
+    <button type="button" onclick="shareManualQuestionnaire('${o.id}')">Enviar formulário de personalização à cliente por WhatsApp</button>
+    <button type="button" onclick="openManualOrderPDF('${o.id}')">📄 Ficha de preparação · Imprimir / PDF</button>
     <button type="button" class="mbl-customer-track" data-order-id="'+o.id+'">Enviar link de acompanhamento à cliente por WhatsApp</button>
     <p class="small">O formulário recolhe as escolhas da cliente. A ficha PDF reúne os dados para preparar a box.</p>
    </details>
