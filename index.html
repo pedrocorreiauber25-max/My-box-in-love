@@ -813,6 +813,45 @@ function updateManualLineTotal() {
  const total=document.getElementById("ototal"); if(total)total.textContent=money(totalOrder());
 }
 
+function manualQuestionnaireSummary(o) {
+ const a=o.customer_questionnaire||{};
+ if(!o.questionnaire_completed_at&&!Object.keys(a).length)return "<p class='small'>Personalização: aguarda respostas da cliente.</p>";
+ const rows=[];
+ if(Array.isArray(a.fruits))rows.push("Frutas: "+a.fruits.join(", "));
+ if(a.drink)rows.push("Bebida: "+a.drink);
+ if(a.card_message)rows.push("Cartão: "+a.card_message);
+ if(a.ribbon_color)rows.push("Fita/laço: "+a.ribbon_color);
+ if(a.recipient_name)rows.push("Destinatário: "+a.recipient_name);
+ if(a.delivery_time)rows.push("Hora: "+a.delivery_time);
+ if(a.details)rows.push("Personalização: "+a.details);
+ return "<div class='notice'><b>Respostas da cliente</b><br>"+rows.map(esc).join("<br>")+"</div>";
+}
+function openManualOrderPDF(id) {
+ const o=d.orders.find(x=>String(x.id)===String(id)); if(!o)return alert("Encomenda não encontrada.");
+ const a=o.customer_questionnaire||{}, items=Array.isArray(o.manualItems)?o.manualItems:[];
+ const extras=(o.extras||[]).map(key=>{const x=d.extras.find(v=>v.id===key);return x?x.name+" — "+money(x.price):"";}).filter(Boolean);
+ const lines=[["Cliente",o.client],["Contacto",o.phone],["Produto",o.product],["Quantidade da box",o.qty||1],["Data de entrega",o.date],["Entrega",o.delivery],["Morada",o.address],["Estado",o.status],["Frutas",Array.isArray(a.fruits)?a.fruits.join(", "):""],["Bebida",a.drink],["Mensagem do cartão",a.card_message],["Cor da fita e laço",a.ribbon_color],["Nome de quem recebe",a.recipient_name],["Horário",a.delivery_time],["Personalização / observações",a.details||o.notes],["Recebido",money(receivedOrder(o))],["Total",money(o.total)]];
+ const rows=lines.filter(x=>x[1]!==undefined&&x[1]!==null&&String(x[1])!=="").map(x=>"<tr><th>"+esc(x[0])+"</th><td>"+esc(String(x[1]))+"</td></tr>").join("");
+ const extraHtml=extras.length?"<h3>Adicionais</h3><p>"+extras.map(esc).join("<br>")+"</p>":"";
+ const itemHtml=items.length?"<h3>Produtos avulsos</h3><table><tr><th>Produto</th><th>Qtd.</th><th>Preço unit.</th><th>Subtotal</th></tr>"+items.map(x=>"<tr><td>"+esc(x.name)+"</td><td>"+Number(x.qty)+"</td><td>"+money(x.unitPrice)+"</td><td>"+money(x.total)+"</td></tr>").join("")+"</table>":"";
+ const w=window.open("","_blank"); if(!w)return alert("Permite abrir a janela para imprimir a ficha.");
+ w.document.write("<!doctype html><html lang='pt-PT'><head><meta charset='utf-8'><title>Ficha de preparação My Box in Love</title><style>body{font:14px Arial,sans-serif;color:#46332e;margin:24px}h1{color:#80502f;margin-bottom:4px}.meta{color:#927f79;margin:0 0 18px}table{width:100%;border-collapse:collapse;margin:12px 0 18px}th,td{border:1px solid #eadde0;padding:9px;text-align:left;vertical-align:top}th{width:32%;background:#fff5f7}h3{color:#80502f;margin:18px 0 6px}.check{margin-top:24px;padding-top:12px;border-top:1px dashed #80502f}@media print{button{display:none}body{margin:12mm}}</style></head><body><h1>MY BOX IN LOVE</h1><p class='meta'>FICHA DE PREPARAÇÃO · "+esc(o.id)+"</p><h2>"+esc(o.product||"Encomenda")+"</h2><table>"+rows+"</table>"+extraHtml+itemHtml+"<div class='check'><b>Verificação antes de fechar a box</b><p>☐ Produtos conferidos　 ☐ Fruta fresca　 ☐ Bebida　 ☐ Cartão　 ☐ Fita/laço　 ☐ Morada e horário confirmados</p><p>Preparado por: ____________________　 Data: ____ / ____ / ______</p></div></body></html>");
+ w.document.close(); setTimeout(()=>w.print(),500);
+}
+async function shareManualQuestionnaire(id) {
+ try {
+  const o=d.orders.find(x=>String(x.id)===String(id)); if(!o)throw new Error("Encomenda não encontrada.");
+  const linked=await getManualTrackingOrder(id);
+  let phone=String(o.phone||linked.customer_phone||"").replace(/\D/g,"");
+  if(phone.startsWith("00"))phone=phone.slice(2);
+  if(phone.length===9)phone="351"+phone;
+  if(phone.length<10)throw new Error("Esta encomenda não tem um número de telemóvel válido.");
+  const url="https://myboxinlove.pages.dev/responder-encomenda.html?token="+encodeURIComponent(linked.tracking_token);
+  const msg="Olá "+(o.client||"")+"! ❤️ Para prepararmos a tua "+(o.product||"box")+" exatamente como desejas, preenche por favor este pequeno formulário: "+url+"\n\nObrigada! My Box in Love ❤️";
+  location.href="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
+ } catch(e) { alert("Não foi possível criar o formulário: "+(e.message||e)); }
+}
+
 async function getManualTrackingOrder(id){
  const result=await mblCall({action:'customer_tracking_link',id:String(id)});
  if(!result||!result.order||!result.tracking_token)throw new Error('A encomenda ainda não está sincronizada para acompanhamento. Confirma a sincronização e tenta novamente.');
