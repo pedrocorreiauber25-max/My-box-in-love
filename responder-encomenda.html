@@ -31,9 +31,9 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
  <form class="card hide" id="form">
   <h2>Vamos personalizar a tua box ❤️</h2>
   <p class="muted" id="orderInfo"></p>
-  <div id="basicFields" class="hide">
-   <div class="field-title">Escolhe exatamente dois tipos de fruta</div>
-   <p class="small">Seleciona duas opções para a tua Box Basic.</p>
+  <div id="customFields">
+   <div class="field-title">1. Que fruta gostarias de incluir?</div>
+   <p class="small">Podes escolher até duas opções. Na Box Basic, escolhe exatamente duas.</p>
    <div class="choices" id="fruitChoices">
     <label class="choice"><input type="checkbox" name="fruit" value="Melancia">Melancia</label>
     <label class="choice"><input type="checkbox" name="fruit" value="Amora">Amora</label>
@@ -44,19 +44,26 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
     <label class="choice"><input type="checkbox" name="fruit" value="Melão">Melão</label>
     <label class="choice"><input type="checkbox" name="fruit" value="Maracujá">Maracujá</label>
    </div>
-   <div class="field-title">Escolhe uma bebida</div>
+   <div class="field-title">2. Que bebida preferes?</div>
+   <p class="small">Escolhe a bebida, se fizer parte do teu produto.</p>
    <div class="choices">
     <label class="choice"><input type="radio" name="drink" value="Sumo de laranja">Sumo de laranja</label>
     <label class="choice"><input type="radio" name="drink" value="Chocolate">Chocolate</label>
    </div>
-   <label for="cardMessage">Mensagem personalizada para o cartão</label>
-   <textarea id="cardMessage" maxlength="500" placeholder="Escreve aqui a mensagem que queres no cartão…"></textarea>
-   <label for="ribbon">Cor da fita e do laço</label>
-   <input id="ribbon" type="text" maxlength="60" placeholder="Ex.: rosa-claro, dourado, vermelho">
-  </div>
-  <div id="otherFields" class="hide">
-   <label for="details">Como gostarias de personalizar a tua box?</label>
-   <textarea id="details" maxlength="1200" placeholder="Indica as tuas escolhas e preferências…"></textarea>
+   <label for="cardMessage">3. Que mensagem queres escrever no cartão?</label>
+   <textarea id="cardMessage" maxlength="500" placeholder="Escreve aqui a dedicatória que vai acompanhar a tua box…"></textarea>
+   <label for="ribbon">4. Qual é a cor da fita e do laço?</label>
+   <select id="ribbon">
+    <option value="">Escolhe a cor da fita e do laço</option>
+    <option>Rosa-claro</option><option>Rosa</option><option>Vermelho</option>
+    <option>Dourado</option><option>Prateado</option><option>Branco</option>
+    <option>Preto</option><option>Azul</option><option>Lilás</option>
+    <option>Verde</option><option>Outra cor</option>
+   </select>
+   <input id="ribbonOther" class="hide" type="text" maxlength="60" placeholder="Escreve a cor que pretendes">
+   <label for="details">5. Tens outro pedido ou detalhe especial?</label>
+   <textarea id="details" maxlength="1200" placeholder="Indica aqui outros pormenores que devemos ter em conta…"></textarea>
+   <p class="small">As perguntas são apresentadas para todos os produtos. Preenche as opções que se aplicam à tua encomenda; as escolhas obrigatórias da Box Basic serão assinaladas.</p>
   </div>
   <label for="recipient">Nome de quem vai receber a box</label>
   <input id="recipient" type="text" maxlength="100" required placeholder="Nome do destinatário">
@@ -96,7 +103,7 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
   if(Array.isArray(a.fruits))document.querySelectorAll("input[name=fruit]").forEach(el=>el.checked=a.fruits.includes(el.value));
   if(a.drink){const el=document.querySelector('input[name="drink"][value="'+CSS.escape(a.drink)+'"]');if(el)el.checked=true;}
   $("cardMessage").value=a.card_message||"";
-  $("ribbon").value=a.ribbon_color||"";
+  const knownRibbon=Array.from($("ribbon").options).some(o=>o.value===a.ribbon_color);\n  $("ribbon").value=knownRibbon?(a.ribbon_color||""):(a.ribbon_color?"Outra cor":"");\n  $("ribbonOther").value=knownRibbon?"":(a.ribbon_color||"");\n  $("ribbonOther").classList.toggle("hide",$("ribbon").value!=="Outra cor");
   $("details").value=a.details||"";
   $("recipient").value=a.recipient_name||"";
   $("deliveryTime").value=a.delivery_time||"";
@@ -108,7 +115,7 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
    const order=data.order||{};
    isBasic=String(order.product||"").toLowerCase().includes("basic");
    $("orderInfo").textContent=(order.product||"A tua encomenda")+(order.date?" · Entrega prevista: "+new Date(order.date+"T12:00:00").toLocaleDateString("pt-PT"):"");
-   $(isBasic?"basicFields":"otherFields").classList.remove("hide");
+   $("customFields").classList.remove("hide");\n   $("ribbon").required=isBasic;
    fill(order.questionnaire);
    $("loading").classList.add("hide");$("form").classList.remove("hide");
    if(order.completed_at)$("message").textContent="Já recebemos as tuas respostas. Podes alterá-las e voltar a enviar se precisares.";
