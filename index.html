@@ -840,7 +840,7 @@ function openManualOrderPDF(id) {
  w.document.write("<!doctype html><html lang='pt-PT'><head><meta charset='utf-8'><title>Ficha de preparação My Box in Love</title><style>body{font:14px Arial,sans-serif;color:#46332e;margin:24px}h1{color:#80502f;margin-bottom:4px}.meta{color:#927f79;margin:0 0 18px}table{width:100%;border-collapse:collapse;margin:12px 0 18px}th,td{border:1px solid #eadde0;padding:9px;text-align:left;vertical-align:top}th{width:32%;background:#fff5f7}h3{color:#80502f;margin:18px 0 6px}.check{margin-top:24px;padding-top:12px;border-top:1px dashed #80502f}@media print{button{display:none}body{margin:12mm}}</style></head><body><h1>MY BOX IN LOVE</h1><p class='meta'>FICHA DE PREPARAÇÃO · "+esc(o.id)+"</p><h2>"+esc(o.product||"Encomenda")+"</h2><table>"+rows+"</table>"+extraHtml+itemHtml+"<div class='check'><b>Verificação antes de fechar a box</b><p>☐ Produtos conferidos　 ☐ Fruta fresca　 ☐ Bebida　 ☐ Cartão　 ☐ Fita/laço　 ☐ Morada e horário confirmados</p><p>Preparado por: ____________________　 Data: ____ / ____ / ______</p></div></body></html>");
  w.document.close(); setTimeout(()=>w.print(),500);
 }
-async async function shareManualQuestionnaire(id) {
+async function shareManualQuestionnaire(id) {
  try {
   const o=d.orders.find(x=>String(x.id)===String(id)); if(!o)throw new Error("Encomenda não encontrada.");
   const linked=await getManualTrackingOrder(id);
