@@ -125,6 +125,7 @@ button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#
    if(order.completed_at)$("message").textContent="Já recebemos as tuas respostas. Podes alterá-las e voltar a enviar se precisares.";
   }catch(e){showError(e.message);}
  }
+ $("ribbon").addEventListener("change",function(){ $("ribbonOther").classList.toggle("hide",this.value!=="Outra cor"); });
  $("form").addEventListener("submit",async function(event){
   event.preventDefault();
   const button=$("submit"),message=$("message");
