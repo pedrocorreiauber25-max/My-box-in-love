@@ -1214,11 +1214,15 @@ function draw(){
    <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
    ${o.produced?'<p class="small good">✓ Produzida em '+esc(o.producedAt?new Date(o.producedAt).toLocaleString('pt-PT'):'data anterior')+' · Custo de materiais: '+money(o.materialCost||0)+'</p><div class="small">'+(Array.isArray(o.materialsUsed)?o.materialsUsed.map(x=>esc(x.name)+': '+Number(x.qty)+' '+esc(x.unit||'unidades')).join(' · '):'Registo de produção anterior sem detalhe de materiais.')+'</div>':''}
    <p class="small">${esc(o.notes||'')}</p>
+   ${(Array.isArray(o.manualItems)&&o.manualItems.length)?'<div class="small"><b>Produtos avulsos:</b> '+o.manualItems.map(x=>esc(x.name)+' × '+Number(x.qty)+' = '+money(x.total)).join(' · ')+'</div>':''}
+   ${manualQuestionnaireSummary(o)}
    <details open class="card" style="background:#fff8fa;border:2px solid var(--brown);margin:12px 0">
     <summary style="cursor:pointer;font-weight:800;color:var(--brown);padding:4px">🔗 LINKS DA ENCOMENDA MANUAL</summary>
     ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar link do motorista + Waze por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
+    <button type="button" onclick="shareManualQuestionnaire(''+o.id+'')">Enviar formulário de personalização à cliente por WhatsApp</button>
+    <button type="button" onclick="openManualOrderPDF(''+o.id+'')">📄 Ficha de preparação · Imprimir / PDF</button>
     <button type="button" class="mbl-customer-track" data-order-id="'+o.id+'">Enviar link de acompanhamento à cliente por WhatsApp</button>
-    <p class="small">A cliente acompanha o estado e a localização do motorista. O motorista inicia a entrega pelo link e partilha o GPS.</p>
+    <p class="small">O formulário recolhe as escolhas da cliente. A ficha PDF reúne os dados para preparar a box.</p>
    </details>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
    <button onclick="produce('${o.id}')" ${o.produced?'disabled title="Produção já registada"':''}>${o.produced?'✓ Produção registada':'Confirmar produção'}</button>
