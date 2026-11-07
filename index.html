@@ -1285,8 +1285,8 @@ function draw(){
   <div class="card">
    <b>${esc(o.client)}</b> · ${esc(o.product)}
    <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
-   <p class="small">Recebido: \${money(receivedOrder(o))} · Em falta: \${money(pendingOrder(o))}</p>
-   \${o.loyaltyDiscountPercent?'<p class="small good">Desconto de fidelização aplicado: '+Number(o.loyaltyDiscountPercent)+'% · '+money(o.loyaltyDiscountAmount||0)+'</p>':''}
+   <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
+   ${o.loyaltyDiscountPercent?'<p class="small good">Desconto de fidelização aplicado: '+Number(o.loyaltyDiscountPercent)+'% · '+money(o.loyaltyDiscountAmount||0)+'</p>':''}
    ${o.produced?'<p class="small good">✓ Produzida em '+esc(o.producedAt?new Date(o.producedAt).toLocaleString('pt-PT'):'data anterior')+' · Custo de materiais: '+money(o.materialCost||0)+'</p><div class="small">'+(Array.isArray(o.materialsUsed)?o.materialsUsed.map(x=>esc(x.name)+': '+Number(x.qty)+' '+esc(x.unit||'unidades')).join(' · '):'Registo de produção anterior sem detalhe de materiais.')+'</div>':''}
    <p class="small">${esc(o.notes||'')}</p>
    ${(Array.isArray(o.manualItems)&&o.manualItems.length)?'<div class="small"><b>Produtos avulsos:</b> '+o.manualItems.map(x=>esc(x.name)+' × '+Number(x.qty)+' = '+money(x.total)).join(' · ')+'</div>':''}
