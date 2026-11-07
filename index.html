@@ -577,24 +577,32 @@ function newOrder(){
 window.newOrder=newOrder;
 function closeOrder(){const form=$('orderform');if(form){form.classList.add('hidden');form.dataset.open='0';}}
 $('oproduct').onchange=()=> $('ototal').textContent=money(totalOrder());
+$('oc').addEventListener('input',updateManualLoyaltyHint);$('op').addEventListener('input',updateManualLoyaltyHint);
 $('oqty').oninput=()=> $('ototal').textContent=money(totalOrder());
 $('oextras').onchange=()=> $('ototal').textContent=money(totalOrder());
 
 function saveOrder(){
  const p=d.products.find(x=>x.id===$('oproduct').value);
  const client=$('oc').value.trim();
+ const phone=$('op').value.trim();
  const qty=Math.max(1,Number($('oqty').value)||1);
  if(!client||!p)return alert('Indica o cliente e o produto.');
- const total=totalOrder();
+ const originalTotal=totalOrder();
+ const completedBefore=mblCustomerCompletedOrders(phone,client);
+ const cycle=completedBefore%5;
+ const loyaltyDiscountPercent=cycle===2?5:(cycle===4?10:0);
+ const discountBase=Math.max(0,originalTotal-(Number(window.mblManualDeliveryFee)||0));
+ const loyaltyDiscountAmount=loyaltyDiscountPercent?Math.round(discountBase*100*loyaltyDiscountPercent/100)/100:0;
+ const total=Math.max(0,originalTotal-loyaltyDiscountAmount);
  const deposit=Number(String($('odeposit').value).replace(',','.'))||0;
- if(!Number.isFinite(deposit)||deposit<0||deposit>total+0.005)return alert('O sinal tem de ser um valor entre 0 € e o total da encomenda.');
+ if(!Number.isFinite(deposit)||deposit<0||deposit>total+0.005)return alert('O sinal tem de ser um valor entre 0 € e o total da encomenda com desconto.');
  if($('odelivery').value==='Entrega ao domicílio'&&!window.mblManualDeliveryQuote)return alert('Calcula primeiro o preço da entrega pela morada.');
  const extras=[...document.querySelectorAll('.ox:checked')].map(c=>c.value);
  const manualItems=getManualLineItems();
  if(document.querySelectorAll(".manual-line-row").length!==manualItems.length)return alert("Preenche o nome, preço e quantidade de cada produto avulso.");
  d.orders.push({
-  id:uid(),client,phone:$('op').value,product:p.name,productId:p.id,
-  qty,date:$('odate').value,status:$('ostatus').value,total,deposit,
+  id:uid(),client,phone,product:p.name,productId:p.id,
+  qty,date:$('odate').value,status:$('ostatus').value,total,originalTotal,loyaltyDiscountPercent,loyaltyDiscountAmount,deposit,
   payments:[],refunds:0,produced:false,materialCost:0,
   extras,manualItems:manualItems.map(item=>({name:item.name,qty:item.qty,unitPrice:item.unitPrice,total:item.total})),notes:$('onotes').value,
   delivery:$('odelivery').value,address:$('oaddress').value.trim(),
@@ -1277,7 +1285,8 @@ function draw(){
   <div class="card">
    <b>${esc(o.client)}</b> · ${esc(o.product)}
    <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
-   <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
+   <p class="small">Recebido: \${money(receivedOrder(o))} · Em falta: \${money(pendingOrder(o))}</p>
+   \${o.loyaltyDiscountPercent?'<p class="small good">Desconto de fidelização aplicado: '+Number(o.loyaltyDiscountPercent)+'% · '+money(o.loyaltyDiscountAmount||0)+'</p>':''}
    ${o.produced?'<p class="small good">✓ Produzida em '+esc(o.producedAt?new Date(o.producedAt).toLocaleString('pt-PT'):'data anterior')+' · Custo de materiais: '+money(o.materialCost||0)+'</p><div class="small">'+(Array.isArray(o.materialsUsed)?o.materialsUsed.map(x=>esc(x.name)+': '+Number(x.qty)+' '+esc(x.unit||'unidades')).join(' · '):'Registo de produção anterior sem detalhe de materiais.')+'</div>':''}
    <p class="small">${esc(o.notes||'')}</p>
    ${(Array.isArray(o.manualItems)&&o.manualItems.length)?'<div class="small"><b>Produtos avulsos:</b> '+o.manualItems.map(x=>esc(x.name)+' × '+Number(x.qty)+' = '+money(x.total)).join(' · ')+'</div>':''}
