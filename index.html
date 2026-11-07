@@ -125,6 +125,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   <button type="button" data-tab="stock" onclick="go('stock')">Stock</button>
   <button type="button" data-tab="finance" onclick="go('finance')">Financeiro</button>
   <button type="button" data-tab="clients" onclick="go('clients')">Clientes</button>
+  <button type="button" data-tab="reviews" onclick="go('reviews')">Avaliações</button>
   <button type="button" data-tab="settings" onclick="go('settings')">Definições</button>
  </nav>
 
@@ -191,6 +192,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <h2>Nova encomenda</h2>
    <label>CLIENTE</label><input id="oc" placeholder="Nome da cliente">
    <label>CONTACTO</label><input id="op" placeholder="Telefone">
+   <p class="small" id="manualLoyaltyHint">Os descontos de fidelização são calculados automaticamente para clientes com encomendas anteriores.</p>
    <label>PRODUTO</label><select id="oproduct"></select>
    <label>QUANTIDADE</label><input id="oqty" type="number" min="1" value="1">
    <label>ADICIONAIS</label><div id="oextras"></div>
@@ -301,8 +303,17 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
  </section>
 
  <section id="clients" class="section">
-  <h1>Clientes</h1>
-  <div class="card"><div id="clientlist"></div></div>
+  <h1>Clientes e fidelização</h1>
+  <p class="muted">Histórico baseado em encomendas não canceladas. O total gasto e os carimbos contam apenas encomendas entregues. VIP a partir de 5 entregas concluídas.</p>
+  <div class="grid" id="clientSummary"></div>
+  <div id="clientlist"></div>
+ </section>
+
+ <section id="reviews" class="section">
+  <div class="row"><h1 style="flex:1">Avaliações dos clientes</h1><button type="button" onclick="mblLoadReviews()">Atualizar</button></div>
+  <p class="muted">As avaliações só aparecem na loja depois de serem aprovadas pela Raquel.</p>
+  <div class="grid" id="reviewSummary"></div>
+  <div id="reviewList"><p class="muted">A carregar avaliações…</p></div>
  </section>
 
  <section id="settings" class="section">
