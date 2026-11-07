@@ -1225,7 +1225,7 @@ function draw(){
     ${o.delivery==='Entrega ao domicílio'&&o.address?'<button type="button" onclick="openManualWaze(\''+o.id+'\')">🧭 Abrir percurso no Waze</button><button type="button" onclick="shareManualDelivery(\''+o.id+'\')">Enviar link do motorista + Waze por WhatsApp</button>':'<p class="small">Esta encomenda não tem entrega ao domicílio ou não tem morada registada.</p>'}
     <button type="button" onclick="shareManualQuestionnaire('${o.id}')">Enviar formulário de personalização à cliente por WhatsApp</button>
     <button type="button" onclick="openManualOrderPDF('${o.id}')">📄 Ficha de preparação · Imprimir / PDF</button>
-    <button type="button" class="mbl-customer-track" data-order-id="'+o.id+'">Enviar link de acompanhamento à cliente por WhatsApp</button>
+    <button type="button" class="mbl-customer-track" data-order-id="${esc(o.id)}">Enviar link de acompanhamento à cliente por WhatsApp</button>
     <p class="small">O formulário recolhe as escolhas da cliente. A ficha PDF reúne os dados para preparar a box.</p>
    </details>
    <button onclick="payment('${o.id}')">Registar pagamento</button>
