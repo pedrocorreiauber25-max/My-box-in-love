@@ -125,7 +125,6 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   <button type="button" data-tab="stock" onclick="go('stock')">Stock</button>
   <button type="button" data-tab="finance" onclick="go('finance')">Financeiro</button>
   <button type="button" data-tab="clients" onclick="go('clients')">Clientes</button>
-  <button type="button" data-tab="reviews" onclick="go('reviews')">Avaliações</button>
   <button type="button" data-tab="settings" onclick="go('settings')">Definições</button>
  </nav>
 
@@ -309,13 +308,6 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
   <div id="clientlist"></div>
  </section>
 
- <section id="reviews" class="section">
-  <div class="row"><h1 style="flex:1">Avaliações dos clientes</h1><button type="button" onclick="mblLoadReviews()">Atualizar</button></div>
-  <p class="muted">As avaliações só aparecem na loja depois de serem aprovadas pela Raquel.</p>
-  <div class="grid" id="reviewSummary"></div>
-  <div id="reviewList"><p class="muted">A carregar avaliações…</p></div>
- </section>
-
  <section id="settings" class="section">
   <h1>Definições</h1>
   <div class="card">
@@ -477,7 +469,6 @@ function go(id){
  if(id==='materials')drawMaterialChecklist();
  if(id==='stock')draw();
  if(id==='orders'){const form=$('orderform');if(form&&form.dataset.open==='1')form.classList.remove('hidden');}
- if(id==='reviews')mblLoadReviews();
  return true;
 }
 window.go=go;
@@ -1510,33 +1501,6 @@ function mblQueueStockSync(){
   const state=$('materialSyncStatus');if(state)state.textContent='Stock guardado neste dispositivo, mas a sincronização falhou: '+e.message;
  }),500);
 }
-async function mblLoadReviews(){
- const box=$('reviewList');if(!box||!MBL_TOKEN)return;
- box.innerHTML='<p class="muted">A carregar avaliações…</p>';
- try{
-  const result=await mblCall({action:'reviews_list'}),reviews=Array.isArray(result.reviews)?result.reviews:[];
-  const pending=reviews.filter(r=>r.status==='pending').length,approvedReviews=reviews.filter(r=>r.status==='approved'),approved=approvedReviews.length;
-  const rated=approved?approvedReviews.reduce((sum,r)=>sum+Number(r.rating||0),0)/approved:0;
-  $('reviewSummary').innerHTML='<div class="card"><span class="small">Por aprovar</span><div class="metric">'+pending+'</div></div><div class="card"><span class="small">Aprovadas</span><div class="metric">'+approved+'</div></div><div class="card"><span class="small">Média publicada</span><div class="metric">'+(approved?rated.toFixed(1).replace('.',',')+' ★':'—')+'</div></div>';
-  const labels={pending:'Pendente',approved:'Aprovada',rejected:'Rejeitada',hidden:'Oculta'};
-  box.innerHTML=reviews.map(r=>{
-   const n=Math.max(0,Math.min(5,Number(r.rating)||0));
-   const stars='★'.repeat(n)+'☆'.repeat(5-n);
-   const date=r.created_at?new Date(r.created_at).toLocaleString('pt-PT'):'';
-   let actions='';
-   if(r.status==='pending')actions='<button class="primary" onclick="mblModerateReview(\''+r.id+'\',\'approved\')">Aprovar e publicar</button><button class="danger" onclick="mblModerateReview(\''+r.id+'\',\'rejected\')">Rejeitar</button>';
-   else if(r.status==='approved')actions='<button class="danger" onclick="mblModerateReview(\''+r.id+'\',\'hidden\')">Ocultar da loja</button>';
-   else actions='<button class="primary" onclick="mblModerateReview(\''+r.id+'\',\'approved\')">Aprovar e publicar</button>';
-   return '<article class="card"><div class="row"><b style="flex:1">'+esc(r.customer_name||'Cliente')+'</b><span class="pill">'+(labels[r.status]||r.status)+'</span></div><div style="color:#d29b32;font-size:22px;letter-spacing:2px">'+stars+'</div><p>'+esc(r.comment||'Sem comentário escrito.')+'</p><p class="small">Encomenda '+esc(r.order_reference||'')+' · '+esc(date)+'</p>'+actions+'</article>';
-  }).join('')||'<div class="card muted">Ainda não recebemos avaliações.</div>';
- }catch(e){box.innerHTML='<div class="card bad">Não foi possível carregar as avaliações: '+esc(e.message)+'</div>';}
-}
-async function mblModerateReview(id,status){
- try{await mblCall({action:'review_moderate',id,status});await mblLoadReviews();}
- catch(e){alert('Não foi possível atualizar a avaliação: '+(e.message||'erro desconhecido'));}
-}
-window.mblLoadReviews=mblLoadReviews;window.mblModerateReview=mblModerateReview;
-
 async function mblLogin(){
  const pin=$('panelPin').value.trim();$('loginError').textContent='';
  if(!/^\d{4}$/.test(pin)){$('loginError').textContent='Introduz os 4 números do PIN.';return;}
@@ -1548,7 +1512,7 @@ async function mblLogin(){
   await mblLoadBusinessData();
   await mblLoadCatalogData();
   await mblLoadMaterialChecklist();
-  await mblLoadOrders();await mblLoadReviews();mblSubscribeOrders();
+  await mblLoadOrders();mblSubscribeOrders();
   if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,10000);
   if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,15000);
   if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,20000);
@@ -1566,7 +1530,7 @@ function mblStartPanel(){
   mblLoadCatalogData();
   mblLoadMaterialChecklist();
   if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);
-  mblLoadOrders().then(async()=>{await mblLoadReviews();mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
+  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
   .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
 }
