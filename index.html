@@ -576,10 +576,10 @@ function newOrder(){
 }
 window.newOrder=newOrder;
 function closeOrder(){const form=$('orderform');if(form){form.classList.add('hidden');form.dataset.open='0';}}
-$('oproduct').onchange=()=> $('ototal').textContent=money(totalOrder());
+$('oproduct').onchange=()=>updateManualLoyaltyHint();
 $('oc').addEventListener('input',updateManualLoyaltyHint);$('op').addEventListener('input',updateManualLoyaltyHint);
-$('oqty').oninput=()=> $('ototal').textContent=money(totalOrder());
-$('oextras').onchange=()=> $('ototal').textContent=money(totalOrder());
+$('oqty').oninput=()=>updateManualLoyaltyHint();
+$('oextras').onchange=()=>updateManualLoyaltyHint();
 
 function saveOrder(){
  const p=d.products.find(x=>x.id===$('oproduct').value);
@@ -1162,11 +1162,14 @@ function mblCustomerCompletedOrders(phone,name){
 }
 function updateManualLoyaltyHint(){
  const hint=$('manualLoyaltyHint');if(!hint)return;
- const name=$('oc').value.trim(),phone=$('op').value.trim();
- if(!name&&!phone){hint.textContent='Os descontos de fidelização são calculados automaticamente para clientes com encomendas anteriores.';return;}
+ const name=$('oc').value.trim(),phone=$('op').value.trim(),base=totalOrder();
+ if(!name&&!phone){hint.textContent='Os descontos de fidelização são calculados automaticamente para clientes com encomendas anteriores.';$('ototal').textContent=money(base);return;}
  const count=mblCustomerCompletedOrders(phone,name),cycle=count%5;
  const pct=cycle===2?5:(cycle===4?10:0);
- hint.textContent=pct?'Cliente com '+count+' encomendas entregues: será aplicado automaticamente um desconto de '+pct+'%.':'Cliente com '+count+' encomendas entregues. Desconto de 5% na 3.ª e 10% na 5.ª encomenda de cada cartão.';
+ const discountBase=Math.max(0,base-(Number(window.mblManualDeliveryFee)||0));
+ const discount=pct?Math.round(discountBase*100*pct/100)/100:0;
+ $('ototal').textContent=money(Math.max(0,base-discount));
+ hint.textContent=pct?'Cliente com '+count+' encomendas entregues: desconto de '+pct+'% ('+money(discount)+') aplicado automaticamente.':'Cliente com '+count+' encomendas entregues. Desconto de 5% na 3.ª e 10% na 5.ª encomenda de cada cartão.';
 }
 function drawClients(){
  const local=d.orders.filter(o=>o&&o.status!=='Cancelada'&&o.status!=='Cancelado');
@@ -1512,9 +1515,9 @@ async function mblLoadReviews(){
  box.innerHTML='<p class="muted">A carregar avaliações…</p>';
  try{
   const result=await mblCall({action:'reviews_list'}),reviews=Array.isArray(result.reviews)?result.reviews:[];
-  const pending=reviews.filter(r=>r.status==='pending').length,approved=reviews.filter(r=>r.status==='approved').length;
-  const rated=reviews.length?reviews.reduce((sum,r)=>sum+Number(r.rating||0),0)/reviews.length:0;
-  $('reviewSummary').innerHTML='<div class="card"><span class="small">Por aprovar</span><div class="metric">'+pending+'</div></div><div class="card"><span class="small">Aprovadas</span><div class="metric">'+approved+'</div></div><div class="card"><span class="small">Média de todas</span><div class="metric">'+(reviews.length?rated.toFixed(1).replace('.',',')+' ★':'—')+'</div></div>';
+  const pending=reviews.filter(r=>r.status==='pending').length,approvedReviews=reviews.filter(r=>r.status==='approved'),approved=approvedReviews.length;
+  const rated=approved?approvedReviews.reduce((sum,r)=>sum+Number(r.rating||0),0)/approved:0;
+  $('reviewSummary').innerHTML='<div class="card"><span class="small">Por aprovar</span><div class="metric">'+pending+'</div></div><div class="card"><span class="small">Aprovadas</span><div class="metric">'+approved+'</div></div><div class="card"><span class="small">Média publicada</span><div class="metric">'+(approved?rated.toFixed(1).replace('.',',')+' ★':'—')+'</div></div>';
   const labels={pending:'Pendente',approved:'Aprovada',rejected:'Rejeitada',hidden:'Oculta'};
   box.innerHTML=reviews.map(r=>{
    const n=Math.max(0,Math.min(5,Number(r.rating)||0));
