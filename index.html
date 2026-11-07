@@ -1585,18 +1585,19 @@ async function mblShowDeliveryLive(id,silent=false){
  }catch(e){if(!silent)box.textContent=e.message||'Não foi possível consultar a localização.';}
 }
 function mblSendTrackingWhatsApp(id){
- const order=(window.mblOnlineOrders||[]).find(o=>o.id===id);
- if(!order)return alert('Não encontrei esta encomenda. Atualiza a lista e tenta novamente.');
- const token=order.tracking_token;
- if(!token)return alert('Não foi possível gerar o link privado. Atualiza as encomendas e tenta novamente.');
- let phone=String(order.customer_phone||'').replace(/\D/g,'');
+ const order=(window.mblOnlineOrders||[]).find(o=>String(o.id)===String(id));
+ // Encomendas manuais são acompanhadas pelo fluxo próprio, não pela lista online.
+ if(!order||!order.tracking_token){
+  if(typeof window.shareManualCustomer==='function')return window.shareManualCustomer(String(id));
+  return alert('Não foi possível localizar esta encomenda. Atualiza o painel e tenta novamente.');
+ }
+ let phone=String(order.customer_phone||'').replace(/\\D/g,'');
  if(phone.startsWith('00'))phone=phone.slice(2);
  if(phone.length===9)phone='351'+phone;
  if(phone.startsWith('00351'))phone=phone.slice(2);
- const url='https://pedrocorreiauber25-max.github.io/My-box-in-love/acompanhar.html?token='+encodeURIComponent(token);
- const message='Olá '+(order.customer_name||'')+'! ❤️ Aqui está o link privado para acompanhares a tua encomenda My Box in Love, consultar o estado e, durante a entrega, ver o percurso do motorista: '+url+'\n\nObrigada pela preferência! ❤️';
+ const url='https://pedrocorreiauber25-max.github.io/My-box-in-love/acompanhar.html?token='+encodeURIComponent(order.tracking_token);
+ const message='Olá '+(order.customer_name||'')+'! ❤️ Aqui está o link privado para acompanhares a tua encomenda My Box in Love, consultar o estado e, durante a entrega, ver o percurso do motorista: '+url+'\\n\\nObrigada pela preferência! ❤️';
  const wa='https://wa.me/'+(phone.length>=10?phone:'')+'?text='+encodeURIComponent(message);
- // Navegação na mesma página evita que o bloqueador de pop-ups impeça a abertura do WhatsApp.
  location.href=wa;
 }
 async function mblCreateDriverLink(id){try{const result=await mblCall({action:'driver_link',id});const message='Olá! Segue o link para acompanhar a entrega: '+result.url;if(navigator.share){await navigator.share({title:'Entrega My Box in Love',text:message,url:result.url});}else{window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank');}}catch(e){alert(e.message);}}
