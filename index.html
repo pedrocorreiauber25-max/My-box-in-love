@@ -1133,6 +1133,56 @@ function drawCEOFinance(){
 window.MBL_SHOW_DELIVERED_ORDERS=window.MBL_SHOW_DELIVERED_ORDERS||false;
 function setOrderArchiveView(delivered){window.MBL_SHOW_DELIVERED_ORDERS=!!delivered;const a=document.getElementById('showActiveOrders'),d=document.getElementById('showDeliveredOrders'),oa=document.getElementById('showActiveOnline'),od=document.getElementById('showDeliveredOnline');[a,oa].forEach(b=>b&&b.classList.toggle('primary',!delivered));[d,od].forEach(b=>b&&b.classList.toggle('primary',!!delivered));draw();mblLoadOrders();}
 window.setOrderArchiveView=setOrderArchiveView;
+function mblNormalizePhone(value){
+ let digits=String(value||'').replace(/\D/g,'');
+ if(digits.startsWith('00351'))digits=digits.slice(5);
+ else if(digits.startsWith('351')&&digits.length>9)digits=digits.slice(3);
+ return digits;
+}
+function mblCustomerCompletedOrders(phone,name){
+ const key=mblNormalizePhone(phone),nameKey=String(name||'').trim().toLowerCase();
+ const matches=(o,online)=>{
+  const other=mblNormalizePhone(online?o.customer_phone:o.phone);
+  if(key&&other)return key===other;
+  if(key||other)return false;
+  return !!nameKey&&String(online?o.customer_name:o.client||'').trim().toLowerCase()===nameKey;
+ };
+ const local=d.orders.filter(o=>o.status==='Entregue'&&matches(o,false)).length;
+ const online=(window.mblOnlineOrders||[]).filter(o=>o.status==='Entregue'&&!o.manual_source_id&&!d.orders.some(localOrder=>String(localOrder.id)===String(o.id))&&matches(o,true)).length;
+ return local+online;
+}
+function updateManualLoyaltyHint(){
+ const hint=$('manualLoyaltyHint');if(!hint)return;
+ const name=$('oc').value.trim(),phone=$('op').value.trim();
+ if(!name&&!phone){hint.textContent='Os descontos de fidelização são calculados automaticamente para clientes com encomendas anteriores.';return;}
+ const count=mblCustomerCompletedOrders(phone,name),cycle=count%5;
+ const pct=cycle===2?5:(cycle===4?10:0);
+ hint.textContent=pct?'Cliente com '+count+' encomendas entregues: será aplicado automaticamente um desconto de '+pct+'%.':'Cliente com '+count+' encomendas entregues. Desconto de 5% na 3.ª e 10% na 5.ª encomenda de cada cartão.';
+}
+function drawClients(){
+ const local=d.orders.filter(o=>o&&o.status!=='Cancelada'&&o.status!=='Cancelado');
+ const online=(window.mblOnlineOrders||[]).filter(o=>o&&o.status!=='Cancelado'&&!o.manual_source_id&&!d.orders.some(x=>String(x.id)===String(o.id)));
+ const clients=new Map();
+ const add=(name,phone,status,total,date)=>{
+  const display=String(name||'Cliente').trim()||'Cliente',digits=mblNormalizePhone(phone);
+  const key=digits?'tel:'+digits:'nome:'+display.toLowerCase();
+  if(!clients.has(key))clients.set(key,{name:display,orders:0,completed:0,spent:0,last:''});
+  const c=clients.get(key);c.orders++;
+  if(status==='Entregue'){c.completed++;c.spent+=Number(total)||0;}
+  if(String(date||'')>c.last)c.last=String(date||'');
+ };
+ local.forEach(o=>add(o.client,o.phone,o.status,o.total,o.date));
+ online.forEach(o=>add(o.customer_name,o.customer_phone,o.status,Number(o.order_total_cents||0)/100,(o.created_at||o.requested_date||'').slice(0,10)));
+ const rows=[...clients.values()].sort((a,b)=>b.completed-a.completed||b.orders-a.orders||b.spent-a.spent);
+ const vip=rows.filter(c=>c.completed>=5).length,totalSpent=rows.reduce((sum,c)=>sum+c.spent,0);
+ $('clientSummary').innerHTML='<div class="card"><span class="small">Clientes registados</span><div class="metric">'+rows.length+'</div></div><div class="card"><span class="small">Clientes VIP</span><div class="metric">'+vip+'</div></div><div class="card"><span class="small">Total gasto em encomendas entregues</span><div class="metric">'+money(totalSpent)+'</div></div>';
+ $('clientlist').innerHTML=rows.map(c=>{
+  const cycle=c.completed%5,stamps=c.completed===0?0:(cycle===0?5:cycle),pct=cycle===2?5:(cycle===4?10:0);
+  const stampHtml=Array.from({length:5},(_,i)=>'<span style="display:inline-flex;width:29px;height:29px;border-radius:50%;align-items:center;justify-content:center;margin:2px;background:'+(i<stamps?'#80502f':'#faedf0')+';color:'+(i<stamps?'white':'#80502f')+'">'+(i<stamps?'♥':'·')+'</span>').join('');
+  const next=pct?'Próxima encomenda ('+(c.completed+1)+'.ª): desconto de '+pct+'%.':'5% na 3.ª e 10% na 5.ª encomenda de cada cartão.';
+  return '<article class="card"><div class="row"><b style="flex:1">'+esc(c.name)+'</b>'+(c.completed>=5?'<span class="pill">⭐ VIP</span>':'')+'</div><p>'+c.orders+' encomenda(s) · '+c.completed+' entregue(s) · <b>'+money(c.spent)+' gastos</b></p><div class="small">Cartão de fidelidade · '+stamps+'/5</div><div>'+stampHtml+'</div><p class="small">'+next+'</p><p class="small">Última encomenda: '+esc(c.last||'—')+'</p></article>';
+ }).join('')||'<div class="card muted">Ainda não existem clientes registados.</div>';
+}
 function draw(){
  drawCEOAlerts();
  $('oproduct').innerHTML=d.products.map(p=>
@@ -1262,8 +1312,7 @@ function draw(){
  $('financelist').innerHTML=movements.sort((a,b)=>(b.date||'').localeCompare(a.date||''))
  .map(x=>`<div class="item">${esc(x.name)} <b>${money(x.value)}</b><div class="small">${x.date||''}</div></div>`).join('')||'Sem movimentos.';
 
- $('clientlist').innerHTML=[...new Set([...d.orders.map(o=>o.client),...validOnline.map(o=>o.customer_name)].filter(Boolean))]
- .map(n=>`<div class="item">${esc(n)}</div>`).join('')||'Ainda sem clientes.';
+ drawClients();
 
  $('recent').innerHTML=d.orders.slice(-5).reverse()
  .map(o=>`<div class="item">${esc(o.client)} · ${esc(o.product)} · ${money(o.total)}</div>`).join('')||'Ainda sem encomendas.';
