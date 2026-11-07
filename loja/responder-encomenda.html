@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#e9b8c2">
+<title>Personalizar encomenda | My Box in Love</title>
+<style>
+:root{--pink:#e9b8c2;--pale:#fff6f8;--brown:#80502f;--ink:#46332e;--line:#f0dce1}
+*{box-sizing:border-box}body{margin:0;background:var(--pale);color:var(--ink);font:16px system-ui,-apple-system,sans-serif}
+header{text-align:center;padding:22px 12px;background:linear-gradient(145deg,#e9b8c2,#f8e5e9)}
+header img{width:70px;height:70px;object-fit:cover;border-radius:18px}
+h1{margin:7px 0 0;letter-spacing:3px;font-size:24px}.script{font:italic 22px Georgia;color:var(--brown)}
+main{max-width:620px;margin:20px auto;padding:0 13px}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:18px;margin:13px 0;box-shadow:0 5px 18px #80502f0b}
+h2{font-size:18px;color:var(--brown);margin:0 0 12px}.muted,.small{color:#927f79;line-height:1.5}.small{font-size:13px}
+label,.field-title{display:block;font-size:13px;font-weight:750;color:var(--brown);margin:12px 0 6px}
+input[type=text],textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;color:var(--ink);background:#fff}
+textarea{min-height:92px;resize:vertical}
+.choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.choice{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff9fa}
+.choice input{width:18px;height:18px;accent-color:var(--brown)}
+button{width:100%;border:0;border-radius:12px;background:var(--brown);color:#fff;font:inherit;font-weight:800;padding:14px;margin-top:12px}
+button:disabled{opacity:.55}.notice{padding:12px;border-radius:12px;background:#fff5e8;margin:10px 0;line-height:1.5}
+#message{white-space:pre-wrap}.hide{display:none!important}footer{text-align:center;color:#927f79;font-size:12px;padding:20px}
+@media(max-width:420px){.choices{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><img src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="My Box in Love"><h1>MY BOX</h1><div class="script">in love</div></header>
+<main>
+ <div class="card" id="loading">A carregar os detalhes da tua encomenda…</div>
+ <form class="card hide" id="form">
+  <h2>Vamos personalizar a tua box ❤️</h2>
+  <p class="muted" id="orderInfo"></p>
+  <div id="customFields">
+   <div class="field-title">1. Que fruta gostarias de incluir?</div>
+   <p class="small">Podes escolher até duas opções. Na Box Basic, escolhe exatamente duas.</p>
+   <div class="choices" id="fruitChoices">
+    <label class="choice"><input type="checkbox" name="fruit" value="Melancia">Melancia</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Amora">Amora</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Mirtilos">Mirtilos</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Framboesas">Framboesas</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Uvas">Uvas</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Kiwi">Kiwi</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Melão">Melão</label>
+    <label class="choice"><input type="checkbox" name="fruit" value="Maracujá">Maracujá</label>
+   </div>
+   <div class="field-title">2. Que bebida preferes?</div>
+   <p class="small">Escolhe a bebida, se fizer parte do teu produto.</p>
+   <div class="choices">
+    <label class="choice"><input type="radio" name="drink" value="Sumo de laranja">Sumo de laranja</label>
+    <label class="choice"><input type="radio" name="drink" value="Chocolate">Chocolate</label>
+   </div>
+   <label for="cardMessage">3. Que mensagem queres escrever no cartão?</label>
+   <textarea id="cardMessage" maxlength="500" placeholder="Escreve aqui a dedicatória que vai acompanhar a tua box…"></textarea>
+   <label for="ribbon">4. Qual é a cor da fita e do laço?</label>
+   <select id="ribbon">
+    <option value="">Escolhe a cor da fita e do laço</option>
+    <option>Rosa-claro</option><option>Rosa</option><option>Vermelho</option>
+    <option>Dourado</option><option>Prateado</option><option>Branco</option>
+    <option>Preto</option><option>Azul</option><option>Lilás</option>
+    <option>Verde</option><option>Outra cor</option>
+   </select>
+   <input id="ribbonOther" class="hide" type="text" maxlength="60" placeholder="Escreve a cor que pretendes">
+   <label for="details">5. Tens outro pedido ou detalhe especial?</label>
+   <textarea id="details" maxlength="1200" placeholder="Indica aqui outros pormenores que devemos ter em conta…"></textarea>
+   <p class="small">As perguntas são apresentadas para todos os produtos. Preenche as opções que se aplicam à tua encomenda; as escolhas obrigatórias da Box Basic serão assinaladas.</p>
+  </div>
+  <label for="recipient">Nome de quem vai receber a box</label>
+  <input id="recipient" type="text" maxlength="100" required placeholder="Nome do destinatário">
+  <label for="deliveryTime">Horário pretendido (a partir das 09:00)</label>
+  <select id="deliveryTime" required>
+   <option value="">Escolhe um horário</option>
+   <option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option>
+   <option>11:00</option><option>11:30</option><option>12:00</option><option>12:30</option>
+   <option>13:00</option><option>13:30</option><option>14:00</option><option>14:30</option>
+   <option>15:00</option><option>15:30</option><option>16:00</option><option>16:30</option>
+   <option>17:00</option><option>17:30</option><option>18:00</option><option>18:30</option>
+   <option>19:00</option><option>19:30</option><option>20:00</option>
+  </select>
+  <div class="notice small">Confirma que as escolhas estão corretas antes de enviar. As respostas serão associadas à tua encomenda My Box in Love.</div>
+  <button id="submit" type="submit">Enviar as minhas escolhas</button>
+  <p id="message" class="small" role="status" aria-live="polite"></p>
+ </form>
+ <div class="card hide" id="error"></div>
+</main>
+<footer>MY BOX IN LOVE · Feito com amor ❤️</footer>
+<script>
+(function(){
+ const endpoint="https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/manual-order-questionnaire";
+ const apiKey="sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb";
+ const token=new URLSearchParams(location.search).get("token");
+ const $=id=>document.getElementById(id);
+ let isBasic=false;
+ async function call(action,answers){
+  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":apiKey},body:JSON.stringify({action:action,token:token,answers:answers||undefined})});
+  const data=await response.json().catch(()=>({error:"Resposta inválida do servidor."}));
+  if(!response.ok||!data.ok)throw new Error(data.error||"Não foi possível concluir o pedido.");
+  return data;
+ }
+ function showError(message){$("loading").classList.add("hide");$("form").classList.add("hide");$("error").textContent=message;$("error").classList.remove("hide");}
+ function fill(a){
+  if(!a)return;
+  if(Array.isArray(a.fruits))document.querySelectorAll("input[name=fruit]").forEach(el=>el.checked=a.fruits.includes(el.value));
+  if(a.drink){const el=document.querySelector('input[name="drink"][value="'+CSS.escape(a.drink)+'"]');if(el)el.checked=true;}
+  $("cardMessage").value=a.card_message||"";
+  const knownRibbon=Array.from($("ribbon").options).some(o=>o.value===a.ribbon_color);
+  $("ribbon").value=knownRibbon?(a.ribbon_color||""):(a.ribbon_color?"Outra cor":"");
+  $("ribbonOther").value=knownRibbon?"":(a.ribbon_color||"");
+  $("ribbonOther").classList.toggle("hide",$("ribbon").value!=="Outra cor");
+  $("details").value=a.details||"";
+  $("recipient").value=a.recipient_name||"";
+  $("deliveryTime").value=a.delivery_time||"";
+ }
+ async function init(){
+  if(!token)return showError("Este link não é válido. Pede à My Box in Love que te envie um novo link.");
+  try{
+   const data=await call("get");
+   const order=data.order||{};
+   isBasic=String(order.product||"").toLowerCase().includes("basic");
+   $("orderInfo").textContent=(order.product||"A tua encomenda")+(order.date?" · Entrega prevista: "+new Date(order.date+"T12:00:00").toLocaleDateString("pt-PT"):"");
+   $("customFields").classList.remove("hide");
+   $("ribbon").required=isBasic;
+   fill(order.questionnaire);
+   $("loading").classList.add("hide");$("form").classList.remove("hide");
+   if(order.completed_at)$("message").textContent="Já recebemos as tuas respostas. Podes alterá-las e voltar a enviar se precisares.";
+  }catch(e){showError(e.message);}
+ }
+ $("ribbon").addEventListener("change",function(){ $("ribbonOther").classList.toggle("hide",this.value!=="Outra cor"); });
+ $("form").addEventListener("submit",async function(event){
+  event.preventDefault();
+  const button=$("submit"),message=$("message");
+  const fruits=Array.from(document.querySelectorAll("input[name=fruit]:checked")).map(el=>el.value);
+  const drink=document.querySelector('input[name="drink"]:checked');
+  if(fruits.length>2){message.textContent="Escolhe no máximo duas frutas.";return;}
+  if(isBasic&&fruits.length!==2){message.textContent="Na Box Basic, escolhe exatamente duas frutas.";return;}
+  if(isBasic&&!drink){message.textContent="Na Box Basic, escolhe uma bebida.";return;}
+  const ribbonChoice=$("ribbon").value;
+  const ribbonColor=ribbonChoice==="Outra cor"?$("ribbonOther").value.trim():ribbonChoice;
+  if(isBasic&&!ribbonColor){message.textContent="Escolhe a cor da fita e do laço.";return;}
+  if(ribbonChoice==="Outra cor"&&!ribbonColor){message.textContent="Escreve a cor da fita e do laço.";return;}
+  if(!$("recipient").value.trim()){message.textContent="Indica o nome de quem vai receber a box.";return;}
+  if(!$("deliveryTime").value){message.textContent="Escolhe o horário pretendido.";return;}
+  const answers={recipient_name:$("recipient").value.trim(),delivery_time:$("deliveryTime").value,
+   fruits:fruits,drink:drink?drink.value:"",card_message:$("cardMessage").value.trim(),
+   ribbon_color:ribbonColor,details:$("details").value.trim()};
+  button.disabled=true;button.textContent="A enviar…";message.textContent="";
+  try{await call("save",answers);message.textContent="As tuas escolhas foram enviadas com sucesso! Obrigada ❤️";button.textContent="Respostas enviadas";}
+  catch(e){message.textContent=e.message;button.disabled=false;button.textContent="Enviar as minhas escolhas";}
+ });
+ init();
+})();
+</script>
+</body>
+</html>
