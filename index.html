@@ -850,7 +850,7 @@ async function shareManualQuestionnaire(id) {
   if(phone.startsWith("00"))phone=phone.slice(2);
   if(phone.length===9)phone="351"+phone;
   if(phone.length<10)throw new Error("Esta encomenda não tem um número de telemóvel válido.");
-  const url="https://pedrocorreiauber25-max.github.io/My-box-in-love/responder-encomenda.html?token="+encodeURIComponent(linked.tracking_token);
+  const url="https://myboxinlove.pages.dev/responder-encomenda.html?token="+encodeURIComponent(linked.tracking_token);
   const msg="Olá "+(o.client||"")+"! ❤️ Para prepararmos a tua "+(o.product||"box")+" exatamente como desejas, preenche por favor este pequeno formulário: "+url+"\n\nObrigada! My Box in Love ❤️";
   location.href="https://wa.me/"+phone+"?text="+encodeURIComponent(msg);
  } catch(e) { alert("Não foi possível criar o formulário: "+(e.message||e)); }
