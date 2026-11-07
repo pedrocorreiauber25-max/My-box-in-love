@@ -1566,7 +1566,7 @@ function mblStartPanel(){
   mblLoadCatalogData();
   mblLoadMaterialChecklist();
   if(!window.mblCatalogPoll)window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);
-  mblLoadOrders().then(()=>{mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
+  mblLoadOrders().then(async()=>{await mblLoadReviews();mblSubscribeOrders();if(!window.mblOrderPoll)window.mblOrderPoll=setInterval(mblLoadOrders,20000);if(!window.mblMaterialPoll)window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);if(!window.mblBusinessPoll)window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);})
   .catch(e=>{$('privateMain').style.display='none';$('loginGate').style.display='block';$('loginError').textContent='A sessão expirou. Introduz novamente o PIN.';MBL_TOKEN='';localStorage.removeItem('mbl_panel_session');});
  }
 }
