@@ -36,6 +36,16 @@ textarea{min-height:90px;resize:vertical}.row{display:grid;grid-template-columns
 footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 @media(max-width:520px){.row{grid-template-columns:1fr}header{padding-top:28px}.photo-gallery{padding:10px}.photo-gallery img{border-radius:10px}}
 
+
+.menu-gallery{max-width:980px;margin:18px auto 0;padding:0 15px}
+.menu-gallery figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 8px 28px #80502f0b}
+.menu-gallery img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain;background:#fff7f8}
+.menu-gallery figcaption{text-align:center;padding:12px;color:#80645c;font-size:13px}
+.product .choose-product{width:100%;margin-top:12px;border:0;border-radius:12px;padding:12px 14px;background:#80502f;color:#fff;font-weight:800;font:inherit;cursor:pointer}
+.product .choose-product:focus-visible{outline:3px solid #e9b8c2;outline-offset:3px}
+.product{display:flex;flex-direction:column}
+.product .choose-product{margin-top:auto}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -54,6 +64,7 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <h1>MY BOX</h1><div class="script">in love</div>
 <p>Pequenos momentos, grandes emoções. ❤️</p>
 </header>
+<section class="menu-gallery" aria-label="Fotografias originais My Box in Love"><figure><img src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/galeria-produtos.webp" alt="Fotografias originais dos produtos My Box in Love" loading="eager"><figcaption>As nossas boxes e presentes, preparados com carinho ❤️</figcaption></figure></section>
 <main>
 <section class="intro">
 <div class="eyebrow">Feito com carinho, pensado em ti</div>
@@ -61,12 +72,12 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p><p class="note">Boxes: mínimo de 24 horas. Caixas Presente e Buquês: mínimo de 48 horas.</p><p class="note">Clube My Box in Love: 5% de desconto na 3.ª encomenda e 10% na 5.ª encomenda entregue.</p>
 </section>
 <section class="grid" aria-label="Boxes disponíveis">
-<article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p></article>
-<article class="card product" data-product-key="box-classic-para-dividir"><div class="product-icon">🥐</div><h3>Box Classic · Para dividir</h3><p class="muted">Seleção generosa de delícias matinais, 3 opções de fruta, charcutaria, macarons, complementos e 2 bebidas.</p><span class="pill">Para partilhar</span><p class="price">65 €</p></article>
-<article class="card product" data-product-key="box-kids-individual"><div class="product-icon">🍭</div><h3>Box Kids · Individual</h3><p class="muted">Pão de leite, mini panquecas, croissant, pão de queijo, waffles, brownie, cookies, fruta e Kinder.</p><span class="pill">Infantil</span><p class="price">36 €</p></article>
-<article class="card product" data-product-key="festa-na-box"><div class="product-icon">🎈</div><h3>Festa na Box</h3><p class="muted">Box individual com pequeno-almoço, doces, decoração temática, balões, painel, placa e cartão personalizado.</p><span class="pill">Decoração incluída</span><p class="price">75 €</p></article>
-<article class="card product" data-product-key="caixa-presente"><div class="product-icon">🎁</div><h3>Caixa Presente</h3><p class="muted">Chocolates premium à escolha, flores opcionais e formato/cor mediante disponibilidade.</p><span class="pill">48 h de antecedência</span><p class="price">40 € – 70 €</p></article>
-<article class="card product" data-product-key="buque-de-doces"><div class="product-icon">💐</div><h3>Buquê de Doces</h3><p class="muted">Ferrero Rocher, Raffaello, Kinder, Milka, Nutella ou combinações à escolha. Cartão incluído.</p><span class="pill">48 h de antecedência</span><p class="price">45 € – 70 €</p></article>
+<article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('box-basic-individual')">Escolher esta opção</button></article>
+<article class="card product" data-product-key="box-classic-para-dividir"><div class="product-icon">🥐</div><h3>Box Classic · Para dividir</h3><p class="muted">Seleção generosa de delícias matinais, 3 opções de fruta, charcutaria, macarons, complementos e 2 bebidas.</p><span class="pill">Para partilhar</span><p class="price">65 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('box-classic-para-dividir')">Escolher esta opção</button></article>
+<article class="card product" data-product-key="box-kids-individual"><div class="product-icon">🍭</div><h3>Box Kids · Individual</h3><p class="muted">Pão de leite, mini panquecas, croissant, pão de queijo, waffles, brownie, cookies, fruta e Kinder.</p><span class="pill">Infantil</span><p class="price">36 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('box-kids-individual')">Escolher esta opção</button></article>
+<article class="card product" data-product-key="festa-na-box"><div class="product-icon">🎈</div><h3>Festa na Box</h3><p class="muted">Box individual com pequeno-almoço, doces, decoração temática, balões, painel, placa e cartão personalizado.</p><span class="pill">Decoração incluída</span><p class="price">75 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('festa-na-box')">Escolher esta opção</button></article>
+<article class="card product" data-product-key="caixa-presente"><div class="product-icon">🎁</div><h3>Caixa Presente</h3><p class="muted">Chocolates premium à escolha, flores opcionais e formato/cor mediante disponibilidade.</p><span class="pill">48 h de antecedência</span><p class="price">40 € – 70 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('caixa-presente')">Escolher esta opção</button></article>
+<article class="card product" data-product-key="buque-de-doces"><div class="product-icon">💐</div><h3>Buquê de Doces</h3><p class="muted">Ferrero Rocher, Raffaello, Kinder, Milka, Nutella ou combinações à escolha. Cartão incluído.</p><span class="pill">48 h de antecedência</span><p class="price">45 € – 70 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('buque-de-doces')">Escolher esta opção</button></article>
 </section>
 <section class="card" style="margin-top:16px"><h2>Adicionais para personalizar</h2><div class="grid">
 <div><b>Balão temático</b><p class="price">4 €</p><p class="note">Coração, estrela ou redondo; cores e temas mediante disponibilidade.</p></div>
@@ -385,5 +396,24 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 })();
 
 </script>
+
+<script id="menu-product-selection">
+function chooseMenuProduct(key){
+ const options={
+  "box-basic-individual":1,
+  "box-classic-para-dividir":2,
+  "box-kids-individual":3,
+  "festa-na-box":4,
+  "caixa-presente":5,
+  "buque-de-doces":6
+ };
+ const select=document.getElementById('produto');
+ if(!select||!options[key])return;
+ select.selectedIndex=options[key];
+ select.dispatchEvent(new Event('change',{bubbles:true}));
+ document.getElementById('pedido').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+
 </body>
 </html>
