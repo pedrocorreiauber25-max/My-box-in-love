@@ -358,8 +358,8 @@ footer{padding:34px 18px 45px;background:#fbf1ef;margin-top:35px;color:#876f66;l
   dateField.required = true;
   timeField.required = true;
   function requiredLeadHours() {
-    const selected = productField.selectedOptions[0]?.textContent || '';
-    return /Caixa Presente|Buquê de Doces/i.test(selected) ? 48 : 24;
+    const option=productField.selectedOptions[0];
+    return Number(option?.dataset.leadHours)||(/Caixa Presente|Buquê de Doces/i.test(option?.textContent||'')?48:24);
   }
   function updateLeadTime() {
     const hours = requiredLeadHours();
@@ -368,11 +368,11 @@ footer{padding:34px 18px 45px;background:#fbf1ef;margin-top:35px;color:#876f66;l
     dateField.min = localDate(earliest);
     leadInfo.textContent = 'Encomenda com pelo menos ' + hours + ' horas de antecedência. Escolhe a data e a hora pretendidas.';
     if (dateField.value && dateField.value < dateField.min) dateField.value = '';
-    const isBouquet = /Buquê de Doces/i.test(productField.selectedOptions[0]?.textContent || '');
-    variableField.min = isBouquet ? '45' : '40';
-    variableField.max = '70';
-    variableField.placeholder = isBouquet ? 'Indica um valor entre 45 e 70 €' : 'Indica um valor entre 40 e 70 €';
-    if (variableField.value && Number(variableField.value) < Number(variableField.min)) variableField.value = '';
+    const option=productField.selectedOptions[0];
+    variableField.min = option?.dataset.min || '40';
+    variableField.max = option?.dataset.max || '70';
+    variableField.placeholder = 'Indica um valor entre '+variableField.min+' e '+variableField.max+' €';
+    if (variableField.value && (Number(variableField.value)<Number(variableField.min)||Number(variableField.value)>Number(variableField.max))) variableField.value = '';
   }
   productField.addEventListener('change', updateLeadTime);
   updateLeadTime();
@@ -530,8 +530,9 @@ function chooseMenuProduct(key){
    const selected=select.selectedOptions[0]?.dataset.storeKey||'';
    select.innerHTML='<option value="">Seleciona uma opção</option>'+products.map(p=>{
     const storeKey=p.storeKey||slug(p.name),label=p.priceLabel||euro(p.price),variable=/(até|desde|–|-)/i.test(label);
-    const value=(p.name||'')+' — '+label;
-    return '<option data-store-key="'+safe(storeKey)+'" data-price="'+Number(p.price||0)+'" '+(variable?'data-variable="true"':'')+' value="'+safe(value)+'">'+safe(value)+'</option>';
+    const bounds=[...label.matchAll(/\d+(?:[.,]\d+)?/g)].map(x=>Number(String(x[0]).replace(',','.')));
+    const value=(p.name||'')+' — '+label,leadHours=['caixa-presente','buque-de-doces'].includes(storeKey)?48:24;
+    return '<option data-store-key="'+safe(storeKey)+'" data-price="'+Number(p.price||0)+'" data-min="'+(variable?(bounds[0]||40):'')+'" data-max="'+(variable?(bounds[1]||70):'')+'" data-lead-hours="'+leadHours+'" '+(variable?'data-variable="true"':'')+' value="'+safe(value)+'">'+safe(value)+'</option>';
    }).join('')+'<option data-variable="true">Pedido personalizado — preço a confirmar</option>';
    if(selected){const option=[...select.options].find(x=>x.dataset.storeKey===selected);if(option)select.value=option.value;}
    select.dispatchEvent(new Event('change',{bubbles:true}));
