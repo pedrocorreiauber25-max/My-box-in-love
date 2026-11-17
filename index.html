@@ -659,7 +659,7 @@ function editProduct(id){
  document.getElementById('recipeProductPrice').value=Number(p.price)||0;
  document.getElementById('recipeProductLabel').value=p.priceLabel||money(p.price);
  document.getElementById('recipeProductDescription').value=p.description||'';
- document.getElementById('recipeProductContents').value=(Array.isArray(p.contents)?p.contents:[]).join('\\n');
+ document.getElementById('recipeProductContents').value=(Array.isArray(p.contents)?p.contents:[]).join('\n');
  renderRecipeEditorRows(p);
  modal.style.display='flex';
 }
@@ -689,7 +689,7 @@ function saveRecipeEditor(){
  }
  const description=document.getElementById('recipeProductDescription').value.trim();
  const priceLabel=document.getElementById('recipeProductLabel').value.trim();
- const contents=document.getElementById('recipeProductContents').value.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+ const contents=document.getElementById('recipeProductContents').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
  p.name=name;p.price=price;p.priceLabel=priceLabel||money(price);p.description=description;p.contents=contents;p.storeKey=p.storeKey||productImageKey(name);p.recipe=recipe;
  save();closeRecipeEditor();
  alert('Ficha técnica guardada com sucesso!');
