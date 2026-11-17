@@ -191,6 +191,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <h2>Nova encomenda</h2>
    <label>CLIENTE</label><input id="oc" placeholder="Nome da cliente">
    <label>CONTACTO</label><input id="op" placeholder="Telefone">
+   <label>CANAL DE ORIGEM</label><select id="osource"><option value="WhatsApp">WhatsApp</option><option value="Instagram">Instagram</option><option value="Manual">Registo manual</option></select>
    <p class="small" id="manualLoyaltyHint">Os descontos de fidelização são calculados automaticamente para clientes com encomendas anteriores.</p>
    <label>PRODUTO</label><select id="oproduct"></select>
    <label>QUANTIDADE</label><input id="oqty" type="number" min="1" value="1">
@@ -220,7 +221,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
    <button class="primary" onclick="saveOrder()">Guardar encomenda</button>
    <button onclick="closeOrder()">Fechar</button>
   </div>
-  <div class="card" id="orderArchiveFilters"><div class="row"><b style="flex:1">Visualização</b><button type="button" id="showActiveOrders" class="primary" onclick="setOrderArchiveView(false)">Em aberto</button><button type="button" id="showDeliveredOrders" onclick="setOrderArchiveView(true)">Entregues</button></div><p class="small">As encomendas entregues ficam arquivadas aqui e continuam disponíveis para consulta.</p></div><div id="orderlist"></div>
+  <div class="card" id="orderArchiveFilters"><div class="row"><b style="flex:1">Visualização</b><button type="button" id="showActiveOrders" class="primary" onclick="setOrderArchiveView(false)">Em aberto</button><button type="button" id="showDeliveredOrders" onclick="setOrderArchiveView(true)">Entregues</button></div><p class="small">As encomendas entregues ficam arquivadas aqui e continuam disponíveis para consulta.</p></div><div class="card"><label for="orderSourceFilter">FILTRAR ENCOMENDAS POR CANAL</label><select id="orderSourceFilter" onchange="draw()"><option value="Todas">Todos os canais</option><option value="WhatsApp">WhatsApp</option><option value="Instagram">Instagram</option><option value="Manual">Registo manual</option></select><p class="small">As encomendas do site aparecem na secção própria abaixo.</p></div><div id="orderlist"></div>
   <div class="card"><div class="row"><h2 style="flex:1">Encomendas da loja online</h2><button onclick="mblLoadOrders()">Atualizar</button><button onclick="mblEnableNotifications()">Ativar notificações</button></div><p class="small" id="notificationState">Ativa as notificações neste dispositivo.</p><div class="row"><button type="button" id="showActiveOnline" class="primary" onclick="setOrderArchiveView(false)">Em aberto</button><button type="button" id="showDeliveredOnline" onclick="setOrderArchiveView(true)">Entregues</button></div><div id="onlineOrders">Entra no painel para carregar as encomendas.</div></div>
  </section>
 
@@ -592,7 +593,7 @@ function saveOrder(){
  const manualItems=getManualLineItems();
  if(document.querySelectorAll(".manual-line-row").length!==manualItems.length)return alert("Preenche o nome, preço e quantidade de cada produto avulso.");
  d.orders.push({
-  id:uid(),client,phone,product:p.name,productId:p.id,
+  id:uid(),client,phone,product:p.name,productId:p.id,source:$('osource').value||'Manual',
   qty,date:$('odate').value,status:$('ostatus').value,total,originalTotal,loyaltyDiscountPercent,loyaltyDiscountAmount,deposit,
   payments:[],refunds:0,produced:false,materialCost:0,
   extras,manualItems:manualItems.map(item=>({name:item.name,qty:item.qty,unitPrice:item.unitPrice,total:item.total})),notes:$('onotes').value,
@@ -1274,10 +1275,11 @@ function draw(){
   <div class="small">${p.date} · ${esc(p.supplier||'')}</div></div>`
  ).join('')||'Ainda não existem compras.';
 
- const visibleManualOrders=d.orders.filter(o=>window.MBL_SHOW_DELIVERED_ORDERS?(o.status==='Entregue'):(o.status!=='Entregue'));
+ const sourceFilter=document.getElementById('orderSourceFilter')?.value||'Todas';
+ const visibleManualOrders=d.orders.filter(o=>(window.MBL_SHOW_DELIVERED_ORDERS?(o.status==='Entregue'):(o.status!=='Entregue'))&&(sourceFilter==='Todas'||(o.source||'Manual')===sourceFilter));
  $('orderlist').innerHTML=visibleManualOrders.slice().reverse().map(o=>`
   <div class="card">
-   <b>${esc(o.client)}</b> · ${esc(o.product)}
+   <b>${esc(o.client)}</b> · ${esc(o.product)}<p><span class="pill">Origem: ${esc(o.source||"Manual")}</span></p>
    <p>${o.date||'Sem data'} · ${money(o.total)} · <span class="pill">${esc(o.status)}</span></p>
    <p class="small">Recebido: ${money(receivedOrder(o))} · Em falta: ${money(pendingOrder(o))}</p>
    ${o.loyaltyDiscountPercent?'<p class="small good">Desconto de fidelização aplicado: '+Number(o.loyaltyDiscountPercent)+'% · '+money(o.loyaltyDiscountAmount||0)+'</p>':''}
