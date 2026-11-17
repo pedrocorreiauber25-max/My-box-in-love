@@ -38,6 +38,70 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 
 
 
+
+</style>
+<style id="mbl-professional-storefront">
+:root{--pink:#e8b6c1;--pale:#fff8f8;--brown:#76503d;--ink:#44332d;--line:#efdee0;--rose:#b77b83;--cream:#f7eee8}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{background:#fffaf9;color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.55}
+.site-header{position:sticky;top:0;z-index:20;padding:10px 22px;background:#fffaf9ed;backdrop-filter:blur(14px);border-bottom:1px solid #efdee0}
+.header-inner{max-width:1120px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--brown)}
+.brand .logo{width:49px;height:49px;border-radius:14px;box-shadow:none}
+.brand span{display:flex;flex-direction:column;line-height:1}
+.brand strong{font-size:17px;letter-spacing:2px}.brand em{font:italic 18px Georgia;color:#b47c83}
+.site-nav{display:flex;align-items:center;gap:26px}.site-nav a,.hero-link{font-size:13px;font-weight:700;color:#76594e;text-decoration:none}
+.site-nav a:hover,.hero-link:hover{color:#b77b83}
+.header-contact{background:#76503d;color:white;text-decoration:none;padding:10px 16px;border-radius:30px;font-size:12px;font-weight:800}
+main{max-width:1120px;margin:0 auto;padding:0 22px}
+.hero{display:grid;grid-template-columns:1.08fr .92fr;align-items:center;gap:30px;min-height:470px;padding:58px 4px 48px}
+.hero-copy{max-width:560px}.eyebrow{letter-spacing:2px;text-transform:uppercase;font-size:10px;color:#b17d82;font-weight:850}
+.hero h1{font:500 clamp(38px,5vw,62px)/1.08 Georgia,serif;letter-spacing:-1.8px;color:#604536;margin:18px 0}
+.hero h1 span{display:block;color:#b77b83;font-style:italic}
+.hero-copy>p{max-width:490px;color:#88766e;font-size:16px;line-height:1.8}
+.hero-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:26px}
+.btn.secondary{background:#76503d;color:white;border-radius:30px;padding:14px 22px;font-size:13px;font-weight:800}
+.hero-link{font-size:12px}.hero-note{margin-top:30px;color:#a18c83;font-size:11px}.hero-note span{color:#b77b83;font-size:17px;margin-right:7px}
+.hero-art{position:relative;min-height:340px;border-radius:48% 48% 24px 24px;background:radial-gradient(circle at 50% 35%,#fff 0,#f9e8eb 53%,#f1dadd 100%);display:grid;place-items:center;overflow:hidden}
+.hero-art:before,.hero-art:after{content:"";position:absolute;border:1px solid #fff9;border-radius:50%;width:300px;height:300px}
+.hero-art:after{width:390px;height:390px}
+.hero-logo-wrap{position:relative;z-index:1;width:min(62%,245px);aspect-ratio:1;border:9px solid #fff9;border-radius:30px;overflow:hidden;box-shadow:0 20px 55px #79513d24;transform:rotate(-4deg)}
+.hero-logo-wrap img{width:100%;height:100%;object-fit:cover}
+.hero-stamp{position:absolute;z-index:2;right:9%;top:13%;background:#fffaf2;color:#9c6d67;border:1px solid #e7c7c4;border-radius:50%;width:82px;height:82px;display:grid;place-content:center;text-align:center;font-size:9px;font-weight:900;letter-spacing:1px;transform:rotate(10deg);box-shadow:0 5px 18px #79513d18}
+.hero-stamp span{font-size:19px}.hero-caption{position:absolute;bottom:18px;color:#8d6a62;font:italic 15px Georgia}
+.intro{padding:48px 10px 26px}.intro h2,.how-section h2,.extras-card h2,.order-card h2,.contact-card h2{font:500 clamp(27px,3vw,36px) Georgia,serif;color:#76503d;margin:8px 0 10px}
+.intro .muted{max-width:650px;margin:0 auto;color:#8d7b74}
+.menu-meta{display:flex;justify-content:center;gap:9px 20px;flex-wrap:wrap;margin-top:18px}.menu-meta span{font-size:10px;color:#9a7775;background:#fff0f2;padding:7px 11px;border-radius:20px}
+.grid{gap:20px}
+.card{border:1px solid #f0e3e2;border-radius:20px;box-shadow:0 10px 34px #76503d0a}
+.card.product{padding:13px 13px 18px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.card.product:hover{transform:translateY(-4px);box-shadow:0 15px 36px #76503d16}
+.product-photo{height:235px;object-fit:cover;border-radius:13px;margin-bottom:14px}
+.card.product .product-icon{height:180px;border-radius:13px;margin-bottom:14px;background:linear-gradient(145deg,#f8e7e9,#fbf3ed)}
+.product h3{font:600 19px Georgia,serif;color:#76503d;margin:4px 3px 7px}
+.product .muted{font-size:12px;min-height:62px;margin:0 3px 10px;color:#8b7a73}
+.product .pill{margin:0 3px;background:#fbf0f0;color:#9c7276;font-size:10px}
+.product .price{font-size:18px;margin:12px 3px;color:#986d62}
+.choose-product{display:block;width:100%;border:1px solid #76503d;border-radius:30px;background:#76503d;color:#fff;padding:12px 14px;font:700 12px system-ui;cursor:pointer;margin-top:12px;transition:background .2s}
+.choose-product:hover{background:#a57578;border-color:#a57578}
+.extras-card{padding:26px}.extras-card .grid{margin-top:15px}.extras-card .grid>div{padding:14px;border-radius:14px;background:#fff8f7}
+.how-section{padding:52px 8px 40px;text-align:center}.how-section h2{margin-bottom:24px}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left}
+.how-grid article{padding:23px;border:1px solid #f0e3e2;border-radius:18px;background:#fff}
+.how-number{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f8e8eb;color:#a8737b;font:italic 16px Georgia}
+.how-grid h3{font:600 18px Georgia;color:#76503d;margin:14px 0 6px}.how-grid p{font-size:12px;color:#8b7a73;line-height:1.7;margin:0}
+.order-card{padding:clamp(18px,4vw,34px)!important}
+.order-card>p{max-width:680px}
+input,select,textarea{border-color:#eadcda;border-radius:12px;background:#fffdfc}
+input:focus,select:focus,textarea:focus{outline:2px solid #e8b6c166;border-color:#c58c93}
+form>button.btn{border-radius:30px;font-weight:800;padding:15px 20px}
+.contact-card{padding:35px 18px;margin-top:20px}
+.contact-card .btn{border-radius:30px}
+.float-wa{right:20px;bottom:20px;border-radius:30px;padding:13px 19px;font-size:12px}
+footer{padding:34px 18px 45px;background:#fbf1ef;margin-top:35px;color:#876f66;line-height:1.9}
+@media(max-width:720px){.site-header{padding:9px 13px}.header-inner{gap:8px}.site-nav{gap:12px}.site-nav a{font-size:11px}.header-contact{display:none}main{padding:0 14px}.hero{grid-template-columns:1fr;gap:25px;padding:43px 3px 25px;min-height:0}.hero-copy{text-align:center}.hero-copy>p{margin:0 auto}.hero-actions{justify-content:center}.hero-art{min-height:270px;max-width:470px;width:100%;margin:0 auto}.hero h1{font-size:43px}.hero-note{margin-top:20px}.intro{padding:38px 5px 20px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.card.product{padding:9px 9px 13px}.product-photo{height:165px}.card.product .product-icon{height:145px}.product h3{font-size:16px}.product .muted{font-size:11px;min-height:90px}.choose-product{font-size:11px;padding:11px 7px}.how-grid{grid-template-columns:1fr;gap:10px}.how-grid article{padding:17px}.menu-meta{gap:6px}.menu-meta span{font-size:9px}.extras-card{padding:18px}.extras-card .grid{grid-template-columns:1fr 1fr}.float-wa{right:12px;bottom:12px}}
+@media(max-width:390px){.brand .logo{width:40px;height:40px}.brand strong{font-size:14px}.brand em{font-size:15px}.site-nav{gap:8px}.site-nav a{font-size:10px}.grid{grid-template-columns:1fr}.product .muted{min-height:0}.product-photo{height:230px}.card.product .product-icon{height:190px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card.product{transition:none}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -58,16 +122,38 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 </style>
 </head>
 <body>
-<header>
+<header class="site-header">
+<div class="header-inner">
+<a class="brand" href="#inicio" aria-label="My Box in Love - início">
 <img class="logo" src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="Logótipo My Box in Love">
-<h1>MY BOX</h1><div class="script">in love</div>
-<p>Pequenos momentos, grandes emoções. ❤️</p>
+<span><strong>MY BOX</strong><em>in love</em></span>
+</a>
+<nav class="site-nav" aria-label="Navegação principal">
+<a href="#menu">O menu</a><a href="#personalizar">Personalizar</a><a href="#pedido">Encomendar</a>
+</nav>
+<a class="header-contact" href="https://wa.me/351960486450" target="_blank" rel="noopener">Falar connosco <span>↗</span></a>
+</div>
 </header>
-<main>
-<section class="intro">
-<div class="eyebrow">Feito com carinho, pensado em ti</div>
-<h2>Surpreende quem amas</h2>
-<p class="muted">Escolhe uma ideia, conta-nos o que imaginas e preparamos contigo uma box especial.</p><p class="note">Boxes: mínimo de 24 horas. Caixas Presente e Buquês: mínimo de 48 horas.</p><p class="note">Clube My Box in Love: 5% de desconto na 3.ª encomenda e 10% na 5.ª encomenda entregue.</p>
+<main id="inicio">
+<section class="hero">
+<div class="hero-copy">
+<div class="eyebrow">Presentes com significado · Porto e arredores</div>
+<h1>Há momentos que merecem <span>uma box especial.</span></h1>
+<p>Pequenos momentos, grandes emoções. Criamos boxes e presentes pensados ao pormenor para surpreender quem mais gostas.</p>
+<div class="hero-actions"><a class="btn secondary" href="#menu">Descobrir o menu <span>↓</span></a><a class="hero-link" href="#pedido">Quero fazer uma encomenda <span>→</span></a></div>
+<div class="hero-note"><span>♡</span> Preparado com carinho, personalizado para cada ocasião.</div>
+</div>
+<div class="hero-art" aria-label="My Box in Love">
+<div class="hero-logo-wrap"><img src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="My Box in Love"></div>
+<div class="hero-stamp">FEITO<br>COM AMOR <span>♡</span></div>
+<div class="hero-caption">Um presente. Uma memória. Um sorriso.</div>
+</div>
+</section>
+<section class="intro" id="menu">
+<div class="eyebrow">Escolhe o teu favorito</div>
+<h2>O nosso menu</h2>
+<p class="muted">Descobre as nossas boxes e presentes. Cada detalhe é preparado com dedicação para tornar o teu momento ainda mais especial.</p>
+<div class="menu-meta"><span>♡ Boxes: mínimo de 24 horas</span><span>♡ Caixas Presente e Buquês: mínimo de 48 horas</span><span>♡ Clube My Box in Love: 5% na 3.ª e 10% na 5.ª encomenda entregue</span></div>
 </section>
 <section class="grid" aria-label="Boxes disponíveis">
 <article class="card product" data-product-key="box-basic-individual"><div class="product-icon">☕</div><h3>Box Basic · Individual</h3><p class="muted">Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.</p><span class="pill">1 pessoa</span><p class="price">33 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('box-basic-individual')">Escolher esta opção</button></article>
@@ -77,20 +163,29 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <article class="card product" data-product-key="caixa-presente"><div class="product-icon">🎁</div><h3>Caixa Presente</h3><p class="muted">Chocolates premium à escolha, flores opcionais e formato/cor mediante disponibilidade.</p><span class="pill">48 h de antecedência</span><p class="price">40 € – 70 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('caixa-presente')">Escolher esta opção</button></article>
 <article class="card product" data-product-key="buque-de-doces"><div class="product-icon">💐</div><h3>Buquê de Doces</h3><p class="muted">Ferrero Rocher, Raffaello, Kinder, Milka, Nutella ou combinações à escolha. Cartão incluído.</p><span class="pill">48 h de antecedência</span><p class="price">45 € – 70 €</p><button class="choose-product" type="button" onclick="chooseMenuProduct('buque-de-doces')">Escolher esta opção</button></article>
 </section>
-<section class="card" style="margin-top:16px"><h2>Adicionais para personalizar</h2><div class="grid">
+<section class="card extras-card" id="personalizar" style="margin-top:16px"><div class="eyebrow">Dá-lhe o teu toque</div><h2>Adicionais para personalizar</h2><div class="grid">
 <div><b>Balão temático</b><p class="price">4 €</p><p class="note">Coração, estrela ou redondo; cores e temas mediante disponibilidade.</p></div>
 <div><b>Placa de mensagem</b><p class="price">3 €</p><p class="note">Happy Birthday, Feliz Aniversário, Parabéns ou tema a confirmar.</p></div>
 <div><b>Quadro personalizado 20×23 cm</b><p class="price">15 €</p><p class="note">Moldura preta ou branca; colagem personalizada.</p></div>
 <div><b>Trio de fotos Polaroid</b><p class="price">5 €</p><p class="note">Até 3 fotos com frases personalizadas.</p></div>
 <div><b>Rosas</b><p class="price">3 € / unidade</p><p class="note">Consultar cores e disponibilidade.</p></div>
 </div><p class="note">Adicionais vendidos exclusivamente com as boxes.</p></section>
-<section class="card" style="margin-top:16px"><h2>Também podes acrescentar delícias</h2><div class="grid">
+<section class="card extras-card" style="margin-top:16px"><div class="eyebrow">Mais um mimo?</div><h2>Também podes acrescentar delícias</h2><div class="grid">
 <div><b>Pães & delícias</b><p class="note">Mini panquecas (2) 1,50 € · Mini pastel de nata 1,50 € · Waffle 1,50 € · Croissant 2 € · Croissant de chocolate 3 € · Pão de leite 1 € · Pães de queijo (4) 3,50 € · Mini tostas (8) 1 €</p></div>
 <div><b>Charcutaria</b><p class="note">Queijo (2 fatias) 1 € · Fiambre (2 fatias) 1 € · Salame (2 fatias) 1,50 €</p></div>
 <div><b>Complementos</b><p class="note">Iogurte natural 1,50 € · Bolacha Nutella 2 € · Mini Nutella 1 € · Manteiga 0,50 € · Granola 1 € · Mel 2 € · Biscoff 1 € · Palitos chocolate 1,50 € · Mini bolachas belgas 1,50 € · Mini palmieres 2 € · Laço folheado 1 € · Biscoito amanteigado 1 € · Macarons (2) 2 € · Fruta 2 €–5 €</p></div>
 <div><b>Bebidas</b><p class="note">Ucal 350 ml 2 € · Compal Laranja 200 ml 2 € · Frappuccino Starbucks 250 ml 5 €</p></div>
 </div></section>
-<section class="card" style="margin-top:18px">
+
+<section class="how-section">
+<div class="eyebrow">Simples e especial</div><h2>Como funciona?</h2>
+<div class="how-grid">
+<article><span class="how-number">01</span><h3>Escolhe a tua box</h3><p>Explora o menu e encontra o presente ideal para a ocasião.</p></article>
+<article><span class="how-number">02</span><h3>Personaliza ao teu gosto</h3><p>Adiciona detalhes, escreve a tua mensagem e indica a data pretendida.</p></article>
+<article><span class="how-number">03</span><h3>Confirma connosco</h3><p>Calculamos a entrega quando aplicável e confirmamos os últimos detalhes pelo WhatsApp.</p></article>
+</div>
+</section>
+<section class="card order-card" id="pedido-section" style="margin-top:18px">
 <h2>Faz o teu pedido</h2>
 <p class="muted">Preenche os detalhes. Vamos abrir uma conversa no WhatsApp com a tua mensagem já preparada.</p>
 <form id="pedido">
@@ -118,8 +213,8 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
 </form>
 </section>
-<section class="card center">
-<h2>Preferes falar diretamente?</h2>
+<section class="card center contact-card">
+<div class="eyebrow">Estamos deste lado</div><h2>O presente começa com uma conversa.</h2>
 <p class="muted">Estamos disponíveis para ajudar a escolher e personalizar o teu presente.</p>
 <a class="btn secondary" href="https://wa.me/351960486450" target="_blank" rel="noopener">WhatsApp · 960 486 450</a>
 </section>
