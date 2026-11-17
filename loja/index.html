@@ -506,7 +506,7 @@ function chooseMenuProduct(key){
  const url='https://tlhcwzpyuhitjxymapbm.supabase.co',key='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
  const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const euro=v=>Number(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
- const slug=v=>String(v||'produto').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
+ const slug=v=>String(v||'produto').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
  try{
   const res=await fetch(url+'/functions/v1/super-handler',{method:'POST',headers:{'Content-Type':'application/json',apikey:key},body:JSON.stringify({action:'public_catalog'})});
   if(!res.ok)throw new Error('Catálogo indisponível');
