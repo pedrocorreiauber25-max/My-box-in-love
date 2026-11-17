@@ -688,9 +688,12 @@ function saveRecipeEditor(){
   recipe.push({material:id,qty});
  }
  const description=document.getElementById('recipeProductDescription').value.trim();
- const priceLabel=document.getElementById('recipeProductLabel').value.trim();
+ const enteredPriceLabel=document.getElementById('recipeProductLabel').value.trim();
+ const previousPrice=Number(p.price)||0,previousLabel=p.priceLabel||money(previousPrice);
+ const isPriceRange=/(até|desde|–|-)/i.test(previousLabel);
+ const priceLabel=(price!==previousPrice&&!isPriceRange&&(!enteredPriceLabel||enteredPriceLabel===previousLabel))?money(price):(enteredPriceLabel||money(price));
  const contents=document.getElementById('recipeProductContents').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
- p.name=name;p.price=price;p.priceLabel=priceLabel||money(price);p.description=description;p.contents=contents;p.storeKey=p.storeKey||productImageKey(name);p.recipe=recipe;
+ p.name=name;p.price=price;p.priceLabel=priceLabel;p.description=description;p.contents=contents;p.storeKey=p.storeKey||productImageKey(name);p.recipe=recipe;
  save();closeRecipeEditor();
  alert('Ficha técnica guardada com sucesso!');
 }
