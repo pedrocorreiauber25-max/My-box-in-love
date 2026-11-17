@@ -255,7 +255,8 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
 <p class="gallery-intro">Fotografias reais das nossas criações. Cada box é preparada com carinho e os detalhes podem variar conforme a disponibilidade.</p>
 <div class="mbl-gallery" id="mblGallery"><div class="mbl-gallery-empty">As fotografias das boxes serão apresentadas aqui assim que forem adicionadas pela My Box in Love.</div></div>
 </section>
-\n<section class="intro" id="menu">
+
+<section class="intro" id="menu">
 <div class="eyebrow">Escolhe o teu favorito</div>
 <h2>O nosso menu</h2>
 <p class="muted">Descobre as nossas boxes e presentes. Cada detalhe é preparado com dedicação para tornar o teu momento ainda mais especial.</p>
@@ -680,7 +681,7 @@ function chooseMenuProduct(key){
       const entries=[];
       document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
         const key=card.dataset.productKey, url=key&&images.get(key);
-        if(url&&/^https:\\/\\//i.test(url)&&!entries.some(item=>item.url===url)){
+        if(url&&url.startsWith('https://')&&!entries.some(item=>item.url===url)){
           entries.push({url,title:card.querySelector('h3')?.textContent.trim()||'Criação My Box in Love'});
         }
       });
