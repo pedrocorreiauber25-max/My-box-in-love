@@ -49,6 +49,13 @@ footer{text-align:center;padding:26px;color:#927f79;font-size:13px}
 .delivery-quote .quote-detail{display:block;font-size:13px;font-weight:650;color:#80645c;line-height:1.5}
 .delivery-quote.is-pending{border-color:#ead6da;background:#fff9fa}
 </style>
+
+<style id="mbl-product-photo-layout">
+/* Fotografias dos produtos: imagem limpa, com nome e descrição em blocos separados. */
+.product-photo{display:block;width:100%;height:220px;object-fit:cover;object-position:center;border-radius:14px;margin:0 0 14px;background:#faedf0}
+.card.product .product-icon{display:flex;align-items:center;justify-content:center;min-height:110px;font-size:54px}
+.card.product .product-photo+h3{margin-top:0}
+</style>
 </head>
 <body>
 <header>
@@ -406,5 +413,45 @@ function chooseMenuProduct(key){
 }
 </script>
 
+
+<script id="mbl-product-photos">
+(async function loadMyBoxProductPhotos(){
+  const SUPABASE_URL='https://tlhcwzpyuhitjxymapbm.supabase.co';
+  const SUPABASE_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
+  const productKeys={
+    'box-basic-individual':'box-basic-individual',
+    'box-classic-para-dividir':'box-classic-para-dividir',
+    'box-kids-individual':'box-kids-individual',
+    'festa-na-box':'festa-na-box',
+    'caixa-presente':'caixa-presente',
+    'buque-de-doces':'buque-de-doces'
+  };
+  try{
+    const response=await fetch(SUPABASE_URL+'/rest/v1/mbl_product_images?select=product_key,image_url',{
+      headers:{'apikey':SUPABASE_KEY,'Accept':'application/json'}
+    });
+    if(!response.ok)throw new Error('Não foi possível carregar as fotografias.');
+    const rows=await response.json();
+    const images=new Map((Array.isArray(rows)?rows:[]).map(row=>[row.product_key,row.image_url]));
+    document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
+      const key=productKeys[card.dataset.productKey];
+      const url=key&&images.get(key);
+      if(!url||!/^https:\/\//i.test(url))return;
+      const title=card.querySelector('h3');
+      if(!title)return;
+      const photo=document.createElement('img');
+      photo.className='product-photo';
+      photo.src=url;
+      photo.alt='Fotografia de '+title.textContent.trim();
+      photo.loading='lazy';
+      photo.decoding='async';
+      photo.addEventListener('error',()=>photo.remove(),{once:true});
+      card.insertBefore(photo,card.firstChild);
+      const icon=card.querySelector('.product-icon');
+      if(icon)icon.hidden=true;
+    });
+  }catch(error){console.warn('Fotografias My Box in Love:',error);}
+})();
+</script>
 </body>
 </html>
