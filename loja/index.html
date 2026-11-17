@@ -492,20 +492,52 @@ footer{padding:34px 18px 45px;background:#fbf1ef;margin-top:35px;color:#876f66;l
 
 <script id="menu-product-selection">
 function chooseMenuProduct(key){
- const options={
-  "box-basic-individual":1,
-  "box-classic-para-dividir":2,
-  "box-kids-individual":3,
-  "festa-na-box":4,
-  "caixa-presente":5,
-  "buque-de-doces":6
- };
  const select=document.getElementById('produto');
- if(!select||!options[key])return;
- select.selectedIndex=options[key];
+ if(!select)return;
+ const option=[...select.options].find(item=>item.dataset.storeKey===key);
+ if(!option)return;
+ select.value=option.value;
  select.dispatchEvent(new Event('change',{bubbles:true}));
  document.getElementById('pedido').scrollIntoView({behavior:'smooth',block:'start'});
 }
+</script>
+<script id="mbl-live-catalog">
+(async function loadMyBoxCatalog(){
+ const url='https://tlhcwzpyuhitjxymapbm.supabase.co',key='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
+ const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const euro=v=>Number(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+ const slug=v=>String(v||'produto').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
+ try{
+  const res=await fetch(url+'/rest/v1/mbl_settings?id=eq.store&select=catalog_data',{headers:{apikey:key,Accept:'application/json'}});
+  if(!res.ok)throw new Error('Catálogo indisponível');
+  const rows=await res.json(),catalog=rows?.[0]?.catalog_data;
+  if(!catalog||!Array.isArray(catalog.products))return;
+  const products=catalog.products,byKey=new Map(products.map(p=>[p.storeKey||slug(p.name),p]));
+  document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
+   const p=byKey.get(card.dataset.productKey);if(!p)return;
+   const title=card.querySelector('h3'),desc=card.querySelector('.muted'),price=card.querySelector('.price');
+   if(title)title.textContent=p.name||title.textContent;
+   if(desc)desc.textContent=p.description||'';
+   if(price)price.textContent=p.priceLabel||euro(p.price);
+   let list=card.querySelector('.product-contents');
+   if(!list){list=document.createElement('div');list.className='product-contents';const button=card.querySelector('.choose-product');card.insertBefore(list,button||null);}
+   const items=Array.isArray(p.contents)?p.contents.filter(x=>String(x).trim()):[];
+   list.innerHTML=items.length?'<div class="small"><b>O que inclui:</b></div><ul>'+items.map(x=>'<li>'+safe(x)+'</li>').join('')+'</ul>':'';
+   card.dataset.productKey=p.storeKey||slug(p.name);
+  });
+  const select=document.getElementById('produto');
+  if(select){
+   const selected=select.selectedOptions[0]?.dataset.storeKey||'';
+   select.innerHTML='<option value="">Seleciona uma opção</option>'+products.map(p=>{
+    const storeKey=p.storeKey||slug(p.name),label=p.priceLabel||euro(p.price),variable=/(até|desde|–|-)/i.test(label);
+    const value=(p.name||'')+' — '+label;
+    return '<option data-store-key="'+safe(storeKey)+'" data-price="'+Number(p.price||0)+'" '+(variable?'data-variable="true"':'')+' value="'+safe(value)+'">'+safe(value)+'</option>';
+   }).join('')+'<option data-variable="true">Pedido personalizado — preço a confirmar</option>';
+   if(selected){const option=[...select.options].find(x=>x.dataset.storeKey===selected);if(option)select.value=option.value;}
+   select.dispatchEvent(new Event('change',{bubbles:true}));
+  }
+ }catch(e){console.warn('Catálogo My Box in Love:',e);}
+})();
 </script>
 
 
@@ -513,14 +545,7 @@ function chooseMenuProduct(key){
 (async function loadMyBoxProductPhotos(){
   const SUPABASE_URL='https://tlhcwzpyuhitjxymapbm.supabase.co';
   const SUPABASE_KEY='sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb';
-  const productKeys={
-    'box-basic-individual':'box-basic-individual',
-    'box-classic-para-dividir':'box-classic-para-dividir',
-    'box-kids-individual':'box-kids-individual',
-    'festa-na-box':'festa-na-box',
-    'caixa-presente':'caixa-presente',
-    'buque-de-doces':'buque-de-doces'
-  };
+  const productKeys=null;
   try{
     const response=await fetch(SUPABASE_URL+'/rest/v1/mbl_product_images?select=product_key,image_url',{
       headers:{'apikey':SUPABASE_KEY,'Accept':'application/json'}
@@ -529,7 +554,7 @@ function chooseMenuProduct(key){
     const rows=await response.json();
     const images=new Map((Array.isArray(rows)?rows:[]).map(row=>[row.product_key,row.image_url]));
     document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
-      const key=productKeys[card.dataset.productKey];
+      const key=card.dataset.productKey;
       const url=key&&images.get(key);
       if(!url||!/^https:\/\//i.test(url))return;
       const title=card.querySelector('h3');
