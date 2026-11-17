@@ -508,9 +508,9 @@ function chooseMenuProduct(key){
  const euro=v=>Number(v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
  const slug=v=>String(v||'produto').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80);
  try{
-  const res=await fetch(url+'/rest/v1/mbl_settings?id=eq.store&select=catalog_data',{headers:{apikey:key,Accept:'application/json'}});
+  const res=await fetch(url+'/functions/v1/super-handler',{method:'POST',headers:{'Content-Type':'application/json',apikey:key},body:JSON.stringify({action:'public_catalog'})});
   if(!res.ok)throw new Error('Catálogo indisponível');
-  const rows=await res.json(),catalog=rows?.[0]?.catalog_data;
+  const result=await res.json(),catalog=result?.catalog;
   if(!catalog||!Array.isArray(catalog.products))return;
   const products=catalog.products,byKey=new Map(products.map(p=>[p.storeKey||slug(p.name),p]));
   document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
