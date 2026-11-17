@@ -419,11 +419,10 @@ oldProductNames.forEach((name,i)=>{
  const idx=d.products.findIndex(p=>p.name===name);
  if(idx>=0) d.products.splice(idx,1);
 });
-menuProducts.forEach(item=>{
- const existing=d.products.find(p=>p.name===item.name);
- if(existing){existing.price=item.price;existing.priceLabel=item.priceLabel;}
- else d.products.push({...item,id:uid(),recipe:[]});
-});
+menuProducts.forEach(item=>{const existing=d.products.find(p=>p.name===item.name);if(!existing)d.products.push({...item,id:uid(),recipe:[]});});
+const productPresentationDefaults={"box-basic-individual":{description:"Pequeno-almoço com croissant, pastel de nata, pão de queijo, panquecas, waffle, fruta, charcutaria, complementos e bebida.",contents:["Croissant","Mini pastel de nata","Pães de queijo","Mini panquecas","Waffle","Fruta","Charcutaria","Complementos","Bebida"]},"box-classic-para-dividir":{description:"Seleção generosa de delícias matinais, 3 opções de fruta, charcutaria, macarons, complementos e 2 bebidas.",contents:["Delícias matinais","3 opções de fruta","Charcutaria","Macarons","Complementos","2 bebidas"]},"box-kids-individual":{description:"Pão de leite, mini panquecas, croissant, pão de queijo, waffles, brownie, cookies, fruta e Kinder.",contents:["Pão de leite","Mini panquecas","Croissant","Pães de queijo","Waffles","Brownie","Cookies","Fruta","Kinder"]},"festa-na-box":{description:"Box individual com pequeno-almoço, doces, decoração temática, balões, painel, placa e cartão personalizado.",contents:["Pequeno-almoço individual","Doces","Decoração temática","Balões","Painel","Placa","Cartão personalizado"]},"caixa-presente":{description:"Chocolates premium à escolha, flores opcionais e formato/cor mediante disponibilidade.",contents:["Chocolates premium à escolha","Flores opcionais","Formato e cor a confirmar"]},"buque-de-doces":{description:"Ferrero Rocher, Raffaello, Kinder, Milka, Nutella ou combinações à escolha. Cartão incluído.",contents:["Ferrero Rocher","Raffaello","Kinder","Milka","Nutella","Combinações à escolha","Cartão incluído"]}};
+function mblEnsureProductPresentation(){let changed=false;d.products.forEach(p=>{const key=p.storeKey||productImageKey(p.name);if(!p.storeKey){p.storeKey=key;changed=true;}const seed=productPresentationDefaults[key];if(seed&&!p.description){p.description=seed.description;changed=true;}if(!Array.isArray(p.contents)){p.contents=seed?[...seed.contents]:[];changed=true;}if(!p.priceLabel){p.priceLabel=money(p.price);changed=true;}});return changed;}
+mblEnsureProductPresentation();
 menuExtras.forEach(item=>{
  if(!d.extras.some(x=>x.name.toLowerCase()===item.name.toLowerCase()))
   d.extras.push({...item,id:uid()});
@@ -630,7 +629,7 @@ async function uploadProductImage(id,input){
   const base64=await new Promise((resolve,reject)=>{
    const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');reader.onerror=()=>reject(new Error('Não foi possível ler a fotografia.'));reader.readAsDataURL(blob);
   });
-  const result=await mblCall({action:'product_image_upload',product_key:productImageKey(product.name),image_base64:base64});
+  const result=await mblCall({action:'product_image_upload',product_key:product.storeKey||productImageKey(product.name),image_base64:base64});
   d.productImages=d.productImages||{};d.productImages[id]=result.image_url;save();
   alert('Fotografia atualizada na loja online!');
  }catch(e){alert(e.message||'Não foi possível enviar a fotografia.');}
@@ -642,7 +641,7 @@ function addProduct(){
  if(!name?.trim())return;
  const price=Number(prompt('Preço de venda (€):','0'));
  if(!Number.isFinite(price)||price<0)return alert('Preço inválido.');
- d.products.push({id:uid(),name:name.trim(),price,recipe:[]});
+ d.products.push({id:uid(),name:name.trim(),price,priceLabel:money(price),storeKey:productImageKey(name),description:"",contents:[],recipe:[]});
  save();
 }
 let recipeEditorProductId=null;
@@ -653,11 +652,14 @@ function editProduct(id){
  if(!modal){
   modal=document.createElement('div');modal.id='recipeEditor';
   modal.style.cssText='position:fixed;inset:0;z-index:99999;background:#24171099;display:flex;align-items:center;justify-content:center;padding:14px;overflow:auto';
-  modal.innerHTML='<div style="background:#fffaf8;color:#49352c;border-radius:20px;padding:20px;width:min(100%,620px);max-height:92vh;overflow:auto;box-shadow:0 12px 45px #0004"><div style="display:flex;align-items:center;gap:10px"><h2 style="flex:1;margin:0">Ficha técnica</h2><button type="button" onclick="closeRecipeEditor()" aria-label="Fechar">✕</button></div><p class="small">Define os materiais e a quantidade usada para fabricar uma unidade do produto.</p><label>Nome do produto</label><input id="recipeProductName" type="text"><label>Preço de venda (€)</label><input id="recipeProductPrice" type="number" min="0" step="0.01"><div style="display:flex;align-items:center;gap:8px;margin:18px 0 8px"><b style="flex:1">Materiais e quantidades</b><span class="small">por unidade</span></div><div id="recipeMaterialRows"></div><div id="recipeNoStock" class="notice" style="display:none">Ainda não tens materiais no Stock. Adiciona primeiro os materiais no separador Stock e volta aqui.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button type="button" class="primary" style="flex:1" onclick="saveRecipeEditor()">Guardar ficha técnica</button><button type="button" onclick="closeRecipeEditor()">Cancelar</button></div><p class="small" style="margin-bottom:0">A ficha anterior só é alterada quando carregares em Guardar.</p></div>';
+  modal.innerHTML='<div style="background:#fffaf8;color:#49352c;border-radius:20px;padding:20px;width:min(100%,620px);max-height:92vh;overflow:auto;box-shadow:0 12px 45px #0004"><div style="display:flex;align-items:center;gap:10px"><h2 style="flex:1;margin:0">Ficha técnica</h2><button type="button" onclick="closeRecipeEditor()" aria-label="Fechar">✕</button></div><p class="small">Define os materiais e a quantidade usada para fabricar uma unidade do produto.</p><label>Nome do produto</label><input id="recipeProductName" type="text"><label>Preço base (€)</label><input id="recipeProductPrice" type="number" min="0" step="0.01"><label>Preço apresentado na loja</label><input id="recipeProductLabel" type="text" placeholder="Ex.: 33 € ou 40 €–70 €"><label>Descrição apresentada aos clientes</label><textarea id="recipeProductDescription" rows="3" placeholder="Descreve esta box..."></textarea><label>O que inclui esta box? (um item por linha)</label><textarea id="recipeProductContents" rows="7" placeholder="Um item por linha"></textarea><div style="display:flex;align-items:center;gap:8px;margin:18px 0 8px"><b style="flex:1">Materiais e quantidades</b><span class="small">por unidade</span></div><div id="recipeMaterialRows"></div><div id="recipeNoStock" class="notice" style="display:none">Ainda não tens materiais no Stock. Adiciona primeiro os materiais no separador Stock e volta aqui.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button type="button" class="primary" style="flex:1" onclick="saveRecipeEditor()">Guardar ficha técnica</button><button type="button" onclick="closeRecipeEditor()">Cancelar</button></div><p class="small" style="margin-bottom:0">A ficha anterior só é alterada quando carregares em Guardar.</p></div>';
   document.body.appendChild(modal);
  }
  document.getElementById('recipeProductName').value=p.name||'';
  document.getElementById('recipeProductPrice').value=Number(p.price)||0;
+ document.getElementById('recipeProductLabel').value=p.priceLabel||money(p.price);
+ document.getElementById('recipeProductDescription').value=p.description||'';
+ document.getElementById('recipeProductContents').value=(Array.isArray(p.contents)?p.contents:[]).join('\\n');
  renderRecipeEditorRows(p);
  modal.style.display='flex';
 }
@@ -685,7 +687,10 @@ function saveRecipeEditor(){
   if(!Number.isFinite(qty)||qty<=0)return alert('Indica uma quantidade válida para cada material selecionado.');
   recipe.push({material:id,qty});
  }
- p.name=name;p.price=price;p.recipe=recipe;
+ const description=document.getElementById('recipeProductDescription').value.trim();
+ const priceLabel=document.getElementById('recipeProductLabel').value.trim();
+ const contents=document.getElementById('recipeProductContents').value.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+ p.name=name;p.price=price;p.priceLabel=priceLabel||money(price);p.description=description;p.contents=contents;p.storeKey=p.storeKey||productImageKey(name);p.recipe=recipe;
  save();closeRecipeEditor();
  alert('Ficha técnica guardada com sucesso!');
 }
@@ -1236,22 +1241,7 @@ function draw(){
   <p>Reinvestimento (${sh.reinvest}%): <b>${money(positive*sh.reinvest/100)}</b></p>
   <p>Reserva (${sh.reserve}%): <b>${money(positive*sh.reserve/100)}</b></p>`;
 
- $('productlist').innerHTML=d.products.map(p=>{
-  const image=(d.productImages||{})[p.id]||'';
-  return `<div class="card">
-   <div class="row" style="align-items:flex-start">
-    <img src="${esc(image||'data:,')}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:13px;background:#faedf0;${image?'':'display:none'}">
-    <div style="flex:1;min-width:150px"><b>${esc(p.name)}</b>
-     <p>Venda: <b>${esc(p.priceLabel||money(p.price))}</b> · Custo estimado: ${money(getCost(p))}</p>
-     <p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p>
-    </div>
-   </div>
-   <label>FOTOGRAFIA DO PRODUTO</label>
-   <input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadProductImage('${p.id}',this)">
-   <p class="small">Escolhe uma fotografia do telemóvel. A imagem é otimizada e aparece na loja online. Máximo 5 MB.</p>
-   <button onclick="editProduct('${p.id}')">Editar produto e ficha técnica</button>
-  </div>`;
- }).join('');
+ $('productlist').innerHTML=d.products.map(p=>{const image=(d.productImages||{})[p.id]||'';const contents=Array.isArray(p.contents)?p.contents:[];return `<div class="card"><div class="row" style="align-items:flex-start"><img src="${esc(image||'data:,')}" alt="" style="width:92px;height:92px;object-fit:cover;border-radius:13px;background:#faedf0;${image?'':'display:none'}"><div style="flex:1;min-width:150px"><b>${esc(p.name)}</b><p>Venda: <b>${esc(p.priceLabel||money(p.price))}</b> · Custo estimado: ${money(getCost(p))}</p><p class="small">${esc(p.description||'Sem descrição definida.')}</p><p class="small"><b>Inclui:</b> ${contents.length?contents.map(esc).join(' · '):'Ainda sem itens definidos'}</p><p class="small">Materiais na ficha técnica: ${(p.recipe||[]).length}</p></div></div><label>FOTOGRAFIA DO PRODUTO</label><input type="file" accept="image/jpeg,image/png,image/webp" onchange="uploadProductImage('${p.id}',this)"><p class="small">Escolhe uma fotografia do telemóvel. A imagem é otimizada e aparece na loja online. Máximo 5 MB.</p><button onclick="editProduct('${p.id}')">Editar nome, preço, descrição, itens e ficha técnica</button></div>`;}).join('');
 
  $('extralist').innerHTML=d.extras.map(x=>`
   <div class="item">${esc(x.name)} · ${money(x.price)}
@@ -1454,16 +1444,11 @@ async function mblLoadCatalogData(){
     if(state)state.textContent='O catálogo foi alterado noutro dispositivo. Mantive as alterações locais; guarda uma cópia e atualiza antes de editar novamente.';
     return;
    }
-   d.products=remote.products;
-   d.extras=remote.extras;
+   d.products=remote.products;const presentationChanged=mblEnsureProductPresentation();d.extras=remote.extras;
    d.shares=remote.shares;
    d.deliveryRate=Number(remote.deliveryRate)||0;
    d.productImages=remote.productImages||{};
-   mblCatalogLastSync=result.updated_at||null;
-   mblCatalogLastPayload=JSON.stringify(mblCatalogPayload());
-   localStorage.setItem('mbl',JSON.stringify(d));
-   draw();
-   if(state)state.textContent='Catálogo, adicionais, percentagens e tarifa sincronizados entre dispositivos.';
+   mblCatalogLastSync=result.updated_at||null;mblCatalogLastPayload=JSON.stringify(remote);localStorage.setItem('mbl',JSON.stringify(d));draw();if(presentationChanged)mblQueueCatalogSync();if(state)state.textContent='Catálogo, descrições, itens, adicionais, percentagens e tarifa sincronizados entre dispositivos.';
   }else{
    mblCatalogLastSync=null;
    mblCatalogLastPayload=null;
