@@ -200,16 +200,35 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
  .header-contact:hover,.btn:hover,.choose-product:hover,.float-wa:hover,.card.product:hover{transform:none}
 }
 </style>
+
+<style id="mbl-gallery-faq">
+.gallery-section,.faq-section{padding:48px 0 20px}
+.gallery-section h2,.faq-section h2{font:500 clamp(27px,3vw,36px) Georgia,serif;color:#76503d;margin:8px 0 10px;text-align:center}
+.gallery-intro,.faq-intro{max-width:650px;margin:0 auto 22px;text-align:center;color:#8d7b74;font-size:13px;line-height:1.8}
+.mbl-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.mbl-gallery a{display:block;overflow:hidden;border-radius:17px;background:#fff;border:1px solid #efdfdf;box-shadow:0 8px 24px rgba(92,61,49,.06)}
+.mbl-gallery img{display:block;width:100%;height:230px;object-fit:cover;transition:transform .25s ease}
+.mbl-gallery a:hover img{transform:scale(1.035)}
+.mbl-gallery figcaption{padding:10px 12px;color:#76503d;font:600 14px Georgia,serif}
+.mbl-gallery-empty{grid-column:1/-1;text-align:center;padding:22px;border:1px dashed #e5cbd0;border-radius:16px;color:#947d76;background:#fffdfc;font-size:13px}
+.mbl-faq{max-width:820px;margin:22px auto 0;display:grid;gap:10px}
+.mbl-faq details{padding:16px 18px;border:1px solid #efdfdf;border-radius:15px;background:#fff;box-shadow:0 6px 20px rgba(92,61,49,.035)}
+.mbl-faq summary{cursor:pointer;color:#76503d;font-weight:750;font-size:14px}
+.mbl-faq details p{margin:10px 0 0;color:#89766e;font-size:13px;line-height:1.75}
+@media(max-width:720px){.gallery-section,.faq-section{padding:36px 0 12px}.mbl-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.mbl-gallery img{height:165px}.mbl-gallery figcaption{font-size:12px;padding:9px}.mbl-faq details{padding:14px}}
+@media(max-width:390px){.mbl-gallery img{height:140px}}
+@media(prefers-reduced-motion:reduce){.mbl-gallery img{transition:none}.mbl-gallery a:hover img{transform:none}}
+</style>
 </head>
 <body>
 <header class="site-header">
 <div class="header-inner">
 <a class="brand" href="#inicio" aria-label="My Box in Love - início">
-<img class="logo" src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="Logótipo My Box in Love">
+<img class="logo" src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="Logótipo My Box in Love" width="100" height="100" decoding="async">
 <span><strong>MY BOX</strong><em>in love</em></span>
 </a>
 <nav class="site-nav" aria-label="Navegação principal">
-<a href="#menu">O menu</a><a href="#personalizar">Personalizar</a><a href="#pedido">Encomendar</a>
+<a href="#menu">O menu</a><a href="#galeria">Galeria</a><a href="#personalizar">Personalizar</a><a href="#pedido">Encomendar</a>
 </nav>
 <a class="header-contact" href="https://wa.me/351960486450" target="_blank" rel="noopener">Falar connosco <span>↗</span></a>
 </div>
@@ -220,16 +239,23 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
 <div class="eyebrow">Presentes com significado · Porto e arredores</div>
 <h1>Há momentos que merecem <span>uma box especial.</span></h1>
 <p>Pequenos momentos, grandes emoções. Criamos boxes e presentes pensados ao pormenor para surpreender quem mais gostas.</p>
-<div class="hero-actions"><a class="btn secondary" href="#menu">Descobrir o menu <span>↓</span></a><a class="hero-link" href="#pedido">Quero fazer uma encomenda <span>→</span></a></div>
+<div class="hero-actions"><a class="btn secondary" href="#menu">Descobrir o menu <span>↓</span></a><a class="hero-link" href="#galeria">Ver fotografias reais <span>→</span></a><a class="hero-link" href="#pedido">Quero fazer uma encomenda <span>→</span></a></div>
 <div class="hero-note"><span>♡</span> Preparado com carinho, personalizado para cada ocasião.</div>
 </div>
 <div class="hero-art" aria-label="My Box in Love">
-<div class="hero-logo-wrap"><img src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="My Box in Love"></div>
+<div class="hero-logo-wrap"><img src="https://raw.githubusercontent.com/pedrocorreiauber25-max/My-box-in-love/main/assets/logo-my-box-in-love.jpg" alt="My Box in Love" width="245" height="245" fetchpriority="high" decoding="async"></div>
 <div class="hero-stamp">FEITO<br>COM AMOR <span>♡</span></div>
 <div class="hero-caption">Um presente. Uma memória. Um sorriso.</div>
 </div>
 </section>
-<section class="intro" id="menu">
+
+<section class="gallery-section" id="galeria" aria-labelledby="gallery-title">
+<div class="eyebrow center">Um olhar mais próximo</div>
+<h2 id="gallery-title">Galeria de momentos especiais</h2>
+<p class="gallery-intro">Fotografias reais das nossas criações. Cada box é preparada com carinho e os detalhes podem variar conforme a disponibilidade.</p>
+<div class="mbl-gallery" id="mblGallery"><div class="mbl-gallery-empty">As fotografias das boxes serão apresentadas aqui assim que forem adicionadas pela My Box in Love.</div></div>
+</section>
+\n<section class="intro" id="menu">
 <div class="eyebrow">Escolhe o teu favorito</div>
 <h2>O nosso menu</h2>
 <p class="muted">Descobre as nossas boxes e presentes. Cada detalhe é preparado com dedicação para tornar o teu momento ainda mais especial.</p>
@@ -293,7 +319,22 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
 <p class="note">Este pedido é um contacto inicial, ainda não uma encomenda confirmada. A disponibilidade, o preço e a entrega serão confirmados pela My Box in Love. Não incluas dados de pagamento neste formulário.</p>
 </form>
 </section>
-<section class="card center contact-card">
+
+<section class="faq-section" id="perguntas-frequentes" aria-labelledby="faq-title">
+<div class="eyebrow center">Antes de encomendar</div>
+<h2 id="faq-title">Perguntas frequentes</h2>
+<p class="faq-intro">Algumas informações úteis para preparares a tua surpresa.</p>
+<div class="mbl-faq">
+<details><summary>Com quanta antecedência devo encomendar?</summary><p>As boxes de pequeno-almoço requerem pelo menos 24 horas de antecedência. As Caixas Presente e os Buquês de Doces requerem pelo menos 48 horas.</p></details>
+<details><summary>Fazem entregas ao domicílio?</summary><p>Sim. Para calcular o valor da entrega, indica a morada completa no formulário e utiliza a opção para localizar a morada e calcular a entrega. O valor é apresentado antes de enviares o pedido.</p></details>
+<details><summary>Posso levantar a encomenda?</summary><p>Sim, existe a opção de levantamento a combinar. Os detalhes são acertados individualmente com a My Box in Love.</p></details>
+<details><summary>Posso personalizar a minha box?</summary><p>Podes indicar os detalhes e preferências no formulário. A possibilidade de personalização e a disponibilidade dos elementos serão confirmadas pela My Box in Love.</p></details>
+<details><summary>O pedido fica confirmado quando envio o formulário?</summary><p>Não. O formulário regista um pedido inicial. A encomenda só fica confirmada depois de a My Box in Love validar os detalhes e o pagamento. O link de acompanhamento é enviado após a confirmação do pagamento.</p></details>
+<details><summary>Como funcionam os descontos de fidelização?</summary><p>O Clube My Box in Love atribui 5% de desconto na 3.ª encomenda entregue e 10% na 5.ª encomenda entregue, de acordo com o histórico de compras registado.</p></details>
+<details><summary>Quais são os métodos de pagamento?</summary><p>As opções de pagamento são confirmadas individualmente pela My Box in Love durante a validação do pedido.</p></details>
+</div>
+</section>
+\n<section class="card center contact-card">
 <div class="eyebrow">Estamos deste lado</div><h2>O presente começa com uma conversa.</h2>
 <p class="muted">Estamos disponíveis para ajudar a escolher e personalizar o teu presente.</p>
 <a class="btn secondary" href="https://wa.me/351960486450" target="_blank" rel="noopener">WhatsApp · 960 486 450</a>
@@ -634,6 +675,25 @@ function chooseMenuProduct(key){
     if(!response.ok)throw new Error('Não foi possível carregar as fotografias.');
     const rows=await response.json();
     const images=new Map((Array.isArray(rows)?rows:[]).map(row=>[row.product_key,row.image_url]));
+    const gallery=document.getElementById('mblGallery');
+    if(gallery){
+      const entries=[];
+      document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
+        const key=card.dataset.productKey, url=key&&images.get(key);
+        if(url&&/^https:\\/\\//i.test(url)&&!entries.some(item=>item.url===url)){
+          entries.push({url,title:card.querySelector('h3')?.textContent.trim()||'Criação My Box in Love'});
+        }
+      });
+      if(entries.length){
+        gallery.replaceChildren();
+        entries.forEach(item=>{
+          const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener';link.setAttribute('aria-label','Ver fotografia: '+item.title);
+          const img=document.createElement('img');img.src=item.url;img.alt=item.title;img.loading='lazy';img.decoding='async';
+          const caption=document.createElement('div');caption.textContent=item.title;caption.style.cssText='padding:10px 12px;color:#76503d;font:600 14px Georgia,serif';
+          link.append(img,caption);gallery.append(link);
+        });
+      }
+    }
     document.querySelectorAll('.card.product[data-product-key]').forEach(card=>{
       const key=card.dataset.productKey;
       const url=key&&images.get(key);
