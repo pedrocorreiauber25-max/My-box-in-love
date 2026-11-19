@@ -258,7 +258,6 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
     <button type="button" class="primary" onclick="mblImportReceiptRows()">Guardar compras da loja e atualizar stock</button>
     <button type="button" onclick="mblCancelReceipt()">Cancelar leitura</button>
    </div>
-   <div class="card" style="background:#fff9fa"><h2>Compras para casa (fora da My Box in Love)</h2><p class="small">As linhas marcadas como Casa ficam guardadas apenas neste dispositivo. Não entram no stock, nas despesas nem nos resultados financeiros da loja.</p><div id="householdReceiptList" class="small">Ainda não há artigos domésticos guardados por recibo neste dispositivo.</div></div>
   </div>
   <div class="card">
    <h2>Registar compra de um pacote</h2>
@@ -769,13 +768,8 @@ function deleteStock(id){
 
 // Leitura de recibos: os artigos são sempre revistos e classificados antes de qualquer registo.
 let mblReceiptDraft=[];
-let mblHouseholdReceiptRows=[];
-try{mblHouseholdReceiptRows=JSON.parse(localStorage.getItem('mbl_household_receipts')||'[]');if(!Array.isArray(mblHouseholdReceiptRows))mblHouseholdReceiptRows=[];}catch(e){mblHouseholdReceiptRows=[];}
-function mblRenderHouseholdReceipts(){
- const box=document.getElementById('householdReceiptList');if(!box)return;
- if(!mblHouseholdReceiptRows.length){box.textContent='Ainda não há artigos domésticos guardados por recibo neste dispositivo.';return;}
- box.innerHTML=mblHouseholdReceiptRows.slice(-40).reverse().map(x=>'<div class="item"><b>'+esc(x.name)+'</b> · '+money(x.price)+' · '+esc(x.date||'')+' · '+esc(x.supplier||'')+'</div>').join('');
-}
+// Artigos classificados como Casa ou Ignorar são apenas temporários e nunca são guardados.
+try{localStorage.removeItem('mbl_household_receipts');}catch(e){}
 function mblReceiptParse(text){
  const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];
  for(const line of lines){
@@ -832,13 +826,13 @@ function mblImportReceiptRows(){
  const shop=mblReceiptDraft.filter(x=>x.category==='loja');
  const home=mblReceiptDraft.filter(x=>x.category==='casa');
  if(pending.length)return alert('Classifica todas as linhas como My Box in Love, Casa ou Ignorar antes de guardar.');
- if(!shop.length&&!home.length)return alert('Não há artigos classificados para guardar.');
+ if(!shop.length)return alert('Não há artigos classificados para a My Box in Love.');
  for(const r of shop){
   if(!String(r.name||'').trim()||!Number.isFinite(Number(r.price))||Number(r.price)<=0||!Number.isFinite(Number(r.qty))||Number(r.qty)<=0||!String(r.unit||'').trim())return alert('Corrige os artigos da loja: nome, preço, quantidade e unidade são obrigatórios.');
   const existing=d.stock.find(x=>String(x.name).toLowerCase()===String(r.name).trim().toLowerCase());
   if(existing&&existing.unit&&existing.unit.toLowerCase()!==String(r.unit).trim().toLowerCase())return alert('O artigo "'+r.name+'" já está no stock em "'+existing.unit+'". Corrige a unidade antes de importar para não misturar medidas.');
  }
- if(!confirm('Confirmas guardar '+shop.length+' artigo(s) na My Box in Love e '+home.length+' artigo(s) para casa? Só os artigos da loja atualizam stock e financeiro.'))return;
+ if(!confirm('Confirmas guardar '+shop.length+' artigo(s) da My Box in Love? As '+home.length+' linha(s) de Casa e as linhas Ignoradas serão descartadas e não ficarão guardadas na aplicação.'))return;
  shop.forEach(r=>{
   const name=String(r.name).trim(),price=Number(r.price),qty=Number(r.qty),unit=String(r.unit).trim();
   let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
@@ -846,10 +840,8 @@ function mblImportReceiptRows(){
   const oldValue=m.qty*m.unitCost;m.unit=m.unit||unit;m.qty+=qty;m.unitCost=(oldValue+price)/m.qty;
   d.purchases.push({id:uid(),name,price,qty,unit:m.unit,unitCost:price/qty,date,supplier,source:'recibo'});
  });
- home.forEach(r=>mblHouseholdReceiptRows.push({name:String(r.name||'').trim(),price:Number(r.price)||0,date,supplier}));
- try{localStorage.setItem('mbl_household_receipts',JSON.stringify(mblHouseholdReceiptRows));}catch(e){}
- save();mblRenderHouseholdReceipts();mblCancelReceipt();
- alert('Recibo separado! '+shop.length+' artigo(s) da loja adicionados ao stock. '+home.length+' artigo(s) de casa ficaram fora das contas da My Box in Love.');
+ save();mblCancelReceipt();
+ alert('Compras da loja registadas: '+shop.length+' artigo(s). As linhas de Casa e Ignoradas foram descartadas.');
 }
 function mblCancelReceipt(){
  mblReceiptDraft=[];const review=document.getElementById('receiptReview');if(review)review.classList.add('hidden');
