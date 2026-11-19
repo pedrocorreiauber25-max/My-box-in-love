@@ -253,6 +253,7 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
     <label>LOJA / FORNECEDOR</label><input id="receiptSupplier" placeholder="Ex.: Continente, Pingo Doce…">
     <p class="small">Confirma ou corrige cada artigo. A quantidade começa em 1 porque o recibo nem sempre indica quantas unidades ou gramas traz cada embalagem. Ajusta-a antes de guardar.</p>
     <div id="receiptRows"></div>
+    <button type="button" onclick="mblReceiptAddRow()">+ Adicionar artigo manualmente</button>
     <div class="notice" id="receiptTotals">Confirma a classificação de cada linha.</div>
     <button type="button" class="primary" onclick="mblImportReceiptRows()">Guardar compras da loja e atualizar stock</button>
     <button type="button" onclick="mblCancelReceipt()">Cancelar leitura</button>
@@ -798,6 +799,7 @@ function mblRenderReceiptRows(){
 }
 function mblReceiptSet(i,key,value){if(!mblReceiptDraft[i])return;mblReceiptDraft[i][key]=key==='price'||key==='qty'?Number(String(value).replace(',','.')):value;mblUpdateReceiptTotals();}
 function mblReceiptRemove(i){mblReceiptDraft.splice(i,1);mblRenderReceiptRows();}
+function mblReceiptAddRow(){mblReceiptDraft.push({name:'',price:0,qty:1,unit:'unidades',category:'rever'});mblRenderReceiptRows();}
 function mblUpdateReceiptTotals(){
  const box=document.getElementById('receiptTotals');if(!box)return;
  const shop=mblReceiptDraft.filter(x=>x.category==='loja').reduce((a,x)=>a+(Number(x.price)||0),0);
