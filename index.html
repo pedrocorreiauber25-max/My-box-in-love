@@ -242,6 +242,23 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 
  <section id="purchases" class="section">
   <h1>Compras de materiais</h1>
+  <div class="card" id="receiptImportCard">
+   <h2>📷 Importar recibo por fotografia</h2>
+   <p class="muted">Fotografa o talão ou escolhe uma imagem. A leitura prepara as linhas para confirmares uma a uma o que é da loja e o que é para casa. Nada entra no stock sem a tua confirmação.</p>
+   <label for="receiptImage">FOTOGRAFIA DO RECIBO</label>
+   <input id="receiptImage" type="file" accept="image/*" capture="environment">
+   <div class="row"><button type="button" class="primary" id="readReceiptButton" onclick="mblReadReceipt()">Ler recibo</button><span id="receiptStatus" class="small" role="status" aria-live="polite">Escolhe uma fotografia nítida, com o talão inteiro visível.</span></div>
+   <div id="receiptReview" class="hidden">
+    <label>DATA DA COMPRA</label><input id="receiptDate" type="date">
+    <label>LOJA / FORNECEDOR</label><input id="receiptSupplier" placeholder="Ex.: Continente, Pingo Doce…">
+    <p class="small">Confirma ou corrige cada artigo. A quantidade começa em 1 porque o recibo nem sempre indica quantas unidades ou gramas traz cada embalagem. Ajusta-a antes de guardar.</p>
+    <div id="receiptRows"></div>
+    <div class="notice" id="receiptTotals">Confirma a classificação de cada linha.</div>
+    <button type="button" class="primary" onclick="mblImportReceiptRows()">Guardar compras da loja e atualizar stock</button>
+    <button type="button" onclick="mblCancelReceipt()">Cancelar leitura</button>
+   </div>
+   <div class="card" style="background:#fff9fa"><h2>Compras para casa (fora da My Box in Love)</h2><p class="small">As linhas marcadas como Casa ficam guardadas apenas neste dispositivo. Não entram no stock, nas despesas nem nos resultados financeiros da loja.</p><div id="householdReceiptList" class="small">Ainda não há artigos domésticos guardados por recibo neste dispositivo.</div></div>
+  </div>
   <div class="card">
    <h2>Registar compra de um pacote</h2>
    <p class="muted">Indica quanto pagaste pelo pacote e quantas unidades ele traz. A aplicação calcula o custo de cada unidade e atualiza o stock automaticamente.</p>
@@ -748,6 +765,94 @@ function deleteStock(id){
  d.products.forEach(p=>{p.recipe=(p.recipe||[]).filter(r=>r.material!==id);});
  save();
 }
+
+// Leitura de recibos: os artigos são sempre revistos e classificados antes de qualquer registo.
+let mblReceiptDraft=[];
+let mblHouseholdReceiptRows=[];
+try{mblHouseholdReceiptRows=JSON.parse(localStorage.getItem('mbl_household_receipts')||'[]');if(!Array.isArray(mblHouseholdReceiptRows))mblHouseholdReceiptRows=[];}catch(e){mblHouseholdReceiptRows=[];}
+function mblRenderHouseholdReceipts(){
+ const box=document.getElementById('householdReceiptList');if(!box)return;
+ if(!mblHouseholdReceiptRows.length){box.textContent='Ainda não há artigos domésticos guardados por recibo neste dispositivo.';return;}
+ box.innerHTML=mblHouseholdReceiptRows.slice(-40).reverse().map(x=>'<div class="item"><b>'+esc(x.name)+'</b> · '+money(x.price)+' · '+esc(x.date||'')+' · '+esc(x.supplier||'')+'</div>').join('');
+}
+function mblReceiptParse(text){
+ const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];
+ for(const line of lines){
+  if(line.length<3)continue;
+  const priceMatch=line.match(/(?:€\s*)?(-?\d+[,.]\d{2})\s*€?$/);
+  if(!priceMatch)continue;
+  const price=Number(priceMatch[1].replace(',','.'));
+  let name=line.slice(0,priceMatch.index).replace(/^[\d\s.*xX\-]+/,'').replace(/\s{2,}/g,' ').trim();
+  if(!name||!Number.isFinite(price)||price<=0)continue;
+  let qty=1,unit='unidades';
+  const qtyMatch=name.match(/^(\d+(?:[,.]\d+)?)\s*[xX]\s*/);
+  if(qtyMatch){qty=Number(qtyMatch[1].replace(',','.'));name=name.slice(qtyMatch[0].length).trim();}
+  out.push({name,price,qty:qty||1,unit,category:'loja'});
+ }
+ return out;
+}
+function mblRenderReceiptRows(){
+ const box=document.getElementById('receiptRows');if(!box)return;
+ box.innerHTML=mblReceiptDraft.map((r,i)=>'<div class="card" style="margin:9px 0;background:#fff9fa"><div class="row"><b style="flex:1">Artigo '+(i+1)+'</b><select aria-label="Destino do artigo '+(i+1)+'" onchange="mblReceiptSet('+i+',\\'category\\',this.value)" style="max-width:150px;margin:0"><option value="loja" '+(r.category==='loja'?'selected':'')+'>My Box in Love</option><option value="casa" '+(r.category==='casa'?'selected':'')+'>Casa</option><option value="ignorar" '+(r.category==='ignorar'?'selected':'')+'>Ignorar</option></select></div><label>ARTIGO</label><input value="'+esc(r.name)+'" onchange="mblReceiptSet('+i+',\\'name\\',this.value)"><div class="row"><div class="field"><label>PREÇO TOTAL (€)</label><input type="number" min="0" step=".01" value="'+Number(r.price).toFixed(2)+'" onchange="mblReceiptSet('+i+',\\'price\\',this.value)"></div><div class="field"><label>QUANTIDADE PARA STOCK</label><input type="number" min=".001" step=".001" value="'+Number(r.qty||1)+'" onchange="mblReceiptSet('+i+',\\'qty\\',this.value)"></div><div class="field"><label>UNIDADE</label><input value="'+esc(r.unit||'unidades')+'" onchange="mblReceiptSet('+i+',\\'unit\\',this.value)"></div></div><button type="button" class="danger" onclick="mblReceiptRemove('+i+')">Remover linha</button></div>').join('');
+ mblUpdateReceiptTotals();
+}
+function mblReceiptSet(i,key,value){if(!mblReceiptDraft[i])return;mblReceiptDraft[i][key]=key==='price'||key==='qty'?Number(String(value).replace(',','.')):value;mblUpdateReceiptTotals();}
+function mblReceiptRemove(i){mblReceiptDraft.splice(i,1);mblRenderReceiptRows();}
+function mblUpdateReceiptTotals(){
+ const box=document.getElementById('receiptTotals');if(!box)return;
+ const shop=mblReceiptDraft.filter(x=>x.category==='loja').reduce((a,x)=>a+(Number(x.price)||0),0);
+ const home=mblReceiptDraft.filter(x=>x.category==='casa').reduce((a,x)=>a+(Number(x.price)||0),0);
+ const ignored=mblReceiptDraft.filter(x=>x.category==='ignorar').length;
+ box.innerHTML='<b>Resumo da classificação</b><br>My Box in Love: <b>'+money(shop)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='loja').length+' artigos) · Casa: <b>'+money(home)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='casa').length+' artigos) · Ignorados: '+ignored+'.';
+}
+async function mblReadReceipt(){
+ const input=document.getElementById('receiptImage'),status=document.getElementById('receiptStatus'),button=document.getElementById('readReceiptButton');
+ const file=input&&input.files&&input.files[0];if(!file){status.textContent='Escolhe primeiro a fotografia do recibo.';return;}
+ if(!file.type.startsWith('image/')){status.textContent='O ficheiro escolhido não é uma imagem.';return;}
+ button.disabled=true;status.textContent='A preparar o leitor de recibos…';
+ try{
+  if(!window.Tesseract){
+   await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(new Error('Não foi possível carregar o leitor. Verifica a ligação à internet.'));document.head.appendChild(script);});
+  }
+  status.textContent='A ler o recibo. Pode demorar um pouco…';
+  const result=await Tesseract.recognize(file,'por',{logger:m=>{if(m.status==='recognizing text')status.textContent='A ler o recibo… '+Math.round((m.progress||0)*100)+'%';}});
+  mblReceiptDraft=mblReceiptParse(result.data.text);
+  if(!mblReceiptDraft.length){status.textContent='Não consegui separar os artigos automaticamente. Tenta uma fotografia mais nítida ou acrescenta as linhas manualmente.';document.getElementById('receiptReview').classList.remove('hidden');mblReceiptDraft=[{name:'',price:0,qty:1,unit:'unidades',category:'loja'}];mblRenderReceiptRows();return;}
+  document.getElementById('receiptDate').value=today();
+  document.getElementById('receiptReview').classList.remove('hidden');
+  mblRenderReceiptRows();status.textContent='Leitura concluída. Confirma os artigos, preços e destino de cada linha.';
+ }catch(e){status.textContent=e.message||'Não foi possível ler a fotografia.';}
+ finally{button.disabled=false;}
+}
+function mblImportReceiptRows(){
+ const date=document.getElementById('receiptDate').value||today(),supplier=document.getElementById('receiptSupplier').value.trim();
+ const shop=mblReceiptDraft.filter(x=>x.category==='loja');
+ const home=mblReceiptDraft.filter(x=>x.category==='casa');
+ if(!shop.length&&!home.length)return alert('Não há artigos classificados para guardar.');
+ for(const r of shop){
+  if(!String(r.name||'').trim()||!Number.isFinite(Number(r.price))||Number(r.price)<=0||!Number.isFinite(Number(r.qty))||Number(r.qty)<=0||!String(r.unit||'').trim())return alert('Corrige os artigos da loja: nome, preço, quantidade e unidade são obrigatórios.');
+  const existing=d.stock.find(x=>String(x.name).toLowerCase()===String(r.name).trim().toLowerCase());
+  if(existing&&existing.unit&&existing.unit.toLowerCase()!==String(r.unit).trim().toLowerCase())return alert('O artigo "'+r.name+'" já está no stock em "'+existing.unit+'". Corrige a unidade antes de importar para não misturar medidas.');
+ }
+ if(!confirm('Confirmas guardar '+shop.length+' artigo(s) na My Box in Love e '+home.length+' artigo(s) para casa? Só os artigos da loja atualizam stock e financeiro.'))return;
+ shop.forEach(r=>{
+  const name=String(r.name).trim(),price=Number(r.price),qty=Number(r.qty),unit=String(r.unit).trim();
+  let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!m){m={id:uid(),name,qty:0,unit,unitCost:0};d.stock.push(m);}
+  const oldValue=m.qty*m.unitCost;m.unit=m.unit||unit;m.qty+=qty;m.unitCost=(oldValue+price)/m.qty;
+  d.purchases.push({id:uid(),name,price,qty,unit:m.unit,unitCost:price/qty,date,supplier,source:'recibo'});
+ });
+ home.forEach(r=>mblHouseholdReceiptRows.push({name:String(r.name||'').trim(),price:Number(r.price)||0,date,supplier}));
+ try{localStorage.setItem('mbl_household_receipts',JSON.stringify(mblHouseholdReceiptRows));}catch(e){}
+ save();mblRenderHouseholdReceipts();mblCancelReceipt();
+ alert('Recibo separado! '+shop.length+' artigo(s) da loja adicionados ao stock. '+home.length+' artigo(s) de casa ficaram fora das contas da My Box in Love.');
+}
+function mblCancelReceipt(){
+ mblReceiptDraft=[];const review=document.getElementById('receiptReview');if(review)review.classList.add('hidden');
+ const input=document.getElementById('receiptImage');if(input)input.value='';
+ const status=document.getElementById('receiptStatus');if(status)status.textContent='Escolhe outra fotografia quando quiseres.';
+}
+
 function updatePurchasePreview(){
  const price=Number(String($('mprice')?.value||'').replace(',','.'));
  const qty=Number(String($('mqty')?.value||'').replace(',','.'));
@@ -860,7 +965,8 @@ function openManualOrderPDF(id) {
  const extraHtml=extras.length?"<section><h2>Adicionais</h2><p>"+extras.map(esc).join(" · ")+"</p></section>":"";
  const itemHtml=items.length?"<section><h2>Produtos avulsos</h2><table><tr><th>Produto</th><th>Quantidade</th></tr>"+items.map(x=>"<tr><td>"+esc(x.name)+"</td><td>"+Number(x.qty)+"</td></tr>").join("")+"</table></section>":"";
  const w=window.open("","_blank"); if(!w)return alert("Permite abrir a janela para imprimir a ficha.");
- w.document.write("<!doctype html><html lang='pt-PT'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Preparação - My Box in Love</title><style>*{box-sizing:border-box}body{font:14px Arial,sans-serif;color:#49352f;margin:0;background:#fff}.sheet{max-width:800px;margin:24px auto;padding:28px;border:2px solid #ead5d9;border-radius:16px}.brand{text-align:center;border-bottom:2px solid #ead5d9;padding-bottom:14px}.brand h1{font-size:25px;letter-spacing:2px;color:#80502f;margin:0}.brand p{margin:5px 0 0;color:#9a7775;font-size:11px;letter-spacing:2px}.headline{text-align:center;margin:18px 0}.headline h2{font-size:22px;margin:0 0 8px;color:#80502f}.timing{display:flex;gap:12px;justify-content:center}.timing div{flex:1;text-align:center;background:#fff3f6;border:1px solid #e8cbd2;border-radius:12px;padding:12px}.timing small{display:block;color:#927a76;font-size:10px;font-weight:bold;letter-spacing:1px;margin-bottom:5px}.timing strong{font-size:23px;color:#603f35}.order{font-size:11px;color:#927a76;margin-top:8px}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #eadde0;padding:9px;text-align:left;vertical-align:top;line-height:1.35}th{width:30%;background:#fff5f7;color:#694c43}section{margin:16px 0}section h2{font-size:15px;color:#80502f;margin:0 0 8px}.check{margin-top:22px;padding:14px;border:1px dashed #c9a8a9;border-radius:10px}.check h2{font-size:15px;color:#80502f;margin:0 0 10px}.checks{display:grid;grid-template-columns:1fr 1fr;gap:9px}.checks span{font-size:12px}.signature{margin-top:18px;color:#806b65;font-size:11px}.print{display:block;margin:0 auto 22px;padding:12px 22px;background:#80502f;color:white;border:0;border-radius:8px;font-weight:bold}@page{size:A4;margin:12mm}@media print{body{margin:0}.sheet{max-width:none;margin:0;padding:8px;border:1px solid #ead5d9;border-radius:0}.print{display:none}tr{break-inside:avoid}}</style></head><body><button class='print' onclick='window.print()'>IMPRIMIR / GUARDAR EM PDF</button><main class='sheet'><header class='brand'><h1>MY BOX IN LOVE</h1><p>FICHA DE PREPARAÇÃO DA ENCOMENDA</p></header><div class='headline'><h2>"+esc(o.product||"Preparação da encomenda")+"</h2><div class='timing'><div><small>DATA DE ENTREGA</small><strong>"+esc(deliveryDate)+"</strong></div><div><small>HORA PRETENDIDA</small><strong>"+esc(deliveryTime)+"</strong></div></div><div class='order'>Encomenda · "+esc(String(o.id).slice(-8).toUpperCase())+"</div></div><table>"+rows+"</table>"+extraHtml+itemHtml+"<div class='check'><h2>✓ CONFIRMAÇÃO ANTES DE FECHAR A BOX</h2><div class='checks'><span>☐ Produto e quantidade conferidos</span><span>☐ Fruta fresca preparada</span><span>☐ Bebida incluída</span><span>☐ Cartão escrito e incluído</span><span>☐ Fita / laço na cor escolhida</span><span>☐ Morada e hora confirmadas</span></div><div class='signature'>Preparado por: ____________________________　 Conferido em: ____ / ____ / ______</div></div></main></body></html>");
+ w.document.write("<!doctype html><html lang='pt-PT'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Preparação - My Box in Love</title><style>*{box-sizing:border-box}body{font:14px Arial,sans-serif;color:#49352f;margin:0;background:#fff}.sheet{max-width:800px;margin:24px auto;padding:28px;border:2px solid #ead5d9;border-radius:16px}.brand{text-align:center;border-bottom:2px solid #ead5d9;padding-bottom:14px}.brand h1{font-size:25px;letter-spacing:2px;color:#80502f;margin:0}.brand p{margin:5px 0 0;color:#9a7775;font-size:11px;letter-spacing:2px}.headline{text-align:center;margin:18px 0}.headline h2{font-size:22px;margin:0 0 8px;color:#80502f}.timing{display:flex;gap:12px;justify-content:center}.timing div{flex:1;text-align:center;background:#fff3f6;border:1px solid #e8cbd2;border-radius:12px;padding:12px}.timing small{display:block;color:#927a76;font-size:10px;font-weight:bold;letter-spacing:1px;margin-bottom:5px}.timing strong{font-size:23px;color:#603f35}.order{font-size:11px;color:#927a76;margin-top:8px}table{width:100%;border-collapse:collapse;margin:16px 0}th,td{border:1px solid #eadde0;padding:9px;text-align:left;vertical-align:top;line-height:1.35}th{width:30%;background:#fff5f7;color:#694c43}section{margin:16px 0}section h2{font-size:15px;color:#80502f;margin:0 0 8px}.check{margin-top:22px;padding:14px;border:1px dashed #c9a8a9;border-radius:10px}.check h2{font-size:15px;color:#80502f;margin:0 0 10px}.checks{display:grid;grid-template-columns:1fr 1fr;gap:9px}.checks span{font-size:12px}.signature{margin-top:18px;color:#806b65;font-size:11px}.print{display:block;margin:0 auto 22px;padding:12px 22px;background:#80502f;color:white;border:0;border-radius:8px;font-weight:bold}@page{size:A4;margin:12mm}@media print{body{margin:0}.sheet{max-width:none;margin:0;padding:8px;border:1px solid #ead5d9;border-radius:0}.print{display:none}tr{break-inside:avoid}}</style></head><body><button class='print' onclick='window.print()'>IMPRIMIR / GUARDAR EM PDF</button><main class='sheet'><header class='brand'><h1>MY BOX IN LOVE</h1><p>FICHA DE PREPARAÇÃO DA ENCOMENDA</p></header><div class='headline'><h2>"+esc(o.product||"Preparação da encomenda")+"</h2><div class='timing'><div><small>DATA DE ENTREGA</small><strong>"+esc(deliveryDate)+"</strong></div><div><small>HORA PRETENDIDA</small><strong>"+esc(deliveryTime)+"</strong></div></div><div class='order'>Encomenda · "+esc(String(o.id).slice(-8).toUpperCase())+"</div></div><table>"+rows+"</table>"+extraHtml+itemHtml+"<div class='check'><h2>✓ CONFIRMAÇÃO ANTES DE FECHAR A BOX</h2><div class='checks'><span>☐ Produto e quantidade conferidos</span><span>☐ Fruta fresca preparada</span><span>☐ Bebida incluída</span><span>☐ Cartão escrito e incluído</span><span>☐ Fita / laço na cor escolhida</span><span>☐ Morada e hora confirmadas</span></div><div class='signature'>Preparado por: ____________________________　 Conferido em: ____ / ____ / ______</div></div></main><script>document.addEventListener("DOMContentLoaded",mblRenderHouseholdReceipts);</script>
+</body></html>");
  w.document.close();setTimeout(()=>{try{w.focus();w.print();}catch(e){}},350);
 }
 async function shareManualQuestionnaire(id) {
