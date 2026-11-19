@@ -787,13 +787,13 @@ function mblReceiptParse(text){
   let qty=1,unit='unidades';
   const qtyMatch=name.match(/^(\d+(?:[,.]\d+)?)\s*[xX]\s*/);
   if(qtyMatch){qty=Number(qtyMatch[1].replace(',','.'));name=name.slice(qtyMatch[0].length).trim();}
-  out.push({name,price,qty:qty||1,unit,category:'loja'});
+  out.push({name,price,qty:qty||1,unit,category:'rever'});
  }
  return out;
 }
 function mblRenderReceiptRows(){
  const box=document.getElementById('receiptRows');if(!box)return;
- box.innerHTML=mblReceiptDraft.map((r,i)=>'<div class="card" style="margin:9px 0;background:#fff9fa"><div class="row"><b style="flex:1">Artigo '+(i+1)+'</b><select aria-label="Destino do artigo '+(i+1)+'" onchange="mblReceiptSet('+i+',\'category\',this.value)" style="max-width:150px;margin:0"><option value="loja" '+(r.category==='loja'?'selected':'')+'>My Box in Love</option><option value="casa" '+(r.category==='casa'?'selected':'')+'>Casa</option><option value="ignorar" '+(r.category==='ignorar'?'selected':'')+'>Ignorar</option></select></div><label>ARTIGO</label><input value="'+esc(r.name)+'" onchange="mblReceiptSet('+i+',\'name\',this.value)"><div class="row"><div class="field"><label>PREÇO TOTAL (€)</label><input type="number" min="0" step=".01" value="'+Number(r.price).toFixed(2)+'" onchange="mblReceiptSet('+i+',\'price\',this.value)"></div><div class="field"><label>QUANTIDADE PARA STOCK</label><input type="number" min=".001" step=".001" value="'+Number(r.qty||1)+'" onchange="mblReceiptSet('+i+',\'qty\',this.value)"></div><div class="field"><label>UNIDADE</label><input value="'+esc(r.unit||'unidades')+'" onchange="mblReceiptSet('+i+',\'unit\',this.value)"></div></div><button type="button" class="danger" onclick="mblReceiptRemove('+i+')">Remover linha</button></div>').join('');
+ box.innerHTML=mblReceiptDraft.map((r,i)=>'<div class="card" style="margin:9px 0;background:#fff9fa"><div class="row"><b style="flex:1">Artigo '+(i+1)+'</b><select aria-label="Destino do artigo '+(i+1)+'" onchange="mblReceiptSet('+i+',\'category\',this.value)" style="max-width:150px;margin:0"><option value="rever" '+(r.category==='rever'?'selected':'')+'>Escolher destino…</option><option value="loja" '+(r.category==='loja'?'selected':'')+'>My Box in Love</option><option value="casa" '+(r.category==='casa'?'selected':'')+'>Casa</option><option value="ignorar" '+(r.category==='ignorar'?'selected':'')+'>Ignorar</option></select></div><label>ARTIGO</label><input value="'+esc(r.name)+'" onchange="mblReceiptSet('+i+',\'name\',this.value)"><div class="row"><div class="field"><label>PREÇO TOTAL (€)</label><input type="number" min="0" step=".01" value="'+Number(r.price).toFixed(2)+'" onchange="mblReceiptSet('+i+',\'price\',this.value)"></div><div class="field"><label>QUANTIDADE PARA STOCK</label><input type="number" min=".001" step=".001" value="'+Number(r.qty||1)+'" onchange="mblReceiptSet('+i+',\'qty\',this.value)"></div><div class="field"><label>UNIDADE</label><input value="'+esc(r.unit||'unidades')+'" onchange="mblReceiptSet('+i+',\'unit\',this.value)"></div></div><button type="button" class="danger" onclick="mblReceiptRemove('+i+')">Remover linha</button></div>').join('');
  mblUpdateReceiptTotals();
 }
 function mblReceiptSet(i,key,value){if(!mblReceiptDraft[i])return;mblReceiptDraft[i][key]=key==='price'||key==='qty'?Number(String(value).replace(',','.')):value;mblUpdateReceiptTotals();}
@@ -802,8 +802,8 @@ function mblUpdateReceiptTotals(){
  const box=document.getElementById('receiptTotals');if(!box)return;
  const shop=mblReceiptDraft.filter(x=>x.category==='loja').reduce((a,x)=>a+(Number(x.price)||0),0);
  const home=mblReceiptDraft.filter(x=>x.category==='casa').reduce((a,x)=>a+(Number(x.price)||0),0);
- const ignored=mblReceiptDraft.filter(x=>x.category==='ignorar').length;
- box.innerHTML='<b>Resumo da classificação</b><br>My Box in Love: <b>'+money(shop)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='loja').length+' artigos) · Casa: <b>'+money(home)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='casa').length+' artigos) · Ignorados: '+ignored+'.';
+ const ignored=mblReceiptDraft.filter(x=>x.category==='ignorar').length;const pending=mblReceiptDraft.filter(x=>x.category==='rever').length;
+ box.innerHTML='<b>Resumo da classificação</b><br>My Box in Love: <b>'+money(shop)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='loja').length+' artigos) · Casa: <b>'+money(home)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='casa').length+' artigos) · Ignorados: '+ignored+' · Por classificar: <b>'+pending+'</b>.';
 }
 async function mblReadReceipt(){
  const input=document.getElementById('receiptImage'),status=document.getElementById('receiptStatus'),button=document.getElementById('readReceiptButton');
@@ -817,7 +817,7 @@ async function mblReadReceipt(){
   status.textContent='A ler o recibo. Pode demorar um pouco…';
   const result=await Tesseract.recognize(file,'por',{logger:m=>{if(m.status==='recognizing text')status.textContent='A ler o recibo… '+Math.round((m.progress||0)*100)+'%';}});
   mblReceiptDraft=mblReceiptParse(result.data.text);
-  if(!mblReceiptDraft.length){status.textContent='Não consegui separar os artigos automaticamente. Tenta uma fotografia mais nítida ou acrescenta as linhas manualmente.';document.getElementById('receiptReview').classList.remove('hidden');mblReceiptDraft=[{name:'',price:0,qty:1,unit:'unidades',category:'loja'}];mblRenderReceiptRows();return;}
+  if(!mblReceiptDraft.length){status.textContent='Não consegui separar os artigos automaticamente. Tenta uma fotografia mais nítida ou acrescenta as linhas manualmente.';document.getElementById('receiptReview').classList.remove('hidden');mblReceiptDraft=[{name:'',price:0,qty:1,unit:'unidades',category:'rever'}];mblRenderReceiptRows();return;}
   document.getElementById('receiptDate').value=today();
   document.getElementById('receiptReview').classList.remove('hidden');
   mblRenderReceiptRows();status.textContent='Leitura concluída. Confirma os artigos, preços e destino de cada linha.';
@@ -826,8 +826,10 @@ async function mblReadReceipt(){
 }
 function mblImportReceiptRows(){
  const date=document.getElementById('receiptDate').value||today(),supplier=document.getElementById('receiptSupplier').value.trim();
+ const pending=mblReceiptDraft.filter(x=>!['loja','casa','ignorar'].includes(x.category));
  const shop=mblReceiptDraft.filter(x=>x.category==='loja');
  const home=mblReceiptDraft.filter(x=>x.category==='casa');
+ if(pending.length)return alert('Classifica todas as linhas como My Box in Love, Casa ou Ignorar antes de guardar.');
  if(!shop.length&&!home.length)return alert('Não há artigos classificados para guardar.');
  for(const r of shop){
   if(!String(r.name||'').trim()||!Number.isFinite(Number(r.price))||Number(r.price)<=0||!Number.isFinite(Number(r.qty))||Number(r.qty)<=0||!String(r.unit||'').trim())return alert('Corrige os artigos da loja: nome, preço, quantidade e unidade são obrigatórios.');
