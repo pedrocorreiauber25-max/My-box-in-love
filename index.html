@@ -1775,7 +1775,7 @@ async function mblSaveOrder(id){
 }
 if(MBL_TOKEN){
  $('loginGate').style.display='none';$('privateMain').style.display='block';
- mblCall({action:'verify'}).then(()=>{mblLoadCatalogData();mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblCatalogPoll){window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);}if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
+ mblCall({action:'verify'}).then(()=>{mblLoadBusinessData();mblLoadCatalogData();mblLoadMaterialChecklist();mblLoadOrders();mblSubscribeOrders();if(!window.mblBusinessPoll){window.mblBusinessPoll=setInterval(mblLoadBusinessData,15000);}if(!window.mblCatalogPoll){window.mblCatalogPoll=setInterval(mblLoadCatalogData,45000);}if(!window.mblOrderPoll){window.mblOrderPoll=setInterval(mblLoadOrders,20000);}if(!window.mblMaterialPoll){window.mblMaterialPoll=setInterval(mblLoadMaterialChecklist,30000);}}).catch(()=>mblLogout());
 }else{
  $('loginGate').style.display='block';$('privateMain').style.display='none';
 }
