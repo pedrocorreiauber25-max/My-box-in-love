@@ -602,8 +602,10 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
 function chooseMenuProduct(key){
  const select=document.getElementById('produto');
  if(!select)return;
+ window.mblSelectedProductKey=key;
  const option=[...select.options].find(item=>item.dataset.storeKey===key);
- if(!option)return;
+ if(!option){window.mblPendingProductKey=key;return;}
+ window.mblPendingProductKey='';
  select.value=option.value;
  select.dispatchEvent(new Event('change',{bubbles:true}));
  document.getElementById('pedido').scrollIntoView({behavior:'smooth',block:'start'});
@@ -635,14 +637,15 @@ function chooseMenuProduct(key){
   });
   const select=document.getElementById('produto');
   if(select){
-   const selected=select.selectedOptions[0]?.dataset.storeKey||'';
+   const selected=window.mblSelectedProductKey||window.mblPendingProductKey||select.selectedOptions[0]?.dataset.storeKey||'';
    select.innerHTML='<option value="">Seleciona uma opção</option>'+products.map(p=>{
     const storeKey=p.storeKey||slug(p.name),label=p.priceLabel||euro(p.price),variable=/(até|desde|–|-)/i.test(label);
     const bounds=[...label.matchAll(/\d+(?:[.,]\d+)?/g)].map(x=>Number(String(x[0]).replace(',','.')));
     const value=(p.name||'')+' — '+label,leadHours=['caixa-presente','buque-de-doces'].includes(storeKey)?48:24;
     return '<option data-store-key="'+safe(storeKey)+'" data-price="'+Number(p.price||0)+'" data-min="'+(variable?(bounds[0]||40):'')+'" data-max="'+(variable?(bounds[1]||70):'')+'" data-lead-hours="'+leadHours+'" '+(variable?'data-variable="true"':'')+' value="'+safe(value)+'">'+safe(value)+'</option>';
    }).join('')+'<option data-variable="true">Pedido personalizado — preço a confirmar</option>';
-   if(selected){const option=[...select.options].find(x=>x.dataset.storeKey===selected);if(option)select.value=option.value;}
+   if(selected){const option=[...select.options].find(x=>x.dataset.storeKey===selected);if(option){select.value=option.value;window.mblSelectedProductKey=selected;window.mblPendingProductKey='';}}
+   select.addEventListener('change',()=>{window.mblSelectedProductKey=select.selectedOptions[0]?.dataset.storeKey||'';},{passive:true});
    select.dispatchEvent(new Event('change',{bubbles:true}));
   }
  }catch(e){console.warn('Catálogo My Box in Love:',e);}
