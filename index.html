@@ -242,23 +242,6 @@ footer{text-align:center;padding:25px;color:#927f79;font-size:12px}
 
  <section id="purchases" class="section">
   <h1>Compras de materiais</h1>
-  <div class="card" id="receiptImportCard">
-   <h2>📷 Importar recibo por fotografia</h2>
-   <p class="muted">Fotografa o talão ou escolhe uma imagem. A leitura prepara as linhas para confirmares uma a uma o que é da loja e o que é para casa. Nada entra no stock sem a tua confirmação.</p>
-   <label for="receiptImage">FOTOGRAFIA DO RECIBO</label>
-   <input id="receiptImage" type="file" accept="image/*" capture="environment">
-   <div class="row"><button type="button" class="primary" id="readReceiptButton" onclick="mblReadReceipt()">Ler recibo</button><span id="receiptStatus" class="small" role="status" aria-live="polite">Escolhe uma fotografia nítida, com o talão inteiro visível.</span></div>
-   <div id="receiptReview" class="hidden">
-    <label>DATA DA COMPRA</label><input id="receiptDate" type="date">
-    <label>LOJA / FORNECEDOR</label><input id="receiptSupplier" placeholder="Ex.: Continente, Pingo Doce…">
-    <p class="small">Confirma ou corrige cada artigo. A quantidade começa em 1 porque o recibo nem sempre indica quantas unidades ou gramas traz cada embalagem. Ajusta-a antes de guardar.</p>
-    <div id="receiptRows"></div>
-    <button type="button" onclick="mblReceiptAddRow()">+ Adicionar artigo manualmente</button>
-    <div class="notice" id="receiptTotals">Confirma a classificação de cada linha.</div>
-    <button type="button" class="primary" onclick="mblImportReceiptRows()">Guardar compras da loja e atualizar stock</button>
-    <button type="button" onclick="mblCancelReceipt()">Cancelar leitura</button>
-   </div>
-  </div>
   <div class="card">
    <h2>Registar compra de um pacote</h2>
    <p class="muted">Indica quanto pagaste pelo pacote e quantas unidades ele traz. A aplicação calcula o custo de cada unidade e atualiza o stock automaticamente.</p>
@@ -764,89 +747,6 @@ function deleteStock(id){
  d.stock=d.stock.filter(x=>x.id!==id);
  d.products.forEach(p=>{p.recipe=(p.recipe||[]).filter(r=>r.material!==id);});
  save();
-}
-
-// Leitura de recibos: os artigos são sempre revistos e classificados antes de qualquer registo.
-let mblReceiptDraft=[];
-// Artigos classificados como Casa ou Ignorar são apenas temporários e nunca são guardados.
-try{localStorage.removeItem('mbl_household_receipts');}catch(e){}
-function mblReceiptParse(text){
- const lines=String(text||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean),out=[];
- for(const line of lines){
-  if(line.length<3)continue;
-  const priceMatch=line.match(/(?:€\s*)?(-?\d+[,.]\d{2})\s*€?$/);
-  if(!priceMatch)continue;
-  const price=Number(priceMatch[1].replace(',','.'));
-  let name=line.slice(0,priceMatch.index).replace(/^[\d\s.*xX\-]+/,'').replace(/\s{2,}/g,' ').trim();
-  if(!name||!Number.isFinite(price)||price<=0)continue;
-  let qty=1,unit='unidades';
-  const qtyMatch=name.match(/^(\d+(?:[,.]\d+)?)\s*[xX]\s*/);
-  if(qtyMatch){qty=Number(qtyMatch[1].replace(',','.'));name=name.slice(qtyMatch[0].length).trim();}
-  out.push({name,price,qty:qty||1,unit,category:'rever'});
- }
- return out;
-}
-function mblRenderReceiptRows(){
- const box=document.getElementById('receiptRows');if(!box)return;
- box.innerHTML=mblReceiptDraft.map((r,i)=>'<div class="card" style="margin:9px 0;background:#fff9fa"><div class="row"><b style="flex:1">Artigo '+(i+1)+'</b><select aria-label="Destino do artigo '+(i+1)+'" onchange="mblReceiptSet('+i+',\'category\',this.value)" style="max-width:150px;margin:0"><option value="rever" '+(r.category==='rever'?'selected':'')+'>Escolher destino…</option><option value="loja" '+(r.category==='loja'?'selected':'')+'>My Box in Love</option><option value="casa" '+(r.category==='casa'?'selected':'')+'>Casa</option><option value="ignorar" '+(r.category==='ignorar'?'selected':'')+'>Ignorar</option></select></div><label>ARTIGO</label><input value="'+esc(r.name)+'" onchange="mblReceiptSet('+i+',\'name\',this.value)"><div class="row"><div class="field"><label>PREÇO TOTAL (€)</label><input type="number" min="0" step=".01" value="'+Number(r.price).toFixed(2)+'" onchange="mblReceiptSet('+i+',\'price\',this.value)"></div><div class="field"><label>QUANTIDADE PARA STOCK</label><input type="number" min=".001" step=".001" value="'+Number(r.qty||1)+'" onchange="mblReceiptSet('+i+',\'qty\',this.value)"></div><div class="field"><label>UNIDADE</label><input value="'+esc(r.unit||'unidades')+'" onchange="mblReceiptSet('+i+',\'unit\',this.value)"></div></div><button type="button" class="danger" onclick="mblReceiptRemove('+i+')">Remover linha</button></div>').join('');
- mblUpdateReceiptTotals();
-}
-function mblReceiptSet(i,key,value){if(!mblReceiptDraft[i])return;mblReceiptDraft[i][key]=key==='price'||key==='qty'?Number(String(value).replace(',','.')):value;mblUpdateReceiptTotals();}
-function mblReceiptRemove(i){mblReceiptDraft.splice(i,1);mblRenderReceiptRows();}
-function mblReceiptAddRow(){mblReceiptDraft.push({name:'',price:0,qty:1,unit:'unidades',category:'rever'});mblRenderReceiptRows();}
-function mblUpdateReceiptTotals(){
- const box=document.getElementById('receiptTotals');if(!box)return;
- const shop=mblReceiptDraft.filter(x=>x.category==='loja').reduce((a,x)=>a+(Number(x.price)||0),0);
- const home=mblReceiptDraft.filter(x=>x.category==='casa').reduce((a,x)=>a+(Number(x.price)||0),0);
- const ignored=mblReceiptDraft.filter(x=>x.category==='ignorar').length;const pending=mblReceiptDraft.filter(x=>x.category==='rever').length;
- box.innerHTML='<b>Resumo da classificação</b><br>My Box in Love: <b>'+money(shop)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='loja').length+' artigos) · Casa: <b>'+money(home)+'</b> ('+mblReceiptDraft.filter(x=>x.category==='casa').length+' artigos) · Ignorados: '+ignored+' · Por classificar: <b>'+pending+'</b>.';
-}
-async function mblReadReceipt(){
- const input=document.getElementById('receiptImage'),status=document.getElementById('receiptStatus'),button=document.getElementById('readReceiptButton');
- const file=input&&input.files&&input.files[0];if(!file){status.textContent='Escolhe primeiro a fotografia do recibo.';return;}
- if(!file.type.startsWith('image/')){status.textContent='O ficheiro escolhido não é uma imagem.';return;}
- button.disabled=true;status.textContent='A preparar o leitor de recibos…';
- try{
-  if(!window.Tesseract){
-   await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(new Error('Não foi possível carregar o leitor. Verifica a ligação à internet.'));document.head.appendChild(script);});
-  }
-  status.textContent='A ler o recibo. Pode demorar um pouco…';
-  const result=await Tesseract.recognize(file,'por',{logger:m=>{if(m.status==='recognizing text')status.textContent='A ler o recibo… '+Math.round((m.progress||0)*100)+'%';}});
-  mblReceiptDraft=mblReceiptParse(result.data.text);
-  if(!mblReceiptDraft.length){status.textContent='Não consegui separar os artigos automaticamente. Tenta uma fotografia mais nítida ou acrescenta as linhas manualmente.';document.getElementById('receiptReview').classList.remove('hidden');mblReceiptDraft=[{name:'',price:0,qty:1,unit:'unidades',category:'rever'}];mblRenderReceiptRows();return;}
-  document.getElementById('receiptDate').value=today();
-  document.getElementById('receiptReview').classList.remove('hidden');
-  mblRenderReceiptRows();status.textContent='Leitura concluída. Confirma os artigos, preços e destino de cada linha.';
- }catch(e){status.textContent=e.message||'Não foi possível ler a fotografia.';}
- finally{button.disabled=false;}
-}
-function mblImportReceiptRows(){
- const date=document.getElementById('receiptDate').value||today(),supplier=document.getElementById('receiptSupplier').value.trim();
- const pending=mblReceiptDraft.filter(x=>!['loja','casa','ignorar'].includes(x.category));
- const shop=mblReceiptDraft.filter(x=>x.category==='loja');
- const home=mblReceiptDraft.filter(x=>x.category==='casa');
- if(pending.length)return alert('Classifica todas as linhas como My Box in Love, Casa ou Ignorar antes de guardar.');
- if(!shop.length)return alert('Não há artigos classificados para a My Box in Love.');
- for(const r of shop){
-  if(!String(r.name||'').trim()||!Number.isFinite(Number(r.price))||Number(r.price)<=0||!Number.isFinite(Number(r.qty))||Number(r.qty)<=0||!String(r.unit||'').trim())return alert('Corrige os artigos da loja: nome, preço, quantidade e unidade são obrigatórios.');
-  const existing=d.stock.find(x=>String(x.name).toLowerCase()===String(r.name).trim().toLowerCase());
-  if(existing&&existing.unit&&existing.unit.toLowerCase()!==String(r.unit).trim().toLowerCase())return alert('O artigo "'+r.name+'" já está no stock em "'+existing.unit+'". Corrige a unidade antes de importar para não misturar medidas.');
- }
- if(!confirm('Confirmas guardar '+shop.length+' artigo(s) da My Box in Love? As '+home.length+' linha(s) de Casa e as linhas Ignoradas serão descartadas e não ficarão guardadas na aplicação.'))return;
- shop.forEach(r=>{
-  const name=String(r.name).trim(),price=Number(r.price),qty=Number(r.qty),unit=String(r.unit).trim();
-  let m=d.stock.find(x=>x.name.toLowerCase()===name.toLowerCase());
-  if(!m){m={id:uid(),name,qty:0,unit,unitCost:0};d.stock.push(m);}
-  const oldValue=m.qty*m.unitCost;m.unit=m.unit||unit;m.qty+=qty;m.unitCost=(oldValue+price)/m.qty;
-  d.purchases.push({id:uid(),name,price,qty,unit:m.unit,unitCost:price/qty,date,supplier,source:'recibo'});
- });
- save();mblCancelReceipt();
- alert('Compras da loja registadas: '+shop.length+' artigo(s). As linhas de Casa e Ignoradas foram descartadas.');
-}
-function mblCancelReceipt(){
- mblReceiptDraft=[];const review=document.getElementById('receiptReview');if(review)review.classList.add('hidden');
- const input=document.getElementById('receiptImage');if(input)input.value='';
- const status=document.getElementById('receiptStatus');if(status)status.textContent='Escolhe outra fotografia quando quiseres.';
 }
 
 function updatePurchasePreview(){
