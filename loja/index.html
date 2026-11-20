@@ -428,16 +428,23 @@ footer{margin-top:32px;padding:34px 18px 48px;background:#fbf2f0;border-top:1px 
   async function locateAddress() {
     const query=address.value.trim();
     if(query.length<5) throw new Error('Escreve a rua, número e localidade da entrega.');
-    const res=await fetch('https://tlhcwzpyuhitjxymapbm.supabase.co/functions/v1/super-handler',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':'sb_publishable_5MEUbRMWp8Y7lbRIBE9QxA_GT1D3rtb'},
-      body:JSON.stringify({action:'geocode',address:query})
+    // Pesquisa iniciada apenas pelo utilizador no browser: o fornecedor recebe
+    // o Referer da loja e não o IP genérico do servidor Edge que estava bloqueado.
+    const params=new URLSearchParams({q:/portugal/i.test(query)?query:query+', Portugal',format:'jsonv2',addressdetails:'1',limit:'5',countrycodes:'pt'});
+    const res=await fetch('https://nominatim.openstreetmap.org/search?'+params.toString(),{
+      headers:{'Accept':'application/json','Accept-Language':'pt-PT,pt;q=0.9'}
     });
-    let data={};
-    try{data=await res.json();}catch(_){}
-    if(!res.ok||!data.ok||!data.point) throw new Error(data.error||'Não foi possível localizar a morada. Confirma rua, número e código postal.');
-    const point=data.point;
-    addressResults=[{geometry:{coordinates:[Number(point.lon),Number(point.lat)]},properties:{name:point.label||query,country:'Portugal'}}];
+    if(!res.ok) throw new Error('O serviço de localização recusou o pedido ('+res.status+'). Escolhe o ponto exato no mapa para calcular a entrega.');
+    const rows=await res.json();
+    const valid=(Array.isArray(rows)?rows:[]).filter(x=>{
+      const lat=Number(x.lat),lon=Number(x.lon);
+      return Number.isFinite(lat)&&Number.isFinite(lon)&&lat>=36.8&&lat<=42.3&&lon>=-9.7&&lon<=-6.0;
+    });
+    if(!valid.length) throw new Error('Não encontrámos essa morada. Confirma rua, número, localidade e código postal, ou escolhe o ponto no mapa.');
+    addressResults=valid.map(x=>({
+      geometry:{coordinates:[Number(x.lon),Number(x.lat)]},
+      properties:{name:x.display_name||query,...(x.address||{}),country:'Portugal'}
+    }));
     document.getElementById('addressChoicesWrap').hidden=true;
     selectAddress(0);
   }
